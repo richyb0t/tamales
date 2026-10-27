@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Tamales · Control de sucursales",
+  "short_name": "Tamales",
+  "description": "Ventas, inventario, apartados y cortes de caja por sucursal",
+  "lang": "es-MX",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5ede0",
+  "theme_color": "#b8321f",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

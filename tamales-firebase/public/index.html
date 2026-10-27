@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tamales · Control de sucursales</title>
+<link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#b8321f"><link rel="icon" type="image/png" href="/icon-192.png"><link rel="apple-touch-icon" href="/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Tamales">
+<style>
+:root{--bg:#fbf6ee;--fg:#2b2118;--card:#fff;--mut:#7a6a5a;--ac:#c2410c;--ok:#15803d;--bad:#b91c1c;--low:#b45309;--bd:#e7dccb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1511;--fg:#f3e9dc;--card:#2a211a;--mut:#a8977f;--ac:#fb923c;--ok:#4ade80;--bad:#f87171;--low:#fbbf24;--bd:#43362a}}
+:root[data-theme="dark"]{--bg:#1b1511;--fg:#f3e9dc;--card:#2a211a;--mut:#a8977f;--ac:#fb923c;--ok:#4ade80;--bad:#f87171;--low:#fbbf24;--bd:#43362a}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+#app{max-width:760px;margin:0 auto;padding:12px}
+header{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+header span{color:var(--mut);font-size:14px;flex:1;text-align:right}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+h2,h3{margin:0 0 8px}h3{font-size:16px}
+button{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}
+button.alt{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button.gh{background:transparent;color:var(--mut);border:1px solid var(--bd);padding:6px 10px}
+button:disabled{opacity:.35}
+input,select{font:inherit;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);max-width:100%;box-sizing:border-box}
+input[type=number]{width:80px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px}
+.tabs button{white-space:nowrap}
+.row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border:0}.row>div:first-child{flex:1}
+small,.mut{color:var(--mut)}
+.big{font-size:26px;font-weight:700;min-width:44px;text-align:center}
+.sc{overflow-x:auto}table{border-collapse:collapse;width:100%}
+th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:left}
+th{font-size:13px;color:var(--mut)}td.n{text-align:center;font-weight:700}
+.ok{color:var(--ok)}.low{color:var(--low)}.bad{color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.stat b{font-size:22px;display:block}
+.form{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.qty{display:flex;gap:10px;align-items:center;justify-content:center}.qty b{font-size:24px;min-width:30px;text-align:center}
+#modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:10;padding:16px}#modal .card{max-width:340px;margin:0}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;display:none;z-index:9}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5ede0;--fg:#2a1f17;--card:#fffdf8;--mut:#86725e;--ac:#b8321f;--go:#1f7a4d;--ok:#1f7a4d;--bad:#c2261a;--low:#b7791f;--bd:#e9dcc6;--sh:0 1px 2px #5a3e1a14,0 4px 14px #5a3e1a0d}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17110d;--fg:#f4eadb;--card:#241b15;--mut:#b09b83;--ac:#f0643f;--go:#2f9e6b;--ok:#4fcf93;--bad:#ff7a6b;--low:#f2b84b;--bd:#3a2d22;--sh:none}}
+:root[data-theme="dark"]{--bg:#17110d;--fg:#f4eadb;--card:#241b15;--mut:#b09b83;--ac:#f0643f;--go:#2f9e6b;--ok:#4fcf93;--bad:#ff7a6b;--low:#f2b84b;--bd:#3a2d22;--sh:none}
+body{font-family:Nunito,system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
+#app{padding:0 14px 150px}
+h1,h2,h3,.ttl{font-family:Fraunces,Georgia,serif}
+.card{border-radius:18px;box-shadow:var(--sh);padding:14px}
+button{min-height:46px;border-radius:12px;padding:10px 16px;font-weight:800;transition:transform .08s}
+button:active{transform:scale(.96)}
+button.go{background:var(--go)}
+button.gh{min-height:40px;font-weight:700}
+input,select{min-height:46px;border-radius:12px;font-size:16px;background:var(--card)}
+input[type=number]{width:84px;text-align:center;font-weight:800}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);padding:12px 0;margin:0}
+.ttl{font-size:23px;display:block;line-height:1.1}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:8;display:flex;background:var(--card);border-top:1px solid var(--bd);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));max-width:760px;margin:0 auto}
+.nav button{flex:1;background:none;color:var(--mut);font-size:12px;display:flex;flex-direction:column;gap:2px;align-items:center;min-height:52px;padding:4px}
+.nav button span{font-size:21px}.nav button.on{color:var(--ac)}
+.seg{display:flex;gap:6px;overflow-x:auto;margin:10px 0}
+.seg button{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:999px;min-height:40px;white-space:nowrap;padding:6px 16px}
+.seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.kp>div{background:var(--card);border-radius:14px;padding:10px;text-align:center;box-shadow:var(--sh)}
+.kp b{display:block;font-size:20px;font-family:Fraunces,Georgia,serif}.kp small{font-size:12px}
+.fl{display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid transparent;border-radius:16px;padding:10px 14px;margin-bottom:8px;box-shadow:var(--sh);min-height:66px;cursor:pointer;user-select:none}
+.fl.sel{border-color:var(--ac)}.fl.out{opacity:.45}.fl .fn{flex:1}.fl .fn b{display:block;font-size:17px;line-height:1.2}
+.chip{border-radius:999px;padding:3px 10px;font-size:13px;font-weight:800;background:#8a6a4a1a;color:var(--mut);white-space:nowrap}
+.chip.ok{color:var(--ok)}.chip.low{color:var(--low)}.chip.bad{color:var(--bad)}
+.st{display:flex;align-items:center;gap:6px}.st button{width:44px;padding:0;font-size:20px}.st b{min-width:24px;text-align:center;font-size:20px}
+.cart{position:fixed;left:0;right:0;bottom:calc(68px + env(safe-area-inset-bottom,0px));margin:0 auto;max-width:760px;z-index:7;padding:0 10px}
+.ct{background:var(--card);border:2px solid var(--ac);border-radius:18px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:0 8px 24px #0003}
+.ci{flex:1;cursor:pointer}.ct b{font-size:24px;font-family:Fraunces,Georgia,serif;display:block}.ct .go{padding:10px 20px;font-size:17px}
+.hero{text-align:center;padding:48px 0 16px}.logo{font-size:64px}
+td.n{padding:4px;text-align:center}th{font-size:11px;white-space:normal}th:first-child,td:first-child{position:sticky;left:0;background:var(--card)}
+#modal{align-items:flex-end;padding:0}#modal .card{max-width:760px;width:100%;margin:0;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));text-align:center}
+#toast{bottom:auto;top:calc(72px + env(safe-area-inset-top,0px));z-index:20}
+.sw{display:flex;gap:8px;align-items:center;margin:10px 0}.sw .seg{margin:0;flex:1}
+.lupa{width:44px;min-height:44px;padding:0;border-radius:50%;background:var(--card);border:1px solid var(--bd);font-size:18px;flex:none}.lupa.on{background:var(--ac);border-color:var(--ac)}
+.sx{animation:grow .2s ease-out;transform-origin:right}@keyframes grow{from{opacity:0;transform:scaleX(.5)}to{opacity:1;transform:none}}
+.seg{scrollbar-width:none;-ms-overflow-style:none}.seg::-webkit-scrollbar{display:none}
+.sw .seg{overflow:visible;gap:4px}
+.sw .seg button{flex:1 1 auto;min-width:0;padding:6px 6px;font-size:clamp(12px,3.6vw,14px)}
+@media(max-width:380px){.sw{gap:4px}}
+#modal .card.mv{text-align:left;max-height:82vh;overflow:auto}.stat.tap{cursor:pointer}.lnk{display:block;color:var(--ac);font-weight:800;margin-top:6px}
+html{color-scheme:light dark}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.cash{display:flex;align-items:center;gap:8px;background:var(--bg);border:2px solid var(--bd);border-radius:16px;padding:4px 16px}
+.cash:focus-within{border-color:var(--ac)}
+.cash span{font-size:30px;font-weight:800;color:var(--mut)}
+.cash input{border:0;background:transparent;font-size:34px;font-weight:800;width:100%;min-height:56px;padding:0;outline:0;color:var(--fg)}
+.nav span{position:relative}.bdg{position:absolute;top:-5px;right:-12px;background:var(--bad);color:#fff;font-style:normal;font-size:11px;font-weight:800;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1}
+html{-webkit-text-size-adjust:100%}
+body{overscroll-behavior-y:contain}body.nolock{overflow:hidden}
+button,input,select,.fl,.stat.tap{touch-action:manipulation}
+input,select,textarea{font-size:16px}
+.top{display:flex;align-items:center;gap:12px}
+.ht{flex:1;min-width:0}.ht .ttl,.ht small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb{position:relative;flex:none;width:48px;min-height:48px;padding:0;font-size:24px;line-height:1;background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:14px}
+.dot,.dot2{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:10px;background:var(--bad);color:#fff;font-style:normal;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;line-height:1}
+#drawer{position:fixed;inset:0;z-index:15;pointer-events:none}
+#drawer .bk{position:absolute;inset:0;background:#0008;opacity:0;transition:opacity .2s}
+#drawer .pn{position:absolute;top:0;bottom:0;left:0;width:84%;max-width:330px;background:var(--card);transform:translateX(-102%);transition:transform .22s ease;display:flex;flex-direction:column;gap:2px;padding:calc(16px + env(safe-area-inset-top,0px)) 12px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 0 30px #0006;overflow-y:auto;overscroll-behavior:contain}
+#drawer.open{pointer-events:auto}#drawer.open .bk{opacity:1}#drawer.open .pn{transform:none}
+.mi{position:relative;display:flex;align-items:center;gap:14px;width:100%;min-height:56px;background:none;color:var(--fg);font-size:17px;font-weight:700;text-align:left;border-radius:14px;padding:10px 14px}
+.mi span{font-size:22px;width:28px;text-align:center;flex:none}.mi em{font-style:normal;flex:1}.mi.on{background:var(--bg);color:var(--ac)}
+.mi .dot2{position:static}
+@media(max-width:380px){#app{padding-left:10px;padding-right:10px}.kp b{font-size:17px}.kp>div{padding:8px 4px}.ttl{font-size:20px}}
+/* ===== Capa responsive (mobile-first): se apoya en los tokens y componentes de arriba ===== */
+:root{--gut:14px;padding-inline:env(safe-area-inset-left,0px) env(safe-area-inset-right,0px)}
+@media(max-width:380px){:root{--gut:10px}}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:7}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}.cash input:focus-visible{outline:0}
+#app{padding-inline:var(--gut)}
+.top{margin-inline:calc(var(--gut)*-1);padding-inline:var(--gut)}
+button.gh,.seg button,.sw .seg button{min-height:44px}
+.lupa{width:44px;min-height:44px;font-size:18px}
+.nav{padding-inline:calc(6px + env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-right,0px))}
+.nav button{font-size:clamp(10.5px,3.3vw,12px);padding:4px 1px;min-width:0;font-weight:700}
+@media(max-width:380px){.nav{padding-inline:calc(2px + env(safe-area-inset-left,0px)) calc(2px + env(safe-area-inset-right,0px))}}
+th{font-size:12px}th:first-child,td:first-child{min-width:7rem;max-width:10rem}.sc{overscroll-behavior-x:contain}
+.row{flex-wrap:wrap}.row>div:first-child{flex:1 1 9rem;min-width:0;overflow-wrap:anywhere}
+.stats{grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));margin-bottom:12px}.stats>.card{margin:0}
+.form>input:not([type=number]),.form>select{flex:1 1 11rem;min-width:0}.form>button{flex:1 1 auto}.form>.wide{flex:1 1 100%;width:auto;font-size:22px}
+label{display:flex;align-items:center;gap:10px;min-height:44px}input[type=checkbox]{width:22px;height:22px;accent-color:var(--ac);flex:none}
+.hero+.card,#app>.card:only-child{max-width:26rem;margin-inline:auto}
+.ci{flex:1 1 100%;min-width:0}.ct>button{flex:1 1 auto}.ct>button.gh{flex:0 0 auto;min-width:44px}.ct .go{padding:10px 16px}.cd{width:100%;max-height:35vh;max-height:35dvh;overflow-y:auto}
+#toast{width:max-content;max-width:min(92vw,28rem);box-sizing:border-box;text-align:center}
+#modal .card{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
+#modal .card.mv{max-height:82vh;max-height:82dvh}
+#modal .form{justify-content:center}#modal .form>button{flex:1 1 7rem}
+#drawer .pn{visibility:hidden;transition:transform .22s ease,visibility 0s linear .22s}#drawer.open .pn{visibility:visible;transition-delay:0s}
+@media(min-width:600px){.ci{flex:1 1 0}#fls{display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));column-gap:10px}#fls>.card{grid-column:1/-1}}
+@media(min-width:768px){.sw .seg button{flex:0 1 auto;padding-inline:18px}#modal{align-items:center;padding:24px}#modal .card{max-width:34rem;border-radius:22px;padding-bottom:18px}}
+@media(max-height:520px) and (orientation:landscape){.top{position:static}body::before{display:none}.nav{padding-block:2px}.nav button{flex-direction:row;justify-content:center;gap:6px;min-height:44px}.cart{bottom:calc(52px + env(safe-area-inset-bottom,0px))}.hero{padding-top:12px}}
+body.kb .nav,body.kb .cart{display:none}
+#net{position:fixed;top:calc(64px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:9;display:none;width:max-content;max-width:92vw;box-sizing:border-box;text-align:center;background:var(--card);color:var(--fg);border:1px solid var(--low);font-size:12px;font-weight:800;padding:4px 12px;border-radius:999px}
+.who{padding-top:clamp(24px,8vh,72px);text-align:center}.who h1{font-size:clamp(1.6rem,6vw,2.4rem);margin:0 0 4px}
+.pf{display:grid;grid-template-columns:repeat(auto-fit,minmax(7rem,8.5rem));gap:18px 14px;justify-content:center;margin:28px 0}
+.pf button{background:none;color:var(--fg);display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px;min-height:0;font-weight:700}
+.pf b{max-width:100%;line-height:1.2;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.pf small{font-weight:600}
+.av{width:clamp(5rem,26vw,6.5rem);aspect-ratio:1;border-radius:16px;display:grid;place-items:center;color:#fff;font:700 clamp(2rem,10vw,2.8rem)/1 Fraunces,Georgia,serif;transition:transform .12s,box-shadow .12s}
+.pf button:hover .av,.pf button:focus-visible .av{transform:scale(1.06);box-shadow:0 0 0 3px var(--fg)}
+.av.big{width:6rem;margin:0 auto 12px;font-size:2.8rem}
+.pin{max-width:22rem;margin:22px auto 0}.pin input{width:100%;text-align:center;font-size:28px;letter-spacing:.35em;font-weight:800}.pin input::placeholder{letter-spacing:.1em;font-weight:700}
+#modal:has(.pd){align-items:center;padding:16px}#modal .card.pd{max-width:340px;width:100%;border-radius:22px;padding-bottom:18px}
+.pw{position:relative;display:inline-flex;flex:1 1 auto;min-width:min(100%,9rem);max-width:100%}.pw input{width:100%;padding-right:48px}.pin .pw{display:flex;width:100%}.pin .pw input{padding-inline:48px}
+.eye{position:absolute;right:2px;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;margin:0;min-height:0;color:var(--mut);cursor:pointer;box-shadow:none}.eye svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nvp{display:flex;gap:4px;border:2px dashed var(--bd);border-radius:16px;padding:6px;margin:10px 0;touch-action:none;user-select:none;-webkit-user-select:none}.nvi{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;border-radius:12px;background:var(--card);border:1px solid var(--bd);font-size:11px;font-weight:800;text-align:center;touch-action:none;cursor:grab;transition:transform .15s;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nvi span{font-size:22px;line-height:1.2}.nvi.drag{transition:none;z-index:3;position:relative;box-shadow:0 8px 20px #0006;border-color:var(--ac)}.nvm{opacity:.45;cursor:default}
+.need{outline:2px solid var(--bad);outline-offset:1px}.row.flash{background:#e8a53a44;border-radius:8px;transition:background .6s}#mic.rec{background:var(--bad);color:#fff;border-color:transparent}
+/* Tabla de existencias: el encabezado (sucursales) se queda fijo al hacer scroll */
+#gr.stk .sc{overflow:visible}
+#gr.stk th{position:sticky;top:calc(72px + env(safe-area-inset-top,0px));z-index:2;background:var(--card);box-shadow:inset 0 -1px 0 var(--bd)}
+#gr.stk th:first-child{z-index:3}
+#gr.stk td:first-child,#gr.stk th:first-child{min-width:4.5rem;max-width:6rem;overflow-wrap:break-word}
+#gr.stk th{padding:6px 2px;font-size:11px;text-align:center;overflow-wrap:normal;word-break:normal}
+#gr.stk th:first-child{text-align:left}
+#gr.stk td.n{padding:4px 1px}
+#gr.stk .chip{padding:2px 5px}
+@media(max-height:520px) and (orientation:landscape){#gr.stk th{top:0}}
+/* Menú hamburguesa a la derecha */
+.hb{order:2}
+#drawer .pn{left:auto;right:0;width:68%;max-width:270px;transform:translateX(102%)}
+#drawer.open .pn{transform:none}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+.how{font-size:13px;color:var(--mut);margin:8px 0 0}.wrap{overflow-x:auto}
+</style></head>
+<body><main id="app"><p class="mut">Cargando…</p></main><div id="drawer"></div><div id="modal" role="dialog" aria-modal="true" aria-label="Diálogo"></div><div id="toast" role="status" aria-live="polite"></div><div id="net" role="status">Sin conexión · tus cambios se suben solos al volver</div>
+<script>
+const F=["Mole rojo","Mole verde","Rajas con queso","Chicharrón","Costilla en salsa verde","Pollo con verduras","Hawaiano","Champiñón con queso","Fresa","Piña","Philadelphia con zarzamora","Elote","Chocorrol","Gansito"];
+const CH=[['Chico','250 ml',20],['Mediano','500 ml',30],['Grande','1 l',50]];const nm=f=>f>=100?'Champurrado '+CH[f-100][0].toLowerCase()+' '+CH[f-100][1]:F[f];
+const ROLE={admin:'Administrador',vend:'Vendedor',enc:'Pedidos'};
+const TL={vendido:'Vendido',apartado:'<b class="low">Apartado</b>',devolucion:'<b class="bad">Devolución</b>'};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');const nz=x=>+x||0;
+const day=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const D=day(),money=n=>'$'+(+n||0).toLocaleString('es-MX',{maximumFractionDigits:2});
+let db=null,pend=false,S={users:[],pre:[],cfg:{},loads:{},sales:[],tr:[],cart:{},me:null,tab:'res',ib:0,tf:0,tt:1,qty:1,ru:false};
+const brs=()=>S.cfg.branches||[1,2,3,4,5].map(n=>'Sucursal '+n);
+const fondo=()=>S.cfg.fondo==null?250:+S.cfg.fondo;
+const isOpen=i=>!(S.cfg.closed||[]).includes(i);
+const BI=()=>brs().map((_,i)=>i).filter(isOpen);
+const price=f=>f>=100?CH[f-100][2]:+((S.cfg.prices||{})['f'+f])||0;
+const load=(b,f)=>+((S.loads[b]||{})['f'+f])||0;
+const used=(b,f)=>S.sales.filter(s=>s.branch==b&&s.f==f).reduce((a,s)=>a+(s.type=='devolucion'?(s.restock?-s.qty:0):(s.type=='apartado'&&s.exp&&s.exp<Date.now()?0:s.qty)),0);
+const net=(b,f)=>S.sales.filter(s=>s.branch==b&&s.f==f).reduce((a,s)=>a+(s.type=='vendido'?s.qty:s.type=='devolucion'?-s.qty:0),0);
+const tx=(b,f,k)=>S.tr.filter(t=>t[k]==b).reduce((a,t)=>a+(+((t.q||{})['f'+f])||0),0);
+const CL=[0.25,0.5,1],r2=x=>Math.round(x*100)/100;
+const chLoad=b=>+((S.loads[b]||{}).ch)||0;
+const txc=(b,k)=>S.tr.filter(t=>t[k]==b).reduce((a,t)=>a+(+((t.q||{}).ch)||0),0);
+const chUsed=b=>S.sales.filter(s=>s.branch==b&&s.f>=100).reduce((a,s)=>a+(s.type=='devolucion'?(s.restock?-1:0):1)*s.qty*CL[s.f-100],0);
+const chLeft=b=>r2(chLoad(b)-chUsed(b)+txc(b,'to')-txc(b,'from'));
+const cartLit=x=>Object.entries(S.cart).reduce((a,[f,q])=>a+(f>=100&&f!=x?q*CL[f-100]:0),0);
+const loadDone=b=>S.loads[b]!==undefined;
+const pendAc=b=>S.pre.filter(p=>p.branch==b&&p.date==D&&!p.ok);
+const resv=(b,f)=>S.pre.filter(p=>p.branch==b&&p.date==D).reduce((a,p)=>a+(+((p.items||{})['f'+f])||0),0);
+const left=(b,f)=>f>=100?Math.max(0,Math.floor((chLeft(b)+1e-9)/CL[f-100])):load(b,f)-used(b,f)+tx(b,f,'to')-tx(b,f,'from')-resv(b,f);
+const LS={get(){try{return localStorage.getItem('tm_s')}catch(e){return null}},set(v){try{v?localStorage.setItem('tm_s',v):localStorage.removeItem('tm_s')}catch(e){}}};
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2200)}
+const err=e=>{console.error(e);toast(e&&e.code=='permission-denied'?'No se pudo: ya cambió o no tienes permiso':'Error: '+(e&&e.message||e))};
+const lock=k=>{lock.s=lock.s||{};if(lock.s[k])return false;lock.s[k]=1;setTimeout(()=>{delete lock.s[k]},4000);return true};
+function ask(msg,fn){const m=$('#modal');m.innerHTML=`<div class="card"><p>${esc(msg)}</p><div class="form"><button id="mk">Sí</button><button class="alt" id="mn">Cancelar</button></div></div>`;m.style.display='flex';$('#mn').onclick=()=>m.style.display='none';$('#mk').onclick=()=>{m.style.display='none';fn()}}
+
+document.addEventListener('focusout',()=>setTimeout(()=>{if(pend)render()},200));
+
+function setupView(){return `<div class="card"><h2>🫔 Bienvenido</h2><p>Crea la cuenta de <b>administrador</b> para empezar.</p><div class="form"><input id="un" placeholder="Nombre"><input id="uu" placeholder="Usuario"><input id="up" placeholder="PIN (6 dígitos)" type="password" inputmode="numeric"></div><button onclick="addUser('admin')">Crear administrador</button></div>`}
+
+/* Un solo vendedor activo por sucursal */
+const brTaken=(b,ex)=>S.users.find(u=>u.role=='vend'&&u.active!==false&&u.branch==b&&u.id!=ex);
+async function setBr(id,v){const t=brTaken(+v,id);if(t){toast(brs()[+v]+' ya tiene vendedor: '+t.name);render(true);return}try{await db.doc('users/'+id).update({branch:+v});toast('Sucursal actualizada')}catch(e){err(e)}}
+
+
+/* ---------- ENCARGADO DE PEDIDOS ---------- */
+
+
+/* ---------- VENDEDOR ---------- */
+
+function cadd(f,n){const c=(S.cart[f]||0)+n,b=S.me.branch;if(c<0||c>(f>=100?Math.floor((chLeft(b)-cartLit(f)+1e-9)/CL[f-100]):left(b,f))){if(f>=100&&n>0)toast('No alcanza el champurrado para ese tamaño');return}if(c)S.cart[f]=c;else delete S.cart[f];render(true)}
+const ctot=()=>Object.entries(S.cart).reduce((a,[f,q])=>a+q*price(+f),0);
+
+async function order(t,p){if(order.b)return;const b=S.me.branch,e=Object.entries(S.cart).map(([f,q])=>[+f,q]);if(!e.length)return;
+ if(e.some(([f,q])=>f<100&&q>left(b,f))||cartLit(-1)>chLeft(b)+1e-9)return toast('Cambió el inventario, revisa las cantidades');
+ const total=ctot(),lines=e.map(([f,q])=>q+'× '+nm(f)).join(', '),ts=Date.now(),oid=S.me.id+'-'+ts;
+ const cart=S.cart;order.b=1;S.cart={};S.cd=false;render(true);
+ try{const bt=db.batch();e.forEach(([f,q],i)=>bt.add('sales',{day:D,branch:b,f,qty:q,type:t,price:price(f),order:oid,by:S.me.user,ts:ts+i}));await bt.commit();try{navigator.vibrate&&navigator.vibrate(40)}catch(_){}note(t=='vendido'?'Pedido cobrado':'Pedido apartado',lines,total,t=='vendido'?p:null)}catch(x){S.cart=cart;render(true);err(x)}finally{order.b=0}}
+function pay(){const tot=ctot();if(!Object.keys(S.cart).length)return;const m=$('#modal');
+ m.innerHTML=`<div class="card"><small>Cobro</small><div class="big" style="font-size:38px">${money(tot)}</div><div class="form"><input type="number" min="0" inputmode="decimal" id="pg" class="wide" aria-label="Con cuánto paga el cliente" placeholder="Paga con $" oninput="chg()"></div><div class="form">${[20,50,100,200,500,1000].filter(v=>v>=tot).slice(0,3).map(v=>`<button class="gh" onclick="pgSet(${v})">$${v}</button>`).join('')}<button class="gh" onclick="pgSet(${tot})">Exacto</button></div><div id="cg" class="big" style="font-size:26px"></div><div class="form"><button id="mk">Confirmar cobro</button><button class="alt" id="mn">Cancelar</button></div></div>`;
+ m.style.display='flex';$('#mn').onclick=()=>m.style.display='none';
+ $('#mk').onclick=()=>{const p=$('#pg').value===''?tot:+$('#pg').value;if(p<tot)return toast('El pago no alcanza');m.style.display='none';order('vendido',p)};chg()}
+function pgSet(v){$('#pg').value=v;chg()}
+/* Ventana de cobro para entregas de apartados: mismo cobro y cambio que una venta normal; al confirmar llama go(pagó) */
+function payAsk(tot,head,line,go){const m=$('#modal');
+ m.innerHTML=`<div class="card"><small>${esc(head)}</small><p>${esc(line)}</p><small>Cobro</small><div class="big" style="font-size:38px">${money(tot)}</div><div class="form"><input type="number" min="0" inputmode="decimal" id="pq" class="wide" aria-label="Con cuánto paga el cliente" placeholder="Paga con $" oninput="pqChg(${tot})"></div><div class="form">${[20,50,100,200,500,1000].filter(v=>v>=tot).slice(0,3).map(v=>`<button class="gh" onclick="pqSet(${v},${tot})">$${v}</button>`).join('')}<button class="gh" onclick="pqSet(${tot},${tot})">Exacto</button></div><div id="cq" class="big" style="font-size:26px"></div><div class="form"><button id="mk">Confirmar cobro</button><button class="alt" id="mn">Cancelar</button></div></div>`;
+ m.style.display='flex';$('#mn').onclick=()=>m.style.display='none';
+ $('#mk').onclick=()=>{const v=$('#pq').value,pg=v===''?tot:+v;if(pg<tot)return toast('El pago no alcanza');m.style.display='none';go(pg)}}
+function pqChg(tot){const v=$('#pq').value,e=$('#cq');if(v===''){e.textContent='';return}const d=+v-tot;e.className='big '+(d<0?'bad':'ok');e.textContent=d<0?'Faltan '+money(-d):'Cambio: '+money(d)}
+function pqSet(v,tot){$('#pq').value=v;pqChg(tot)}
+function chg(){const tot=ctot(),v=$('#pg').value,e=$('#cg');if(v===''){e.textContent='';return}const d=+v-tot;e.className='big '+(d<0?'bad':'ok');e.textContent=d<0?'Faltan '+money(-d):'Cambio: '+money(d)}
+function note(h,l,t,p){const m=$('#modal');m.innerHTML=`<div class="card"><small>${esc(h)}</small><p>${esc(l)}</p><small>Total</small><div class="big" style="font-size:38px">${money(t)}</div>${p!=null?`<small>Pagó ${money(p)}</small><br><small>Cambio</small><div class="big ok" style="font-size:38px">${money(p-t)}</div>`:''}<div class="form"><button id="mk">Listo</button></div></div>`;m.style.display='flex';$('#mk').onclick=()=>m.style.display='none'}
+
+/* Entregar un apartado hecho desde Vender: cobra con la misma ventana de cobro y cambio. Si el apartado fue un pedido de varios renglones, se cobra y entrega el pedido completo. */
+function deliver(id){const s=S.sales.find(x=>x._id==id);if(!s)return;
+ const g=s.order?S.sales.filter(x=>x.order==s.order&&x.type=='apartado'&&live(x)):[s];if(!g.length)return;
+ const tot=g.reduce((a,x)=>a+x.qty*x.price,0),line=g.map(x=>x.qty+'× '+nm(x.f)).join(', ');
+ payAsk(tot,'Entregar y cobrar'+(s.client?' · '+s.client:''),line,async pg=>{
+  if(g.some(x=>{const c=S.sales.find(y=>y._id==x._id);return !c||c.type!='apartado'}))return toast('Este apartado ya cambió');
+  try{await Promise.all(g.map(x=>db.doc('sales/'+x._id).update({type:'vendido',by:S.me.user})));try{navigator.vibrate&&navigator.vibrate(40)}catch(_){}note('Apartado entregado'+(s.client?' · '+s.client:''),line,tot,pg)}catch(e){err(e)}})}
+/* Bitácora de anulaciones y cancelaciones: la ve el administrador en "Ver movimientos" de cada sucursal */
+const logD=o=>{const d={day:D,by:S.me.user,byName:S.me.name,ts:Date.now(),...o};Object.keys(d).forEach(k=>d[k]==null&&delete d[k]);return d};
+function logEv(o){if(!S.me)return;try{Promise.resolve(db.collection('logs').add(logD(o))).catch(e=>console.warn('logs',e))}catch(e){console.warn('logs',e)}}
+async function anular(id){const s=S.sales.find(x=>x._id==id);if(!s)return;if(s.type=='vendido'&&net(s.branch,s.f)-s.qty<0)return toast('Primero hay que anular la devolución de ese sabor');ask('¿Anular este movimiento? El inventario se ajusta solo.',async()=>{try{
+ /* la anulación y su registro en la bitácora van juntos: las reglas no dejan borrar una venta cobrada sin bitácora */
+ const bt=db.batch();bt.set('logs/del_'+id,logD({branch:s.branch,kind:'anulacion',label:'Anulado · '+({vendido:'venta',apartado:'apartado',devolucion:'devolución'}[s.type]||s.type),txt:s.qty+'× '+nm(s.f)+(s.client?' · '+s.client:''),amt:s.qty*s.price}));bt.delete('sales/'+id);await bt.commit();toast('Anulado')}catch(e){err(e)}})}
+function devForm(b){
+ const opts=[...F.keys(),100,101,102].map(f=>net(b,f)>0?`<option value="${f}">${nm(f)} (vendidos: ${net(b,f)})</option>`:'').join('');
+ if(!opts)return '<div class="card"><h3>Devoluciones</h3><small>Aún no hay ventas de hoy para devolver.</small></div>';
+ return `<div class="card"><h3>Registrar devolución</h3><div class="form"><select id="dv_f" aria-label="Sabor a devolver">${opts}</select><input type="number" min="1" id="dv_q" value="1" aria-label="Cantidad a devolver"><select id="dv_r" aria-label="Motivo"><option>Mal estado</option><option>Pedido equivocado</option><option>Cliente no satisfecho</option><option>Otro</option></select><input id="dv_t" placeholder="Detalle del motivo"></div><label><input type="checkbox" id="dv_s"> El producto regresa al inventario</label><small style="display:block">Con champurrado ya servido normalmente no se marca.</small><div class="form"><button onclick="saveDev()">Registrar devolución</button></div></div>`}
+async function saveDev(){const b=S.me.branch,f=+$('#dv_f').value,q=Math.max(1,parseInt($('#dv_q').value)||1),r=$('#dv_r').value,t=$('#dv_t').value.trim();
+ if(q>net(b,f))return toast('Solo hay '+net(b,f)+' vendidos de ese sabor');
+ if(r=='Otro'&&!t)return toast('Escribe el motivo');
+ try{await db.collection('sales').add({day:D,branch:b,f,qty:q,type:'devolucion',price:price(f),reason:r+(t?': '+t:''),restock:$('#dv_s').checked,by:S.me.user,ts:Date.now()});toast('Devolución registrada');render(true)}catch(e){err(e)}}
+function trForm(from,adm){
+ S.trd=S.trd||{};if(S.trf!==from){S.trd={};S.trf=from}
+ const bs=brs(),o=BI().filter(i=>i!=from),to=o.includes(S.tt)?S.tt:o[0],fl=F.map((n,f)=>[n,f,left(from,f)]).filter(x=>x[2]>0),cl=chLeft(from);
+ return `<div class="card"><h3>Pasar tamales a otra sucursal</h3><small>Por ejemplo si cierran un puesto y pasan los sobrantes. Escribe cuántos pasas de cada sabor, o usa los botones.</small><div class="form">${adm?`<select onchange="S.tf=+this.value;render(true)">${bs.map((n,i)=>!isOpen(i)?'':`<option value="${i}" ${i==from?'selected':''}>De: ${esc(n)}</option>`).join('')}</select>`:''}<select onchange="S.tt=+this.value;render(true)">${o.map(i=>`<option value="${i}" ${i==to?'selected':''}>A: ${esc(bs[i])}</option>`).join('')}</select></div>${fl.length||cl>0?`<div class="form"><button class="alt" onclick="trFill(${from},1)">Pasar todo</button><button class="gh" onclick="trFill(${from},0)">Poner todo en 0</button></div>`+fl.map(x=>`<div class="row"><div>${x[0]}<br><small>quedan ${x[2]}</small></div><input type="number" min="0" id="tq${x[1]}" value="${S.trd['f'+x[1]]??0}" oninput="S.trd['f${x[1]}']=this.value"></div>`).join('')+(cl>0?`<div class="row"><div>☕ Champurrado<br><small>quedan ${cl} L</small></div><input type="number" min="0" step="0.25" inputmode="decimal" id="tqch" value="${S.trd.ch??0}" oninput="S.trd.ch=this.value"></div>`:'')+`<div class="form"><button onclick="doTr(${from},${to})">Pasar</button></div>`:'<small>No quedan tamales en esta sucursal.</small>'}</div>`}
+function trFill(from,all){S.trd={};if(all){F.forEach((_,f)=>{const l=left(from,f);if(l>0)S.trd['f'+f]=l});const c=chLeft(from);if(c>0)S.trd.ch=c}render(true)}
+function doTr(from,to){const q={};let n=0,lc=0;F.forEach((_,f)=>{const v=$('#tq'+f);if(!v)return;const x=Math.min(Math.max(0,parseInt(v.value)||0),left(from,f));if(x>0){q['f'+f]=x;n+=x}});
+ const vc=$('#tqch');if(vc){const x=r2(Math.min(Math.max(0,parseFloat(vc.value)||0),chLeft(from)));if(x>0){q.ch=x;lc=x}}
+ if(!n&&!lc)return toast('No hay nada para pasar');
+ ask(`¿Pasar ${[n?n+' tamales':'',lc?lc+' L de champurrado':''].filter(Boolean).join(' y ')} de ${brs()[from]} a ${brs()[to]}?`,async()=>{try{await db.collection('transfers').add({day:D,from,to,q,n,by:S.me.user,ts:Date.now()});S.trd={};toast('Traspaso hecho');render(true)}catch(e){err(e)}})}
+function closeBr(i){
+ if(BI().length<=1)return toast('Debe quedar al menos una sucursal');if(S.pre.some(p=>p.branch==i))return toast('Tiene apartados pendientes: entrégalos o cancélalos primero');
+ if(S.users.some(u=>u.role=='vend'&&u.branch==i&&u.active!==false))return toast('Primero cambia de sucursal a sus vendedores (en Usuarios)');
+ if(F.some((_,f)=>left(i,f)>0)||chLeft(i)>0)return toast('Aún tiene tamales o champurrado hoy: pásalos a otra sucursal en Traspasos');
+ ask('¿Eliminar "'+brs()[i]+'"? Ya no aparecerá, pero sus ventas anteriores se conservan.',async()=>{try{await db.doc('config/main').set({closed:[...(S.cfg.closed||[]),i]},{merge:true});toast('Sucursal eliminada')}catch(e){err(e)}})}
+async function openBr(i){try{await db.doc('config/main').set({closed:(S.cfg.closed||[]).filter(x=>x!==i)},{merge:true});toast('Sucursal reabierta')}catch(e){err(e)}}
+async function addBranch(){const b=[...brs(),'Sucursal '+(brs().length+1)];try{await db.doc('config/main').set({branches:b},{merge:true});toast('Sucursal agregada. Ponle nombre y guarda.')}catch(e){err(e)}}
+function trList(b){const l=S.tr.filter(t=>b==null||t.from==b||t.to==b).sort((a,c)=>c.ts-a.ts);if(!l.length)return '';
+ return `<div class="card"><h3>Traspasos de hoy</h3>${l.map(t=>{const d=new Date(t.ts),it=Object.entries(t.q||{}).map(([k,v])=>k=='ch'?v+' L champurrado':v+'× '+F[+k.slice(1)]).join(', ');return `<div class="row"><div><b>${esc(brs()[t.from])} → ${esc(brs()[t.to])}</b><br><small>${pad(d.getHours())}:${pad(d.getMinutes())} · ${esc(it)}</small></div>${b==null||t.from==b?`<button class="gh" onclick="delTr('${t._id}')">Anular</button>`:''}</div>`}).join('')}</div>`}
+function delTr(id){const t=S.tr.find(x=>x._id==id);if(!t)return;
+ if(Object.entries(t.q||{}).find(([k,v])=>k=='ch'?chLeft(t.to)<v:left(t.to,+k.slice(1))<v))return toast('No se puede anular: la sucursal destino ya vendió parte de esos tamales');
+ ask('¿Anular este traspaso?',async()=>{try{const bt=db.batch();bt.set('logs/del_tr_'+id,logD({branch:t.from,branch2:t.to,kind:'anulacion',label:'Traspaso anulado',txt:brs()[t.from]+' → '+brs()[t.to]+' · '+Object.entries(t.q||{}).map(([k,v])=>k=='ch'?v+' L champurrado':v+'× '+F[+k.slice(1)]).join(', ')}));bt.delete('transfers/'+id);await bt.commit();toast('Traspaso anulado')}catch(e){err(e)}})}
+function trView(){const f=BI().includes(S.tf)?S.tf:BI()[0];return trForm(f,true)+trList(null)}
+function devList(){const l=S.sales.filter(s=>s.type=='devolucion').sort((a,c)=>c.ts-a.ts);if(!l.length)return '';
+ return `<div class="card"><h3>Devoluciones de hoy</h3>${l.map(s=>{const d=new Date(s.ts);return `<div class="row"><div>${nz(s.qty)}× ${nm(s.f)} · ${esc(brs()[s.branch])}<br><small>${pad(d.getHours())}:${pad(d.getMinutes())} · ${esc(s.reason)} · ${s.restock?'regresó al inventario':'no regresó al inventario'} · ${esc(s.by)}</small></div></div>`}).join('')}</div>`}
+
+/* ---------- ADMIN ---------- */
+
+
+
+function resView(){
+ const st=b=>{const s=S.sales.filter(x=>x.branch==b),sm=(t,k)=>s.filter(x=>x.type==t&&live(x)).reduce((a,x)=>a+x.qty*(k?x.price:1),0);return{v:sm('vendido'),a:sm('apartado'),d:sm('devolucion'),m:sm('vendido',1)-sm('devolucion',1)}};
+ const all=BI().map(b=>({b,...st(b)})),tot=all.reduce((a,x)=>a+x.m,0);
+ return `${alertCard()}<div class="card"><h3>Hoy · ${D}</h3><div class="stat"><small>Total neto (${BI().length} sucursales)</small><b>${money(tot)}</b></div></div>
+ <div class="stats">${all.map(x=>`<div class="card stat tap" onclick="showMv(${x.b})"><small>${esc(brs()[x.b])}</small><b>${money(x.m)}</b><small>${x.v} vendidos · ${x.a} apartados · ${x.d} devol.</small><small class="lnk">Ver movimientos ›</small></div>`).join('')}</div>
+ <div class="card"><h3>Tamales que quedan</h3>${grid(BI())}</div>${devList()}`;
+}
+
+async function saveInv(){const b=curIb(),q={},pa={};
+ if(pendAc(b).length){toast('Primero acepta los apartados de hoy de '+brs()[b]);return admAp(b)}
+ F.forEach((_,f)=>{const a=paNow(b,f),base=Math.max(0,parseInt($('#q'+f).value)||0);q['f'+f]=base+a;if(a)pa['f'+f]=a});
+ q.ch=Math.max(0,parseFloat($('#qch').value)||0);q.pa=pa;
+ try{await db.doc(`loads/${D}_${b}`).set({day:D,branch:b,q});if(S.dr)delete S.dr[b];const n=Object.values(pa).reduce((x,v)=>x+v,0);toast('Carga guardada para '+brs()[b]+(n?' · incluye '+n+(n==1?' apartado':' apartados'):''))}catch(e){err(e)}}
+function ajView(){return navCard()+`<div class="card"><h3>Nombres de sucursales</h3><div class="form"><button class="alt" onclick="addBranch()">＋ Agregar sucursal</button></div>${brs().map((n,i)=>`<div class="form"><input id="bn${i}" aria-label="Nombre de la sucursal ${i+1}" value="${esc(n)}" style="flex:1;${isOpen(i)?'':'opacity:.5'}">${isOpen(i)?`<button class="gh" style="color:var(--bad)" onclick="closeBr(${i})">Eliminar</button>`:`<button class="gh" onclick="openBr(${i})">Reabrir</button>`}</div>`).join('')}</div>
+ <div class="card"><h3>Apartados y alertas</h3><div class="row"><div>Minutos que se guarda un apartado de otra sucursal<br><small>Cuenta desde que la otra sucursal lo acepta</small></div><input type="number" min="5" inputmode="numeric" id="holdIn" value="${holdMin()}"></div><div class="row"><div>Avisar cuando queden esta cantidad de tamales o menos<br><small>Por cada sabor</small></div><input type="number" min="0" inputmode="numeric" id="lowIn" value="${lowT()}"></div><div class="row"><div>Avisar cuando queden estos litros o menos de champurrado</div><input type="number" min="0" step="0.25" inputmode="decimal" id="lowlIn" value="${lowL()}"></div></div>
+ <div class="card"><h3>Fondo inicial por vendedor</h3><div class="row"><div>Efectivo con el que empieza cada vendedor<br><small>Se usa en el corte de caja</small></div><input type="number" min="0" inputmode="decimal" id="fondoIn" value="${fondo()}"></div></div>
+ <div class="card"><h3>Precio y costo por sabor</h3>${F.map((n,f)=>`<div class="row"><div>${n}</div><input type="number" min="0" id="pr${f}" value="${price(f)}" aria-label="Precio de ${n}"><input type="number" min="0" step="0.5" inputmode="decimal" id="co${f}" value="${cst(f)||''}" placeholder="Costo" aria-label="Costo de ${n}"></div>`).join('')}<div class="form"><button onclick="saveAj()">Guardar ajustes</button></div><small>Los cambios de precio aplican a ventas nuevas. El costo es opcional y sirve para calcular la utilidad en Reportes.</small></div>`}
+async function saveAj(){const branches=brs().map((n,i)=>{const e=$('#bn'+i);return e?(e.value.trim()||n):n}),prices={};const costs={};F.forEach((_,f)=>{prices['f'+f]=Math.max(0,+$('#pr'+f).value||0);costs['f'+f]=Math.max(0,+$('#co'+f).value||0)});
+ try{await db.doc('config/main').set({branches,prices,costs,fondo:Math.max(0,+$('#fondoIn').value||0),hold:Math.max(5,+$('#holdIn').value||60),low:Math.max(0,+$('#lowIn').value||0),lowl:Math.max(0,+$('#lowlIn').value||0)},{merge:true});toast('Ajustes guardados')}catch(e){err(e)}}
+function usView(){return `<div class="card"><h3>Nuevo usuario</h3><div class="form"><input id="un" placeholder="Nombre"><input id="uu" placeholder="Usuario" autocapitalize="none"><input id="up" placeholder="PIN (6 dígitos)" inputmode="numeric"><select id="ur" aria-label="Rol"><option value="vend">Vendedor</option><option value="enc">Encargado de pedidos</option><option value="admin">Administrador</option></select><select id="ub" aria-label="Sucursal">${brs().map((n,i)=>!isOpen(i)?'':`<option value="${i}">${esc(n)}${brTaken(i)?' · ya tiene vendedor':''}</option>`).join('')}</select></div><small>La sucursal solo aplica a vendedores.</small><div class="form"><button onclick="addUser()">Crear usuario</button></div></div>
+ <div class="card"><h3>Usuarios</h3>${S.users.map(u=>`<div class="row" style="flex-wrap:wrap"><div><b>${esc(u.name)}${u.active===false?' <small class="bad">(desactivado)</small>':''}</b><br><small>${esc(u.user||u.id)} · ${ROLE[u.role]||''}${u.role=='vend'?' · '+esc(brs()[u.branch]):''}</small></div>${u.role=='vend'?`<select aria-label="Sucursal del vendedor" data-id="${esc(u.id)}" onchange="setBr(this.dataset.id,this.value)">${brs().map((n,i)=>!isOpen(i)&&i!=u.branch?'':`<option value="${i}" ${i==u.branch?'selected':''}>${esc(n)}</option>`).join('')}</select>`:''}${u.id==S.me.id?'':`<button class="gh" data-id="${esc(u.id)}" onclick="pinUser(this.dataset.id)">Cambiar PIN</button><button class="gh" data-id="${esc(u.id)}" onclick="delUser(this.dataset.id,${u.active===false})">${u.active===false?'Reactivar':'Desactivar'}</button><button class="gh" style="color:var(--bad)" data-id="${esc(u.id)}" onclick="rmUser(this.dataset.id)">Eliminar</button>`}</div>`).join('')}</div>`}
+
+/* ===== Interfaz móvil (reemplaza vistas anteriores) ===== */
+const isD=f=>f>=8,norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),inCat=f=>S.cat!='b'&&((S.cat||'t')=='t'||((S.cat=='d')==isD(f)))&&(!S.q||norm(F[f]).includes(norm(S.q)));
+function nav(it,cur,fn){return `<nav class="nav">${it.map(([k,i,l,n])=>`<button class="${cur==k?'on':''}"${cur==k?' aria-current="page"':''} onclick="${fn}('${k}')"><span>${i}${n?`<em class="bdg">${n}</em>`:''}</span>${l}</button>`).join('')}</nav>`}
+
+function bchips(cur,fn){return `<div class="seg">${brs().map((n,i)=>!isOpen(i)?'':`<button class="${i==cur?'on':''}" onclick="${fn}(${i})">${esc(n)}</button>`).join('')}</div>`}
+/* ===== Login tipo perfiles: lista pública mínima en 'profiles' (nombre, usuario, rol, activo) que mantiene el administrador ===== */
+let prU=null;
+function profSub(){if(prU)return;try{prU=db.collection('profiles').onSnapshot(q=>{S.prs=q.docs.map(d=>({id:d.id,...d.data()}));S.prE=false;if(!S.fu)render()},e=>{console.warn('profiles',e);S.prE=true;if(!S.fu)render()})}catch(e){S.prE=true}
+ setTimeout(()=>{if(!S.prs&&!S.fu){S.prE=true;render()}},3000)}
+function profOff(){if(prU){prU();prU=null}}
+const prList=()=>(S.prs||[]).filter(p=>p.active!==false&&p.user).sort((a,b)=>String(a.name).localeCompare(String(b.name),'es'));
+const AVC=['#b8321f','#1f7a4d','#b7791f','#7a4fa0','#2f6f9f','#a14a6b','#4f7a2f','#c2611a'];
+const avC=u=>{let h=0;for(const c of String(u))h=(h*31+c.charCodeAt(0))>>>0;return AVC[h%AVC.length]};
+const avI=n=>esc((String(n).trim()[0]||'?').toUpperCase());
+function pick(u){S.lp=prList().find(p=>p.user==u)||null;render(true);const e=$('#lp');if(e)e.focus()}
+function loginView(){const l=prList();
+ if(S.lp&&!l.some(p=>p.user==S.lp.user))S.lp=null;
+ if(S.lp)return pinView(S.lp);
+ if(!S.prs&&!S.prE)return '<p class="mut" style="padding:24px;text-align:center">Cargando perfiles…</p>';
+ if(S.lm||S.prE||!l.length)return loginForm()+(l.length?'<div class="who"><button class="gh" onclick="S.lm=false;render(true)">← Volver a los perfiles</button></div>':'');
+ return `<div class="who"><div style="font-size:42px">🫔</div><h1>¿Quién entra?</h1><small>Elige tu perfil</small><div class="pf">${l.map(p=>`<button data-u="${esc(p.user)}" onclick="pick(this.dataset.u)" aria-label="${esc(p.name)}, ${ROLE[p.role]||''}"><span class="av" style="background:${avC(p.user)}">${avI(p.name)}</span><b>${esc(p.name)}</b><small>${ROLE[p.role]||''}</small></button>`).join('')}<button onclick="S.lm=true;render(true)"><span class="av" style="border:2px dashed var(--mut);color:var(--mut)">＋</span><b>Otro usuario</b><small>&nbsp;</small></button></div></div>`}
+function pinView(p){return `<div class="who"><span class="av big" style="background:${avC(p.user)}">${avI(p.name)}</span><h1>${esc(p.name)}</h1><small>${ROLE[p.role]||''}</small><div class="card pin"><input id="lp" type="password" inputmode="numeric" autocomplete="current-password" enterkeyhint="go" aria-label="PIN de ${esc(p.name)}" placeholder="PIN" onkeydown="if(event.key=='Enter')login()"><button class="go" style="width:100%;margin-top:12px;font-size:18px" onclick="login()">Entrar</button><button class="gh" style="width:100%;margin-top:8px" onclick="S.lp=null;render(true)">Cambiar de perfil</button></div></div>`}
+/* El administrador mantiene 'profiles' igual que 'users' (altas, bajas, desactivados, cambios de nombre) */
+function syncProf(){if(!S.me||S.me.role!='admin'||!S.pr||!S.users.length)return;
+ const want={};S.users.forEach(u=>want[u.id]={user:u.user||'',name:u.name||'',active:u.active!==false});const ops=[];
+ Object.entries(want).forEach(([id,w])=>{const p=S.pr[id];if(!p||p.user!==w.user||p.name!==w.name||p.role!==undefined||p.active!==w.active)ops.push(['s',id,w])});
+ Object.keys(S.pr).forEach(id=>{if(!want[id])ops.push(['d',id])});
+ const sig=JSON.stringify(ops);if(!ops.length||sig===S.psig)return;S.psig=sig;
+ ops.forEach(([k,id,w])=>{try{(k=='s'?db.doc('profiles/'+id).set(w):db.doc('profiles/'+id).delete()).catch(e=>console.warn('profiles',e))}catch(e){console.warn(e)}})}
+function setTab(t){S.tab=t;render(true);scrollTo(0,0)}
+function setVt(t){S.vt=t;if(t=='r')stockOn();else stockOff();render(true);scrollTo(0,0)}
+function setIb(i){S.ib=i;render(true)}
+function gridT(bs){const q=S.q?norm(S.q):'',cr=((S.cat||'t')=='t'&&(!q||norm('champurrado').includes(q)))?`<tr><td>☕ Champurrado (L)</td>${bs.map(b=>{const t=chLoad(b),l=chLeft(b);return `<td class="n"><span class="chip ${l<=0?(t?'bad':''):l<1?'low':'ok'}">${t||l?l:'–'}</span></td>`}).join('')}</tr>`:'';
+ return `<div class="sc"><table><tr><th>Sabor</th>${bs.map(b=>`<th>${esc(brs()[b])}</th>`).join('')}</tr>`+F.map((n,f)=>inCat(f)?`<tr><td>${n}</td>${bs.map(b=>{const l=left(b,f),t=load(b,f);return `<td class="n"><span class="chip ${l<=0?(t?'bad':''):l<=3?'low':'ok'}">${t||l?l:'–'}</span></td>`}).join('')}</tr>`:'').join('')+cr+`</table></div>`}
+function loginForm(){return `<div class="hero"><div class="logo">🫔</div><h1>Tamales</h1><small>Control de sucursales</small></div><div class="card"><div class="form"><input id="lu" placeholder="Usuario" aria-label="Usuario" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" style="flex:1 1 100%"><input id="lp" placeholder="PIN (6 dígitos)" aria-label="PIN" type="password" inputmode="numeric" autocomplete="current-password" enterkeyhint="go" onkeydown="if(event.key=='Enter')login()" style="flex:1 1 100%"></div><button class="go" style="width:100%;font-size:18px" onclick="login()">Entrar</button></div>`}
+
+function cartBar(){const e=Object.entries(S.cart);if(!e.length)return '';const n=e.reduce((a,[f,q])=>a+(+f<100?q:0),0),m=e.reduce((a,[f,q])=>a+(+f>=100?q:0),0),lbl=[n?n+(n>1?' tamales':' tamal'):'',m?m+(m>1?' champurrados':' champurrado'):''].filter(Boolean).join(' + ');
+ return `<div class="cart"><div class="ct">${S.cd?`<div class="cd">${e.map(([f,q])=>`<div class="row"><div>${q}× ${nm(f)}</div><b style="font-size:16px">${money(q*price(+f))}</b></div>`).join('')}</div>`:''}<div class="ci" onclick="S.cd=!S.cd;render(true)"><small>${lbl} · ${S.cd?'ocultar':'ver pedido'}</small><b>${money(ctot())}</b></div><button class="gh" aria-label="Vaciar pedido" onclick="S.cart={};S.cd=false;render(true)">✕</button><button class="alt" onclick="order('apartado')">Apartar</button><button class="go" onclick="pay()">Cobrar</button></div></div>`}
+function histViewOld(mine){const o=[...mine.filter(s=>s.type=='apartado'),...mine.filter(s=>s.type!='apartado')];
+ return `<div class="card"><h3>Movimientos de hoy</h3>${o.length?o.slice(0,40).map(s=>{const d=new Date(s.ts);return `<div class="row"><div>${nz(s.qty)}× ${nm(s.f)}<br><small>${pad(d.getHours())}:${pad(d.getMinutes())} · ${live(s)?TL[s.type]:'<b class="bad">Vencido</b>'}${s.client?' · '+esc(s.client):''}${s.type=='devolucion'?' · '+esc(s.reason||''):''}</small></div>${s.type=='apartado'&&live(s)&&!s.req?`<button class="go" onclick="deliver('${s._id}')">Entregar y cobrar</button>`:''}<button class="gh" onclick="anular('${s._id}')">Anular</button></div>`}).join(''):'<small>Sin movimientos todavía.</small>'}</div>`}
+/* ===== Historial por pedido: agrupa lo cobrado al mismo tiempo; anular/devolver por pedido o por tamal ===== */
+const reg=ids=>(S.ar.push(ids),S.ar.length-1);
+function anularMany(ids,msg){const L=ids.map(i=>S.sales.find(x=>x._id==i)).filter(Boolean);if(!L.length)return;
+ const dv={};L.forEach(s=>{if(s.type=='vendido')dv[s.f]=(dv[s.f]||0)+s.qty;if(s.type=='devolucion')dv[s.f]=(dv[s.f]||0)-s.qty});
+ const bad=Object.keys(dv).find(f=>net(L[0].branch,+f)-dv[f]<0);if(bad)return toast('Primero hay que anular la devolución de '+nm(+bad));
+ ask(msg,async()=>{try{const bt=db.batch();L.forEach(x=>{bt.set('logs/del_'+x._id,logD({branch:x.branch,kind:'anulacion',label:'Anulado · '+({vendido:'venta',apartado:'apartado',devolucion:'devolución'}[x.type]||x.type),txt:x.qty+'× '+nm(x.f)+(x.client?' · '+x.client:''),amt:x.qty*x.price}));bt.delete('sales/'+x._id)});await bt.commit();toast('Anulado')}catch(e){err(e)}})}
+function anularR(n,k){anularMany(S.ar[n]||[],k?'¿Anular esta devolución? El inventario se ajusta solo.':'¿Anular el pedido completo? El inventario se ajusta solo.')}
+function grpHtml(i){const k=S.gk[i],l=S.gg[k],sl=l.filter(s=>s.type!='devolucion').sort((a,c)=>a.ts-c.ts),rl=l.filter(s=>s.type=='devolucion'),
+ tot=sl.reduce((a,s)=>a+s.qty*s.price,0)-rl.reduce((a,s)=>a+s.qty*s.price,0);
+ const line=x=>`<div class="row"><div>${nz(x.qty)}× ${nm(x.f)}<br><small>${hm(x.ts)} · ${live(x)?TL[x.type]:'<b class="bad">Vencido</b>'}${x.client?' · '+esc(x.client):''}${x.type=='devolucion'?' · '+esc(x.reason||''):''}</small></div>${x.type=='apartado'&&live(x)&&!x.req?`<button class="go" onclick="deliver('${x._id}')">Entregar y cobrar</button>`:''}<button class="gh" onclick="anular('${x._id}')">Anular</button></div>`;
+ if(l.length==1)return line(l[0])+(sl.length&&sl[0].type=='vendido'?`<div class="form" style="margin:0 0 6px"><button class="gh" onclick="devPed(${i})">Devolver</button></div>`:'');
+ const rg={};rl.forEach(x=>(rg[x.ret||x._id]=rg[x.ret||x._id]||[]).push(x));
+ return `<div style="border:1px solid var(--bd);border-radius:12px;padding:6px 10px;margin:8px 0"><div class="row" style="border:0"><div><b>Pedido · ${hm(sl.length?sl[0].ts:rl[0].ts)}</b><br><small>${sl.length} ${sl.length==1?'artículo':'artículos'} · ${money(tot)}</small></div>${sl.some(x=>x.type=='vendido')?`<button class="gh" onclick="devPed(${i})">Devolver</button>`:''}<button class="gh" style="color:var(--bad)" onclick="anularR(${reg(l.map(x=>x._id))},0)">Anular pedido</button></div>${sl.map(line).join('')}${Object.values(rg).map(g=>(g.length>1?`<div class="row" style="border:0"><b class="bad">Devolución · ${hm(g[0].ts)}</b><button class="gh" onclick="anularR(${reg(g.map(x=>x._id))},1)">Anular devolución</button></div>`:'')+g.map(line).join('')).join('')}</div>`}
+function histView(mine){S.ar=[];const g={},ord=[];mine.forEach(s=>{const k=s.order||s.pre||s.req||s._id;if(!g[k]){g[k]=[];ord.push(k)}g[k].push(s)});
+ const ap=k=>g[k].some(s=>s.type=='apartado'&&live(s)),keys=[...ord.filter(ap),...ord.filter(k=>!ap(k))].slice(0,200);S.gk=keys;S.gg=g;
+ return `<div class="card"><h3>Movimientos de hoy</h3>${keys.length?keys.map((_,i)=>grpHtml(i)).join(''):'<small>Sin movimientos todavía.</small>'}</div>`}
+function devPed(i){const k=S.gk[i],l=S.gg[k]||[],R={};l.filter(s=>s.type=='vendido').forEach(s=>R[s.f]=(R[s.f]||0)+s.qty);l.filter(s=>s.type=='devolucion').forEach(s=>R[s.f]=(R[s.f]||0)-s.qty);
+ const fs=Object.keys(R).map(f=>[+f,R[f]]).filter(x=>x[1]>0);if(!fs.length)return toast('Este pedido ya se devolvió completo');S.dp={k,fs};const m=$('#modal');
+ m.innerHTML=`<div class="card mv"><h3>Devolver del pedido</h3><small>Escribe cuántas devuelves de cada uno.</small>${fs.map(([f,mx])=>`<div class="row"><div>${nm(f)}<br><small>máx. ${mx}</small></div><input type="number" min="0" max="${mx}" id="dp${f}" value="0"></div>`).join('')}<div class="form"><button class="gh" onclick="S.dp.fs.forEach(([f,x])=>$('#dp'+f).value=x)">Todo el pedido</button></div><div class="form"><select id="dpr" aria-label="Motivo"><option>Mal estado</option><option>Pedido equivocado</option><option>Cliente no satisfecho</option><option>Otro</option></select><input id="dpt" placeholder="Detalle del motivo"></div><label><input type="checkbox" id="dps"> El producto regresa al inventario</label><div class="form"><button id="dpk">Devolver</button><button class="alt" id="dpn">Cancelar</button></div></div>`;
+ m.style.display='flex';$('#dpn').onclick=()=>m.style.display='none';$('#dpk').onclick=saveDevPed}
+async function saveDevPed(){const b=S.me.branch,r=$('#dpr').value,t=$('#dpt').value.trim(),ts=Date.now(),rid='r'+ts,k=S.dp.k,rs=$('#dps').checked,it=[];
+ S.dp.fs.forEach(([f,mx])=>{const q=Math.min(mx,Math.max(0,parseInt($('#dp'+f).value)||0));if(q>0)it.push([f,q])});
+ if(!it.length)return toast('Escribe cuántas devuelves');if(r=='Otro'&&!t)return toast('Escribe el motivo');
+ const pr=f=>{const x=(S.gg[k]||[]).find(s=>s.type=='vendido'&&s.f==f);return x?x.price:price(f)};
+ try{const bt=db.batch();it.forEach(([f,q],i)=>bt.add('sales',{day:D,branch:b,f,qty:q,type:'devolucion',price:pr(f),reason:r+(t?': '+t:''),restock:rs,order:k,ret:rid,by:S.me.user,ts:ts+i}));await bt.commit();$('#modal').style.display='none';toast('Devolución registrada')}catch(e){err(e)}}
+function vendView(){const b=S.me.branch,vt=S.vt||'v',mine=S.sales.filter(s=>s.branch==b).sort((a,c)=>c.ts-a.ts);
+ const sm=(t,k)=>mine.filter(s=>s.type==t&&live(s)).reduce((a,s)=>a+s.qty*(k?s.price:1),0);
+ const dt=t=>{const d=mine.filter(s=>s.type==t&&s.f>=100).reduce((a,s)=>a+nz(s.qty),0),n=sm(t)-d;return [n?n+(n>1?' tamales':' tamal'):'',d?d+(d>1?' bebidas':' bebida'):''].filter(Boolean).join(' + ')};
+ const pq=S.pre.filter(p=>p.branch==b&&p.date<=D).reduce((a,p)=>a+preQty(p),0),dta=()=>{const d=mine.filter(s=>s.type=='apartado'&&live(s)&&s.f>=100).reduce((a,s)=>a+nz(s.qty),0),n=sm('apartado')-d+pq;return [n?n+(n>1?' tamales':' tamal'):'',d?d+(d>1?' bebidas':' bebida'):''].filter(Boolean).join(' + ')};
+ const kp=`<div class="kp"><div><small>Vendidos</small><b>${sm('vendido')}</b><small>${dt('vendido')}</small></div><div><small>Apartados</small><b>${sm('apartado')+pq}</b><small>${dta()}</small></div><div><small>Total neto</small><b>${money(sm('vendido',1)-sm('devolucion',1))}</b></div></div>`;
+ const any=F.some((_,f)=>load(b,f)+tx(b,f,'to')>0)||chLoad(b)+txc(b,'to')>0;let body;
+ if(vt=='v')body=(any?'':'<div class="card">El administrador aún no carga el inventario de hoy.</div>')+seg()+srch()+`<div id="fls">${flList(b)}</div>`;
+ else if(vt=='h')body=histView(mine);
+ else if(vt=='r')body=apView();
+ else body=corteCard()+trForm(b,false)+trList(b);
+ return head()+inBanner(vt)+(vt=='v'?preBanner():'')+(vt=='m'||vt=='r'?'':kp)+body+(vt=='v'?cartBar():'')+nav([['v','🛒','Vender'],['h','🧾','Historial'],['r','📌','Apartados',pin()+preN()],['m','⋯','Más']],vt,'setVt')}
+function encView(){const t=S.et||'d';return head()+alertCard()+`<div class="seg" style="margin:0 0 10px"><button class="${t=='d'?'on':''}" onclick="S.et='d';S.anew=false;render(true)">Disponibilidad</button><button class="${t=='a'?'on':''}" onclick="S.et='a';S.anew=false;S.apt=S.apt=='s'?'h':S.apt;render(true)">Apartados${S.pre.length?' ('+S.pre.length+')':''}</button></div>`+(t=='a'?apViewAdm():`<div class="card"><h3>Disponibilidad de hoy</h3><small>Solo consulta · se actualiza sola.</small>${grid(BI())}</div>`)}
+function adminView(){const t=S.tab,v={res:resView,inv:invView,tr:trView,ct:cortesView,aj:ajView,us:usView,ap:apViewAdm,rp:rpView};
+ const sel=navSel(),cu=t||'res',hid=Object.keys(NAVALL).filter(k=>!sel.includes(k)).reduce((a,k)=>a+navBadge(k),0);
+ return head()+(v[t]||resView)()+nav([...sel.map(k=>[k,NAVALL[k][0],NAVALL[k][1],navBadge(k)]),['more','⋯','Más',hid]],sel.includes(cu)?cu:'more','adNav')}
+function curIb(){return BI().includes(S.ib)?S.ib:BI()[0]}
+function dv(b,k,d){const x=(S.dr||{})[b];return x&&x[k]!=null?x[k]:d}
+function drs(b,k,v){S.dr=S.dr||{};(S.dr[b]=S.dr[b]||{})[k]=v}
+function invView(){const b=curIb(),v=(k,d)=>dv(b,k,d),o=`oninput="drs(${b},this.id,this.value)"`;
+ const pn=pendAc(b);if(pn.length)return preInvCard(b)+`<div class="card"><h3>Carga del día</h3>${bchips(b,'setIb')}<div style="border:2px solid var(--ac);border-radius:12px;padding:12px;margin-top:10px"><b>📌 Primero acepta los apartados de hoy</b><br><small>${pn.length==1?'Hay 1 apartado sin aceptar':'Hay '+pn.length+' apartados sin aceptar'} en ${esc(brs()[b])} (${pn.map(x=>esc(x.client)).join(', ')}). Acéptalos (o recházalos) y después podrás llenar la carga.</small><div class="form"><button class="go" style="flex:1" onclick="admAp(${b})">Ir a aceptar apartados</button></div></div></div>`;
+ return preInvCard(b)+`<div class="card"><h3>Carga del día</h3><small>¿Cuántos tamales lleva cada sucursal hoy? Los apartados se suman solos al guardar.</small>${bchips(b,'setIb')}
+ <div class="vz"><div class="form" style="margin:10px 0 4px"><button class="alt" onclick="copyDay()" style="flex:1 1 9rem">📋 Copiar de otro día</button><button class="alt" id="mic" onclick="mic()" style="flex:1 1 9rem">🎤 Dictar</button><button class="alt" onclick="vaciarCarga()" style="flex:1 1 9rem">🗑 Vaciar</button></div>
+ <div class="form" style="margin:4px 0"><input type="text" id="vt" placeholder="Ej: mole rojo 20, rajas 15, champurrado 10 litros" autocomplete="off" enterkeyhint="done" value="${esc(S.vx||'')}" oninput="S.vx=this.value" onkeydown="if(event.key=='Enter'){event.preventDefault();voiceFill(this.value)}" style="flex:1 1 12rem;min-width:0"><button class="gh" onclick="voiceFill($('#vt').value)">Llenar</button></div>
+ <small id="vs">Dicta o escribe los sabores con su cantidad; se llenan solos y tú revisas antes de guardar.</small></div>
+ ${F.map((n,f)=>`<div class="row"><div>${n}<br><small>ya salieron: ${used(b,f)}${paNow(b,f)?' · <b class="low">+'+paNow(b,f)+' apartados'+(loadDone(b)?' incluidos':' al guardar')+'</b>':''}</small></div><input type="number" min="0" inputmode="numeric" id="q${f}" value="${v('q'+f,Math.max(0,load(b,f)-paNow(b,f)))}" ${o}></div>`).join('')}<div class="row"><div>☕ Champurrado (litros)<br><small>ya salieron: ${r2(chUsed(b))} L</small></div><input type="number" min="0" step="0.25" inputmode="decimal" id="qch" value="${v('qch',chLoad(b))}" ${o}></div></div><div class="cart"><div class="ct"><button class="go" style="flex:1" onclick="saveInv()">Guardar carga de ${esc(brs()[b])}</button></div></div>`}
+function setField(b,k,v){drs(b,k,v);const e=$('#'+k);if(e){e.value=v;const r=e.closest('.row');if(r){r.classList.add('flash');setTimeout(()=>r.classList.remove('flash'),9000)}}}
+/* Copiar la carga de un día anterior (o de otra sucursal hoy) */
+async function copyDay(){const b=curIb(),m=$('#modal');
+ m.innerHTML='<div class="card mv"><h3>Copiar carga</h3><small>Buscando días anteriores…</small></div>';m.style.display='flex';
+ let h=[];try{const ds=[...Array(14)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-i-1);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())});h=(await Promise.all(ds.map(x=>db.doc(`loads/${x}_${b}`).get().catch(()=>null)))).filter(d=>d&&d.exists()).map(d=>d.data())}catch(e){m.style.display='none';return err(e)}
+ const fd=s=>{const[y,mo,d]=s.split('-').map(Number);return new Date(y,mo-1,d).toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'short'})};
+ const tot=q=>F.reduce((a,_,f)=>a+(+q['f'+f]||0),0);
+ S.cp=[...h.map(x=>({t:fd(x.day),q:x.q||{}})),...BI().filter(i=>i!=b&&S.loads[i]&&tot(S.loads[i])>0).map(i=>({t:'Hoy · '+brs()[i],q:S.loads[i]}))];
+ m.innerHTML=`<div class="card mv"><h3>Copiar carga a ${esc(brs()[b])}</h3><small>Elige un día y se llenan las cantidades; después puedes cambiarlas y guardar.</small>${S.cp.length?S.cp.map((x,i)=>`<div class="row"><div style="text-transform:capitalize">${esc(x.t)}<br><small style="text-transform:none">${tot(x.q)} tamales${+x.q.ch?' · '+x.q.ch+' L champurrado':''}</small></div><button class="alt" onclick="pickLoad(${i})">Usar</button></div>`).join(''):'<div class="row"><small>Todavía no hay cargas de otros días para esta sucursal.</small></div>'}<div class="form"><button id="mk" style="flex:1">Cerrar</button></div></div>`;$('#mk').onclick=()=>m.style.display='none'}
+function pickLoad(i){const x=S.cp[i],b=curIb();if(!x)return;$('#modal').style.display='none';
+ F.forEach((_,f)=>setField(b,'q'+f,Math.max(0,(+x.q['f'+f]||0)-(+((x.q.pa||{})['f'+f])||0))));setField(b,'qch',+x.q.ch||0);toast('Listo. Revisa las cantidades y guarda')}
+/* Llenar por voz o por texto */
+const NU={cero:0,un:1,uno:1,una:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veintiun:21,veintiuno:21,veintidos:22,veintitres:23,veinticuatro:24,veinticinco:25,veintiseis:26,veintisiete:27,veintiocho:28,veintinueve:29,treinta:30,cuarenta:40,cincuenta:50,sesenta:60,setenta:70,ochenta:80,noventa:90,cien:100,ciento:100,doscientos:200,trescientos:300,cuatrocientos:400,quinientos:500,seiscientos:600,setecientos:700,ochocientos:800,novecientos:900};
+const lev=(a,b)=>{const d=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]==b[j-1]?0:1));p=t}}return d[b.length]};
+const eqw=(a,b)=>a==b||a+'s'==b||a+'es'==b||b+'s'==a||b+'es'==a||(a.length>=5&&b.length>=5&&lev(a,b)<=1);
+function parseVoice(txt){
+ const t=norm(txt).replace(/(\d)[,.](\d)/g,'$1#$2').replace(/[^a-z0-9# ]/g,' ').replace(/#/g,'.').split(/\s+/).filter(Boolean),STP=['con','de','del','en','la','el','los','las','a','y','salsa'];
+ const toks=F.map(n=>norm(n).split(/\s+/).filter(w=>!STP.includes(w))),cnt={};toks.forEach(a=>new Set(a).forEach(w=>cnt[w]=(cnt[w]||0)+1));
+ const al=[];F.forEach((n,f)=>{al.push([f,norm(n).split(/\s+/)]);toks[f].forEach(w=>{if(cnt[w]==1&&w.length>3)al.push([f,[w]])})});
+ al.push(['ch',['champurrado']]);al.sort((a,c)=>c[1].length-a[1].length);
+ const it=[];let i=0;
+ while(i<t.length){const w=t[i];let m;
+  if(/^\d+(\.\d+)?$/.test(w)){let v=parseFloat(w);i++;if(t[i]=='y'&&/^medi[oa]$/.test(t[i+1]||'')){v+=.5;i+=2}else if(/^cuartos?$/.test(t[i]||'')){v*=.25;i++}it.push({n:v});continue}
+  if(NU[w]!=null){let v=NU[w];i++;for(;;){const nx=NU[t[i]],p=v%10?1:v%100?10:100;
+    if(t[i]=='y'&&NU[t[i+1]]>0&&NU[t[i+1]]<10&&v>=30&&v%10==0){v+=NU[t[i+1]];i+=2}else if(nx>0&&nx<p){v+=nx;i++}else break}
+   if(t[i]=='y'&&/^medi[oa]$/.test(t[i+1]||'')){v+=.5;i+=2}else if(/^cuartos?$/.test(t[i]||'')){v*=.25;i++}it.push({n:v});continue}
+  if(/^medi[oa]$/.test(w)){it.push({n:.5});i++;continue}
+  if(w=='cuarto'){it.push({n:.25});i++;continue}
+  m=al.find(([f,a])=>a.every((x,j)=>t[i+j]!=null&&eqw(x,t[i+j])));
+  if(m){it.push({f:m[0]});i+=m[1].length}else i++}
+ const out={},used=new Set(),before=it.length&&it[0].n!=null;
+ it.forEach((x,k)=>{if(x.f==null)return;const a=before?k-1:k+1,c=before?k+1:k-1;const j=[a,c].find(j=>it[j]&&it[j].n!=null&&!used.has(j));
+  if(j!=null){used.add(j);out[x.f]=it[j].n}});
+ return out}
+function voiceFill(txt){const b=curIb(),s=$('#vs');if(!(txt||'').trim())return toast('Escribe o dicta primero');
+ const r=parseVoice(txt),ks=Object.keys(r);
+ if(!ks.length){if(s)s.textContent='No entendí. Prueba así: «mole rojo 20, rajas 15, champurrado 10 litros».';return toast('No entendí, intenta otra vez')}
+ const ok=[];ks.forEach(k=>{if(k=='ch'){const v=Math.max(0,Math.round(r[k]*4)/4);setField(b,'qch',v);ok.push('Champurrado '+v+' L')}else{const f=+k,v=Math.max(0,Math.round(r[k]));setField(b,'q'+f,v);ok.push(F[f]+' '+v)}});
+ if(s)s.textContent='Entendí: '+ok.join(' · ')+'. Revisa y guarda.';toast('Se llenaron '+ok.length+' campos. Revisa y guarda')}
+let rec=null,want=false;
+function micUi(on){const bb=$('#mic');if(bb){bb.textContent=on?'⏹ Terminar':'🎤 Dictar';bb.classList.toggle('rec',on)}}
+function mic(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR)return toast('Este navegador no tiene dictado. Usa el micrófono de tu teclado en el cuadro de texto');
+ if(want){want=false;try{rec&&rec.stop()}catch(_){}return}
+ let fin='',itm='',fatal=false,tries=0;want=true;micUi(true);S.vx='';const bx=$('#vt');if(bx)bx.value='';
+ const show=()=>{const x=(fin+' '+itm).trim();S.vx=x;const box=$('#vt');if(box)box.value=x},
+ go=()=>{tries++;rec=new SR();rec.lang='es-MX';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;
+  rec.onresult=e=>{itm='';for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i],t=r[0].transcript.trim();if(r.isFinal)fin=(fin+' '+t).trim();else itm=(itm+' '+t).trim()}show()};
+  rec.onerror=e=>{if(e.error=='no-speech'||e.error=='aborted')return;fatal=true;want=false;toast(e.error=='not-allowed'||e.error=='service-not-allowed'?'Permite el micrófono para dictar':e.error=='network'?'El dictado necesita internet':'No se pudo dictar ('+e.error+')')};
+  rec.onend=()=>{rec=null;fin=(fin+' '+itm).trim();itm='';
+   /* si todavía no dijiste nada, sigue esperando; si ya hablaste y hay silencio, termina y llena */
+   if(want&&!fatal&&!fin&&tries<4){try{go();return}catch(_){}}
+   want=false;micUi(false);show();if(fin)voiceFill(fin);else toast('No te escuché, intenta otra vez')};
+  rec.start()};
+ try{go()}catch(_){want=false;rec=null;micUi(false)}}
+
+
+function grid(bs){return seg()+srch()+`<div id="gr" class="stk" data-b="${bs.join()}">${gridT(bs)}</div>`}
+function fsq(v){S.q=v;const e=$('#fls');if(e)e.innerHTML=flList(S.me.branch);const g=$('#gr');if(g)g.innerHTML=gridT(g.dataset.b.split(',').map(Number))}
+function seg(){const o=S.so||S.q;return `<div class="sw"><div class="seg">${[['t','Todos'],['s','Salados'],['d','Dulces'],...(S.me&&S.me.role=='vend'?[['b','Bebidas']]:[])].map(([k,l])=>`<button class="${(S.cat||'t')==k?'on':''}" onclick="S.cat='${k}';render(true)">${l}</button>`).join('')}</div><button class="lupa ${o?'on':''}" aria-label="Buscar" onclick="fso()">🔍</button></div>`}
+function srch(){return (S.so||S.q)?`<div class="sx"><input type="search" id="sq" placeholder="Buscar sabor…" value="${esc(S.q||'')}" oninput="fsq(this.value)" autocomplete="off" style="width:100%;box-sizing:border-box;margin-bottom:10px"></div>`:''}
+function fso(){if(S.so||S.q){S.so=false;S.q=''}else S.so=true;render(true);const i=$('#sq');if(i)i.focus()}
+function flav(b,f){const l=left(b,f),c=S.cart[f]||0,ch=f>=100,mx=ch?Math.floor((chLeft(b)-cartLit(f)+1e-9)/CL[f-100]):l;
+ return `<div class="fl ${l<=0?'out':''} ${c?'sel':''}" ${l>0?`onclick="cadd(${f},1)"`:''}><div class="fn"><b>${ch?'☕ '+CH[f-100][0]+' · '+CH[f-100][1]:nm(f)}</b><small>${money(price(f))}${ch?' · descuenta '+CL[f-100]+' L':''}</small></div>${c?`<div class="st" onclick="event.stopPropagation()"><button class="gh" onclick="cadd(${f},-1)">−</button><b>${c}</b><button onclick="cadd(${f},1)" ${c>=mx?'disabled':''}>+</button></div>`:ch?(l<=0?'<span class="chip bad">No alcanza</span>':''):`<span class="chip ${l<=0?'bad':l<=3?'low':'ok'}">${l<=0?'Agotado':l+' quedan'}</span>`}</div>`}
+function chHead(b){const l=chLeft(b),c=cartLit(-1);
+ return `<div class="card" style="margin:14px 0 8px;text-align:center"><b>☕ Champurrado</b><div class="big" style="font-size:34px;line-height:1.2">${l} L</div><small>${l<=0?'Se acabó el champurrado de hoy':(c>0?'Con este pedido quedarían '+r2(l-c)+' L · ':'')+'Los litros se comparten entre chico, mediano y grande'}</small></div>`}
+function flList(b){const t=S.cat||'t',a=F.map((n,f)=>f).filter(inCat).sort((x,y)=>(left(b,x)<=0)-(left(b,y)<=0)).map(f=>flav(b,f)).join(''),q=S.q?norm(S.q):'',
+ ch=(t=='t'||t=='b')?CH.map((c,i)=>100+i).filter(f=>!q||norm(nm(f)).includes(q)).sort((x,y)=>(left(b,x)<=0)-(left(b,y)<=0)).map(f=>flav(b,f)).join(''):'';
+ return a+(ch?chHead(b)+ch:'')||'<div class="card"><small>No hay sabores con ese nombre.</small></div>'}
+function showMv(b){const m=$('#modal'),hm=ts=>{const d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes())};
+ const l=S.sales.filter(s=>s.branch==b).map(s=>({ts:s.ts,h:`<div class="row"><div>${nz(s.qty)}× ${nm(s.f)}<br><small>${hm(s.ts)} · ${TL[s.type]}${s.type=='devolucion'?' · '+esc(s.reason||''):''} · ${esc(s.by)}</small></div><b>${s.type=='devolucion'?'−':''}${money(s.qty*s.price)}</b></div>`})),
+ t=S.tr.filter(x=>x.from==b||x.to==b).map(x=>({ts:x.ts,h:`<div class="row"><div>🔁 ${x.from==b?'Salió a '+esc(brs()[x.to]):'Entró de '+esc(brs()[x.from])}<br><small>${hm(x.ts)} · ${esc(Object.entries(x.q||{}).map(([k,v])=>k=='ch'?v+' L champurrado':v+'× '+F[+k.slice(1)]).join(', '))}</small></div></div>`})),
+ g=(S.lg||[]).filter(x=>x.branch==b||x.branch2==b).map(x=>({ts:x.ts,h:`<div class="row"><div><b class="bad">🚫 ${esc(x.label||'Anulado')}</b><br><small>${esc(x.txt||'')}<br>${hm(x.ts)} · por ${esc(x.byName||x.by)}</small></div>${x.amt!=null?`<b>${money(x.amt)}</b>`:''}</div>`})),
+ r=[...l,...t,...g].sort((a,c)=>c.ts-a.ts);
+ m.innerHTML=`<div class="card mv mvc"><h3>Movimientos · ${esc(brs()[b])}</h3>${r.length?r.map(x=>x.h).join(''):'<small>Sin movimientos hoy.</small>'}<div class="form"><button id="mk" style="flex:1">Cerrar</button></div></div>`;m.style.display='flex';$('#mk').onclick=()=>m.style.display='none'}
+/* ===== Firebase: sesión, usuarios y suscripciones ===== */
+const mail=u=>u+'@tamalescastro.com';
+const fe=e=>({'auth/invalid-credential':'Usuario o PIN incorrecto','auth/invalid-login-credentials':'Usuario o PIN incorrecto','auth/user-not-found':'Usuario o PIN incorrecto','auth/wrong-password':'Usuario o PIN incorrecto','auth/email-already-in-use':'Ese usuario ya existe','auth/weak-password':'El PIN debe tener al menos 6 dígitos','auth/too-many-requests':'Demasiados intentos, espera unos minutos','auth/network-request-failed':'Sin conexión a internet','old-user':'Ese usuario existió antes con otro PIN. Usa otro nombre de usuario (por ejemplo ana2)','permission-denied':'No tienes permiso para hacer eso'}[e&&e.code]||(e&&e.message)||'Error');
+let pu=null,subs=[],subKey='';
+function stopSubs(){subs.forEach(f=>f());subs=[];subKey=''}
+function onUser(u){
+ S.au=true;S.fu=u;if(u)profOff();if(pu){pu();pu=null}stopSubs();S.me=null;S.pf=false;S.cart={};S.vt='v';S.q='';restoreView(u);
+ if(!u){S.lp=null;S.lm=false;profSub();FB.initExists().then(x=>{S.setup=!x;render(true)}).catch(()=>{S.setup=false;render(true)});return}
+ pu=db.doc('users/'+u.uid).onSnapshot(d=>{const x=d.data();
+  if(!d.exists()||x.active===false){S.me=null;S.pf=true;stopSubs()}else{S.me={id:u.uid,...x};startSubs()}
+  render(true)},err)}
+function startSubs(){const m=S.me,M=m.role=='vend',b=m.branch,k=m.role+'|'+(M?b:'');if(k==subKey)return;stopSubs();subKey=k;
+ S.loads={};S.sales=[];S.tr=[];S.cuts=[];subCuts();subs.push(()=>{if(cutUn){cutUn();cutUn=null}});S.csales=null;subCSales();subs.push(()=>{if(csUn){csUn();csUn=null}});
+ const L=(c,f,v)=>{let q=db.collection(c).where('day','==',D);return v!=null?q.where(f,'==',v):q};
+ subs.push(db.doc('config/main').onSnapshot(d=>{S.cfg=d.data()||{};render()},err));
+ if(m.role=='admin'){S.pr=null;S.psig='';subs.push(db.collection('users').onSnapshot(q=>{S.users=q.docs.map(d=>({id:d.id,...d.data()}));syncProf();render()},err));subs.push(db.collection('profiles').onSnapshot(q=>{S.pr={};q.docs.forEach(d=>S.pr[d.id]=d.data());syncProf()},e=>console.warn('profiles',e)))}
+ S.lg=[];if(m.role=='admin')subs.push(L('logs').onSnapshot(q=>{S.lg=q.docs.map(d=>({_id:d.id,...d.data()}));render()},e=>console.warn('logs',e)));
+ subs.push(L('loads','branch',M?b:null).onSnapshot(q=>{S.loads={};q.docs.forEach(d=>{const x=d.data();S.loads[x.branch]=x.q||{}});render()},err));
+ subs.push(L('sales','branch',M?b:null).onSnapshot(q=>{S.sales=q.docs.map(d=>({_id:d.id,...d.data()}));render()},err));
+ if(M){let A=[],B=[];const mg=()=>{const o={};[...A,...B].forEach(t=>o[t._id]=t);S.tr=Object.values(o);render()};
+  subs.push(L('transfers','from',b).onSnapshot(q=>{A=q.docs.map(d=>({_id:d.id,...d.data()}));mg()},err));
+  subs.push(L('transfers','to',b).onSnapshot(q=>{B=q.docs.map(d=>({_id:d.id,...d.data()}));mg()},err))}
+ else subs.push(L('transfers').onSnapshot(q=>{S.tr=q.docs.map(d=>({_id:d.id,...d.data()}));render()},err));
+ S.pre=[];subs.push((M?db.collection('pre').where('branch','==',b).where('status','==','pendiente'):db.collection('pre').where('status','==','pendiente')).onSnapshot(q=>{S.pre=q.docs.map(d=>({_id:d.id,...d.data()}));render()},err));
+ S.rq=[];S.stock={};S.rqPrev=null;S.alAfter=Date.now()+8000;S.alSeen=null;if(m.role!='enc')subReqs(m,M,b);if(M)subs.push(()=>stockOff())}
+let rT=0;function render(force){clearTimeout(rT);if(force)return renderNow(true);rT=setTimeout(()=>renderNow(false),100)}
+function renderNow(force){
+ if(!force&&/INPUT|SELECT/.test(document.activeElement?.tagName||'')){pend=true;return}
+ if(force)S.dt=0;else if(S.dt&&Date.now()-S.dt<15000){clearTimeout(rT);rT=setTimeout(()=>renderNow(false),15200-(Date.now()-S.dt));return}
+ pend=false;const a=$('#app'),w='<p class="mut" style="padding:24px;text-align:center">Cargando…</p>';
+ if(!db||!S.au){a.innerHTML=w;return}
+ if(!S.fu){a.innerHTML=S.setup?setupView():loginView();return}
+ if(!S.me){a.innerHTML=S.pf?noAccess():w;return}
+ a.innerHTML=({admin:adminView,vend:vendView,enc:encView}[S.me.role]||(()=>'<p>Rol no válido</p>'))();if(S.me.role!='vend')chkAlerts();if(S.me.role!='enc')schedSt();labelControls()}
+function labelControls(){document.querySelectorAll('#app input[type=number]').forEach(e=>e.enterKeyHint='next');document.querySelectorAll('#app input:not([aria-label]):not([type=checkbox])').forEach(e=>{const r=e.closest('.row'),n=r&&r.firstElementChild!==e?r.firstElementChild:null,t=n&&[...n.childNodes].find(x=>x.nodeType==3&&x.textContent.trim()),l=e.placeholder||(t&&t.textContent.trim());if(l)e.setAttribute('aria-label',l)})}
+function noAccess(){return `<div class="hero"><div class="logo">🫔</div><h1>Sin acceso</h1><small>Tu cuenta no está activa o aún no tiene permisos. Pide al administrador que la revise.</small></div><div class="card"><button style="width:100%" onclick="logout()">Salir</button></div>`}
+async function login(){const u=S.lp?S.lp.user:$('#lu').value.trim().toLowerCase().replace(/[^a-z0-9_.]/g,''),p=$('#lp').value.trim();if(!u||!p)return toast(S.lp?'Escribe tu PIN':'Escribe usuario y PIN');try{await FB.login(mail(u),p)}catch(e){toast(fe(e));const i=$('#lp');if(i){i.value='';i.focus()}}}
+async function logout(){S.cart={};try{localStorage.removeItem('tm_v')}catch(e){}try{await FB.logout()}catch(e){err(e)}}
+async function addUser(first){
+ const n=$('#un').value.trim(),u=$('#uu').value.trim().toLowerCase().replace(/[^a-z0-9_.]/g,''),p=$('#up').value.trim(),r=first||$('#ur').value,b=first?0:+$('#ub').value;
+ if(!n||!u||!/^\d{6,}$/.test(p))return toast('Completa nombre, usuario y PIN (solo números, mínimo 6)');
+ if(S.users.some(x=>x.user==u))return toast('Ese usuario ya existe');
+ if(r=='vend'){const t=brTaken(b);if(t)return toast(brs()[b]+' ya tiene vendedor: '+t.name+'. Elige otra sucursal o desactívalo primero')}
+ const prof={user:u,name:n,role:r,branch:b,active:true};
+ try{if(first)await FB.bootstrap(mail(u),p,prof);else{await FB.newUser(mail(u),p,prof);['un','uu','up'].forEach(i=>$('#'+i).value='');toast('Usuario creado')}}catch(e){toast(fe(e))}}
+function rmUser(id){const n=(S.users.find(x=>x.id==id)||{}).name||'este usuario';if(id==S.me.id)return;ask('¿Eliminar a '+n+'? Ya no podrá entrar a la app. Sus ventas anteriores se conservan.',async()=>{try{try{await FB.call('deleteUser',{uid:id})}catch(e){if(e.code!='functions/not-found')throw e;await db.doc('users/'+id).delete()}toast('Usuario eliminado')}catch(e){err(e)}})}
+function delUser(id,off){if(id==S.me.id)return;const u0=S.users.find(x=>x.id==id);if(off&&u0&&u0.role=='vend'){const t=brTaken(u0.branch,id);if(t)return toast(brs()[u0.branch]+' ya tiene vendedor: '+t.name+'. Cámbialo de sucursal antes de reactivar')}ask(off?'¿Reactivar este usuario?':'¿Desactivar este usuario? Ya no podrá entrar.',async()=>{try{await db.doc('users/'+id).update({active:!!off})}catch(e){err(e)}})}
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+/* ===== Corte de caja ===== */
+let cutUn=null,csUn=null;
+function subCSales(){if(csUn){csUn();csUn=null}const m=S.me,d=S.cday||D;if(!m||m.role!='admin'||d==D)return;csUn=db.collection('sales').where('day','==',d).onSnapshot(q=>{S.csales=q.docs.map(x=>({_id:x.id,...x.data()}));render()},err)}
+function subCuts(){if(cutUn){cutUn();cutUn=null}const m=S.me;if(!m||m.role=='enc')return;
+ let q=db.collection('cuts').where('day','==',m.role=='admin'?(S.cday||D):D);if(m.role=='vend')q=q.where('by','==',m.user);
+ cutUn=q.onSnapshot(r=>{S.cuts=r.docs.map(d=>({id:d.id,...d.data()}));render()},err)}
+const hm=ts=>{const d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes())};
+const dif$=d=>d==0?'Correcto ✓':d>0?'Sobran '+money(d):'Faltan '+money(-d);
+function cx(){const mine=S.sales.filter(s=>s.by==S.me.user),sm=t=>mine.filter(s=>s.type==t).reduce((a,s)=>a+s.qty*s.price,0);
+ const fo=fondo(),v=sm('vendido'),d=sm('devolucion');return {fo,v,d,ap:sm('apartado'),esp:r2(fo+v-d)}}
+function setCday(v){S.cday=v||D;S.cuts=[];S.csales=null;subCuts();subCSales();render(true)}
+function anCorte(id){ask('¿Anular este corte? El vendedor podrá hacerlo de nuevo.',async()=>{try{await db.doc('cuts/'+id).delete();toast('Corte anulado')}catch(e){err(e)}})}
+/* --- corte a ciegas: el vendedor no ve cuánto debe haber hasta hacerlo --- */
+const dstr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const dlong=x=>{const t=new Date(x+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});return t.charAt(0).toUpperCase()+t.slice(1)};
+function dateChips(cur){const days=[];for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);days.push(dstr(d))}
+ const sh=(x,o)=>new Date(x+'T12:00:00').toLocaleDateString('es-MX',o).replace('.',''),custom=!days.includes(cur);
+ return `<div class="seg">${days.map((x,i)=>`<button class="${x==cur?'on':''}" onclick="setCday('${x}')">${i==0?'Hoy':i==1?'Ayer':sh(x,{weekday:'short',day:'numeric'})}</button>`).join('')}<button class="${custom?'on':''}" onclick="pickDay()">📅 ${custom?sh(cur,{day:'numeric',month:'short'}):'Otra'}</button></div><input type="date" id="cdt" tabindex="-1" aria-hidden="true" max="${D}" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px" onchange="setCday(this.value)">`}
+function pickDay(){const i=$('#cdt');try{i.showPicker()}catch(e){i.click()}}
+function corteCard(){const x=cx(),c=S.cuts.find(k=>k.by==S.me.user);
+ if(c)return `<div class="card"><h3>Corte de caja</h3><div class="row"><div><b>Corte hecho a las ${hm(c.ts)}</b></div><span class="chip ${c.dif==0?'ok':c.dif>0?'low':'bad'}">${dif$(c.dif)}</span></div>
+ ${c.dif==0?'':`<div class="row"><div>Fondo inicial</div><b>${money(c.fondo)}</b></div><div class="row"><div>Ventas cobradas</div><b>${money(c.ventas)}</b></div><div class="row"><div>Devoluciones</div><b>−${money(c.devol)}</b></div>
+ <div class="row"><div>Debía haber en caja</div><b>${money(c.esperado)}</b></div><div class="row"><div>Contaste</div><b>${money(c.contado)}</b></div>`}
+ <div class="row"><div><b>Entrega al administrador</b><br><small>Lo contado menos tu fondo de ${money(c.fondo)}</small></div><b>${money(c.entregar)}</b></div>
+ <small>Si te equivocaste, pídele al administrador que anule el corte para hacerlo de nuevo.</small></div>`;
+ return `<div class="card"><h3>Corte de caja</h3><small>Cuenta todo el efectivo de tu caja, incluyendo tu fondo de ${money(x.fo)}, y escribe el total. Al terminar verás el resultado.</small>
+ <div class="cash" style="margin-top:12px"><span>$</span><input id="cc" aria-label="Efectivo contado en caja" type="text" inputmode="decimal" placeholder="0" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9.]/g,'')"></div>
+ ${x.ap?'<small>Los apartados sin entregar no cuentan para el corte.</small>':''}
+ <div class="form"><input id="cn" placeholder="Nota (opcional)" style="flex:1"></div>
+ <div class="form"><button class="go" style="flex:1" onclick="doCorte()">Hacer corte</button></div></div>`}
+function doCorte(){const x=cx(),val=$('#cc').value,nota=$('#cn').value.trim();if(val===''||isNaN(+val))return toast('Escribe cuánto efectivo hay en caja');
+ const c=r2(+val),dif=r2(c-x.esp);
+ ask(`¿Hacer el corte con ${money(c)} en caja? Después ya no podrás cambiarlo.`,async()=>{try{await db.doc('cuts/'+D+'_'+S.me.user).set({day:D,branch:S.me.branch,by:S.me.user,name:S.me.name,fondo:x.fo,ventas:x.v,devol:x.d,esperado:x.esp,contado:c,dif,entregar:r2(c-x.fo),apartados:x.ap,nota,ts:Date.now()});toast('Corte guardado')}catch(e){err(e)}})}
+function cortesView(){const day=S.cday||D,l=[...S.cuts].sort((a,b)=>a.ts-b.ts),sm=k=>l.reduce((a,c)=>a+c[k],0),SL=day==D?S.sales:S.csales;
+ /* recalcula desde las ventas registradas (hasta la hora del corte) y avisa si no coincide con lo que declaró el corte */
+ const rc=c=>{if(!SL)return null;const m=SL.filter(s=>s.by==c.by&&s.ts<=c.ts),t=k=>m.filter(s=>s.type==k).reduce((a,s)=>a+s.qty*s.price,0),v=t('vendido'),d=t('devolucion');return Math.abs(v-c.ventas)>.01||Math.abs(d-c.devol)>.01?{v,d,dif:r2(c.contado-(c.fondo+v-d))}:null};
+ const pend=day==D?S.users.filter(u=>u.role=='vend'&&u.active!==false&&!l.some(c=>c.by==u.user)):(SL?[...new Set(SL.filter(s=>s.type!='apartado').map(s=>s.by))].filter(by=>!l.some(c=>c.by==by)).map(by=>S.users.find(u=>u.user==by)).filter(u=>u&&u.role=='vend'):[]);
+ return `<div class="card"><h3>Cortes de caja</h3><small>${dlong(day)}</small>${dateChips(day)}
+ <div class="kp"><div><small>Cortes</small><b>${l.length}</b></div><div><small>A entregar</small><b>${money(sm('entregar'))}</b></div><div><small>Diferencia</small><b class="${sm('dif')==0?'ok':sm('dif')>0?'low':'bad'}">${money(r2(sm('dif')))}</b></div></div></div>
+ ${l.map(c=>`<div class="card"><div class="row"><div><b>${esc(c.name)}</b><br><small>${esc(brs()[c.branch])} · ${hm(c.ts)}</small></div><span class="chip ${c.dif==0?'ok':c.dif>0?'low':'bad'}">${dif$(c.dif)}</span></div>
+ ${c.dif==0?'':`<div class="row"><div>Fondo</div><b>${money(c.fondo)}</b></div><div class="row"><div>Ventas</div><b>${money(c.ventas)}</b></div><div class="row"><div>Devoluciones</div><b>−${money(c.devol)}</b></div>
+ <div class="row"><div>Debía haber</div><b>${money(c.esperado)}</b></div><div class="row"><div>Contado</div><b>${money(c.contado)}</b></div>`}<div class="row"><div><b>Entregó</b></div><b>${money(c.entregar)}</b></div>${(x=>x?`<div class="row"><div><b class="bad">⚠️ No coincide con las ventas registradas</b><br><small>Las ventas suman ${money(x.v)} y las devoluciones ${money(x.d)}. Con eso el resultado sería: ${dif$(x.dif)}. Si el vendedor entregó apartados o vendió después del corte, puede explicarse.</small></div></div>`:'')(rc(c))}
+ ${c.apartados?`<small>Apartados sin cobrar: ${money(c.apartados)}</small><br>`:''}${c.nota?`<small>Nota: ${esc(c.nota)}</small><br>`:''}<div class="form"><button class="gh" style="color:var(--bad)" data-id="${esc(c.id)}" onclick="anCorte(this.dataset.id)">Anular corte</button></div></div>`).join('')||'<div class="card"><small>No hay cortes en esta fecha.</small></div>'}
+ ${pend.length?`<div class="card"><h3>Sin corte todavía</h3>${pend.map(u=>`<div class="row"><div>${esc(u.name)}<br><small>${esc(brs()[u.branch])}</small></div></div>`).join('')}</div>`:''}`}
+/* ===== Apartados entre sucursales y alertas de existencias ===== */
+const holdMin=()=>S.cfg.hold==null?60:+S.cfg.hold,lowT=()=>S.cfg.low==null?3:+S.cfg.low,lowL=()=>S.cfg.lowl==null?1:+S.cfg.lowl;
+const cfgBase=()=>({branches:brs(),prices:S.cfg.prices||{},fondo:fondo(),hold:holdMin(),low:lowT(),lowl:lowL(),closed:S.cfg.closed||[],...(S.cfg.anav?{anav:S.cfg.anav}:{})});
+const live=s=>!(s.type=='apartado'&&s.exp&&s.exp<Date.now());
+const rqTot=r=>Object.entries(r.items||{}).reduce((a,[k,v])=>a+v*price(+k.slice(1)),0);
+const rqTxt=r=>Object.entries(r.items||{}).map(([k,v])=>v+'× '+F[+k.slice(1)]).join(', ');
+const rqSt=r=>{const n=Date.now();return r.status=='pendiente'&&n-r.ts>holdMin()*60000?'sinresp':r.status=='aceptado'&&r.exp<n?'vencido':r.status};
+const RL={pendiente:['Pendiente','low'],aceptado:['Aceptado','ok'],rechazado:['No hay','bad'],entregado:['Entregado','ok'],cancelado:['Cancelado',''],vencido:['Vencido','bad'],sinresp:['Sin respuesta','bad']};
+const pin=()=>S.me&&S.me.role=='vend'?(S.rq||[]).filter(r=>r.to==S.me.branch&&rqSt(r)=='pendiente').length:0;
+const rqShort=(r,b)=>Object.entries(r.items||{}).map(([k,v])=>[+k.slice(1),v,left(b,+k.slice(1))]).filter(x=>x[2]<x[1]);
+const ago=t=>{const m=Math.round((Date.now()-t)/60000);return m<1?'hace un momento':'hace '+m+' min'};
+const vib=()=>{try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}};
+let stUn=null,lastSt={},stT=null;
+function stockOn(){if(stUn)return;stUn=db.collection('stock').onSnapshot(q=>{S.stock={};q.docs.forEach(d=>S.stock[d.id]=d.data());render()},err)}
+function stockOff(){if(stUn){stUn();stUn=null}}
+function schedSt(){clearTimeout(stT);stT=setTimeout(syncStock,1500)}
+async function syncStock(){if(!S.me||S.me.role=='enc')return;
+ for(const b of (S.me.role=='vend'?[S.me.branch]:BI())){const f={};F.forEach((_,i)=>f['f'+i]=Math.max(0,left(b,i)));
+  const v={branch:b,f,ch:Math.max(0,chLeft(b))},j=JSON.stringify(v);if(lastSt[b]===j)continue;lastSt[b]=j;
+  try{await db.doc('stock/'+b).set({...v,at:Date.now()})}catch(e){console.error(e)}}}
+function subReqs(m,M,b){const L=(f,v)=>{let q=db.collection('reqs').where('day','==',D);return v!=null?q.where(f,'==',v):q},mp=q=>q.docs.map(d=>({_id:d.id,...d.data()}));
+ if(M){let A=[],B=[];const mg=()=>{const o={};[...A,...B].forEach(r=>o[r._id]=r);S.rq=Object.values(o);onReqs();render()};
+  subs.push(L('from',b).onSnapshot(q=>{A=mp(q);mg()},err));subs.push(L('to',b).onSnapshot(q=>{B=mp(q);mg()},err))}
+ else subs.push(L().onSnapshot(q=>{S.rq=mp(q);onReqs();render()},err))}
+function onReqs(){const prev=S.rqPrev,cur={};S.rq.forEach(r=>cur[r._id]=r.status);
+ if(prev&&Date.now()>S.alAfter&&S.me&&S.me.role=='vend'){const b=S.me.branch;
+  S.rq.forEach(r=>{const p=prev[r._id];
+   if(r.to==b&&r.status=='pendiente'&&p===undefined){toast('📌 Solicitud de '+brs()[r.from]+': '+r.client);vib()}
+   if(r.from==b&&p=='pendiente'&&r.status=='aceptado'){toast('✅ '+brs()[r.to]+' aceptó el apartado de '+r.client);vib()}
+   if(r.from==b&&p=='pendiente'&&r.status=='rechazado'){toast('❌ '+brs()[r.to]+' no tiene lo que pediste para '+r.client);vib()}})}
+ S.rqPrev=cur}
+/* alertas de existencias bajas (administrador y encargado de pedidos) */
+function lowList(){const T=lowT(),LL=lowL(),o=[];
+ BI().forEach(b=>{F.forEach((n,f)=>{if(load(b,f)+tx(b,f,'to')<=0)return;const l=left(b,f);if(l<=T)o.push({b,n,l,o:l<=0})});
+  if(chLoad(b)+txc(b,'to')>0){const l=chLeft(b);if(l<=LL)o.push({b,n:'Champurrado',l,o:l<=0,L:1})}});return o}
+function alertCard(){const l=lowList();if(!l.length)return '';
+ const sec=(arr,title,col,fmt)=>{if(!arr.length)return '';const g={};arr.forEach(x=>(g[x.b]=g[x.b]||[]).push(x));
+  return `<div style="margin-top:12px"><b style="color:${col}">${title}</b>${Object.keys(g).map(b=>`<div class="row"><div><b>${esc(brs()[b])}</b><br><small>${g[b].map(fmt).join(' · ')}</small></div></div>`).join('')}</div>`};
+ const out=l.filter(x=>x.o),low=l.filter(x=>!x.o);
+ return `<div class="card" style="border:2px solid ${out.length?'var(--bad)':'var(--low)'}"><h3 style="margin:0">Existencias</h3>${sec(out,'🚫 Agotados','var(--bad)',x=>esc(x.n))}${sec(low,'⚠️ Por agotarse','var(--low)',x=>esc(x.n)+' ('+x.l+(x.L?' L':'')+')')}<small>Se avisa cuando quedan ${lowT()} o menos por sabor (${lowL()} L de champurrado).</small></div>`}
+function chkAlerts(){const cur=new Set(lowList().map(x=>x.b+'|'+x.n+'|'+(x.o?1:0)));
+ if(Date.now()<(S.alAfter||0)||!S.alSeen){S.alSeen=cur;return}
+ const nw=[...cur].filter(k=>!S.alSeen.has(k));if(nw.length){const [b,n,o]=nw[0].split('|');toast('⚠️ '+(o=='1'?'Se agotó ':'Se acaba ')+n+' en '+brs()[b]);vib()}S.alSeen=cur}
+/* vista del vendedor: pestaña Apartados */
+function inBanner(vt){const n=pin();return vt!='r'&&n>0?`<div class="card" style="border:2px solid var(--ac)" onclick="setVt('r')"><b>📌 ${n} solicitud${n>1?'es':''} de apartado</b><br><small>Toca para revisar</small></div>`:''}
+function reqView(){const b=S.me.branch;S.rd=S.rd||{items:{}};
+ const R=(S.rq||[]).slice().sort((a,c)=>c.ts-a.ts),inc=R.filter(r=>r.to==b),out=R.filter(r=>r.from==b);
+ const pend=inc.filter(r=>rqSt(r)=='pendiente'),hold=inc.filter(r=>rqSt(r)=='aceptado'),done=inc.filter(r=>!['pendiente','aceptado'].includes(rqSt(r))).slice(0,8);
+ const top=(r,x)=>`<div class="card"><div class="row"><div><b>${esc(r.client)}</b>${r.phone?' · '+esc(r.phone):''}<br><small>${x}</small></div><b>${money(rqTot(r))}</b></div><div>${esc(rqTxt(r))}</div>`;
+ const o=BI().filter(i=>i!=b),to=o.includes(S.rd.to)?S.rd.to:o[0],st=(S.stock||{})[to],sel=S.rd.items||{};
+ const fl=st?F.map((n,f)=>[n,f,(st.f||{})['f'+f]||0]).filter(x=>x[2]>0):[];
+ const form=o.length?`<div class="card" id="rdf"><h3>Apartar en otra sucursal</h3><small>Para cuando se te acabó un sabor. La otra sucursal debe aceptar antes de que se aparte.</small><div class="seg">${o.map(i=>`<button class="${i==to?'on':''}" onclick="rdTo(${i})">${esc(brs()[i])}</button>`).join('')}</div>
+ ${st?`<small>Disponibilidad de ${esc(brs()[to])} · ${ago(st.at)}</small>`:'<small>Aún no hay datos de esa sucursal.</small>'}
+ ${fl.map(x=>`<div class="fl ${sel[x[1]]?'sel':''}"><div class="fn"><b>${x[0]}</b><small>hay ${x[2]}</small></div><div class="st"><button class="gh" onclick="rdAdd(${to},${x[1]},-1)">−</button><b>${sel[x[1]]||0}</b><button onclick="rdAdd(${to},${x[1]},1)">+</button></div></div>`).join('')||(st?'<small>Esa sucursal no tiene tamales disponibles.</small>':'')}
+ <div class="form"><input id="rdn" placeholder="Nombre del cliente" value="${esc(S.rd.name||'')}" oninput="S.rd.name=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(S.rd.phone||'')}" oninput="S.rd.phone=this.value" style="flex:1"></div>
+ <div class="form"><button class="go" id="rdi" style="flex:1" onclick="sendReq(${to})">Enviar solicitud</button></div></div><div class="cart" id="rdb"><div class="ct"><button class="go" style="flex:1" onclick="sendReq(${to})">Enviar solicitud${(n=>n?' · '+n+(n==1?' tamal':' tamales'):'')(Object.values(sel).reduce((a,v)=>a+(+v||0),0))}</button></div></div>`:'';
+ return `${pend.length?'<h3 style="margin:6px 4px">Solicitudes que recibiste</h3>':''}${pend.map(r=>{const sh=rqShort(r,b);return top(r,'De '+esc(brs()[r.from])+' · '+hm(r.ts))+(sh.length?`<small class="bad">No alcanza: ${sh.map(x=>esc(F[x[0]])+' (piden '+x[1]+', hay '+Math.max(0,x[2])+')').join(', ')}</small>`:'')+`<div class="form"><button class="go" ${sh.length?'disabled':''} onclick="acceptReq('${r._id}')">Aceptar y apartar</button><button class="gh" onclick="rejectReq('${r._id}')">No hay</button></div></div>`}).join('')}
+ ${hold.length?'<h3 style="margin:6px 4px">Apartados por entregar</h3>':''}${hold.map(r=>top(r,'De '+esc(brs()[r.from])+' · guardado hasta las '+hm(r.exp))+`<div class="form"><button class="go" onclick="deliverReq('${r._id}')">Entregar y cobrar ${money(rqTot(r))}</button><button class="gh" onclick="cancelHold('${r._id}')">Cancelar</button></div></div>`).join('')}
+ ${form}
+ <div class="card"><h3>Lo que enviaste hoy</h3>${out.map(r=>{const s=rqSt(r),t=RL[s];return `<div class="row" style="flex-wrap:wrap"><div><b>${esc(r.client)}</b> → ${esc(brs()[r.to])}<br><small>${esc(rqTxt(r))} · ${hm(r.ts)}</small></div><span class="chip ${t[1]}">${t[0]}</span>${s=='aceptado'?`<small style="width:100%">Dile al cliente que pase a ${esc(brs()[r.to])} antes de las ${hm(r.exp)}.</small>`:s=='rechazado'?`<small style="width:100%">${esc(r.reason||'No hay suficiente')}</small>`:''}${s=='pendiente'?`<button class="gh" onclick="cancelReq('${r._id}')">Cancelar solicitud</button>`:''}</div>`}).join('')||'<small>Todavía no has enviado solicitudes hoy.</small>'}</div>
+ ${done.length?`<div class="card"><h3>Recibidas · ya cerradas</h3>${done.map(r=>{const t=RL[rqSt(r)];return `<div class="row"><div><b>${esc(r.client)}</b> · ${esc(brs()[r.from])}<br><small>${esc(rqTxt(r))}</small></div><span class="chip ${t[1]}">${t[0]}</span></div>`}).join('')}</div>`:''}`}
+function rdTo(i){S.rd={...S.rd,to:i,items:{}};render(true)}
+function rdAdd(to,f,n){S.rd=S.rd||{items:{}};S.rd.to=to;const mx=(((S.stock||{})[to]||{}).f||{})['f'+f]||0,c=Math.max(0,Math.min(mx,((S.rd.items||{})[f]||0)+n));S.rd.items={...S.rd.items,[f]:c};render(true)}
+async function sendReq(to){const r=S.rd||{},items={};Object.entries(r.items||{}).forEach(([f,v])=>{if(v>0)items['f'+f]=v});
+ if(!Object.keys(items).length)return toast('Elige los tamales que necesitas');if(!(r.name||'').trim()){toast('Escribe el nombre del cliente');const e=$('#rdn');if(e){e.scrollIntoView({block:'center',behavior:'smooth'});setTimeout(()=>{try{e.focus({preventScroll:true})}catch(_){e.focus()}},350);e.classList.add('need');setTimeout(()=>e.classList.remove('need'),3000)}return}
+ try{await db.collection('reqs').add({day:D,from:S.me.branch,to,items,client:r.name.trim(),phone:(r.phone||'').trim(),status:'pendiente',by:S.me.user,byName:S.me.name,ts:Date.now()});S.rd={items:{}};toast('Solicitud enviada a '+brs()[to]);render(true)}catch(e){err(e)}}
+async function cancelReq(id){const r=S.rq.find(x=>x._id==id);try{await db.doc('reqs/'+id).update({status:'cancelado'});toast('Solicitud cancelada');if(r)logEv({branch:r.from,branch2:r.to,kind:'cancelacion',label:'Solicitud de apartado cancelada',txt:r.client+' · '+rqTxt(r),amt:rqTot(r)})}catch(e){err(e)}}
+async function acceptReq(id){const r=S.rq.find(x=>x._id==id),b=S.me.branch;if(!r)return;if(rqShort(r,b).length)return toast('Ya no alcanza el inventario');
+ const exp=Date.now()+holdMin()*60000;
+ if(!lock('ac'+id))return;try{const bt=db.batch();bt.update('reqs/'+id,{status:'aceptado',exp,acceptedBy:S.me.user});Object.entries(r.items).forEach(([k,v],i)=>bt.add('sales',{day:D,branch:b,f:+k.slice(1),qty:v,type:'apartado',price:price(+k.slice(1)),req:id,client:r.client,exp,by:S.me.user,ts:Date.now()+i}));await bt.commit();
+  toast('Apartado guardado hasta las '+hm(exp))}catch(e){err(e)}}
+async function rejectReq(id){try{await db.doc('reqs/'+id).update({status:'rechazado',reason:'No hay suficiente',rejectedBy:S.me.user});toast('Avisamos que no hay')}catch(e){err(e)}}
+function deliverReq(id){const r=S.rq.find(x=>x._id==id);if(!r)return;
+ payAsk(rqTot(r),'Entregar y cobrar · '+r.client,rqTxt(r),async pg=>{if(!lock('rq'+id))return;try{const bt=db.batch();bt.update('reqs/'+id,{status:'entregado',deliveredBy:S.me.user,dts:Date.now()});S.sales.filter(x=>x.req==id&&x.type=='apartado').forEach(x=>bt.update('sales/'+x._id,{type:'vendido',by:S.me.user}));await bt.commit();try{navigator.vibrate&&navigator.vibrate(40)}catch(_){}note('Apartado entregado · '+r.client,rqTxt(r),rqTot(r),pg)}catch(e){err(e)}})}
+function cancelHold(id){const r=S.rq.find(x=>x._id==id);if(!r)return;
+ ask('¿Cancelar el apartado de '+r.client+'? Los tamales regresan al inventario.',async()=>{try{const bt=db.batch();S.sales.filter(x=>x.req==id&&x.type=='apartado').forEach(x=>bt.delete('sales/'+x._id));bt.update('reqs/'+id,{status:'cancelado'});await bt.commit();toast('Apartado cancelado');logEv({branch:r.to,branch2:r.from,kind:'cancelacion',label:'Apartado cancelado (entre sucursales)',txt:r.client+' · '+rqTxt(r),amt:rqTot(r)})}catch(e){err(e)}})}
+function reqAdmin(){const l=(S.rq||[]).slice().sort((a,c)=>c.ts-a.ts);if(!l.length)return '';
+ return `<div class="card"><h3>Apartados entre sucursales</h3>${l.map(r=>{const t=RL[rqSt(r)];return `<div class="row"><div><b>${esc(r.client)}</b> · ${esc(brs()[r.from])} → ${esc(brs()[r.to])}<br><small>${esc(rqTxt(r))} · ${hm(r.ts)}</small></div><span class="chip ${t[1]}">${t[0]}</span></div>`}).join('')}</div>`}
+/* ===== Encabezado y menú hamburguesa ===== */
+const SEC={ap:'Apartados',res:'Resumen',inv:'Inventario',tr:'Traspasos',ct:'Cortes',rp:'Reportes',us:'Usuarios',aj:'Ajustes'};
+function head(){const m=S.me,A=m.role=='admin',V=m.role=='vend',n=V?pin():A?lowList().length:0;
+ return `<header class="top"><button class="hb" onclick="menu(1)" aria-label="Abrir menú">☰${n?`<i class="dot">${n}</i>`:''}</button><div class="ht"><b class="ttl">${esc(V?brs()[m.branch]:A?(SEC[S.tab]||'Resumen'):'Pedidos')}</b><small>${A?'Administrador · ':''}${esc(m.name)} · ${D}</small></div></header>`}
+function menu(o){const d=$('#drawer');if(!d)return;
+ if(!o){const f=d.contains(document.activeElement);d.classList.remove('open');document.body.classList.remove('nolock');if(f){const h=$('.hb');if(h)h.focus()}return}
+ const m=S.me,A=m.role=='admin',V=m.role=='vend';
+ const its=A?[['res','📊','Resumen',lowList().length],['inv','📦','Inventario'],['tr','🔁','Traspasos'],['ct','🧾','Cortes'],['ap','📌','Apartados',preN()],['rp','📈','Reportes'],['us','👥','Usuarios'],['aj','⚙️','Ajustes']]
+  :V?[['v','🛒','Vender'],['h','🧾','Historial'],['r','📌','Apartados',pin()+preN()],['m','💵','Corte y traspasos']]:[['e','📋','Disponibilidad de hoy']];
+ const cur=A?(S.tab||'res'):V?(S.vt||'v'):'e';
+ d.innerHTML=`<div class="bk" onclick="menu(0)"></div><div class="pn"><div style="margin:4px 4px 14px"><div style="font-size:36px;line-height:1.1">🫔</div><b class="ttl">Tamales</b><br><small>${esc(m.name)} · ${A?'Administrador':V?'Vendedor · '+esc(brs()[m.branch]):'Pedidos'}</small></div>${its.map(([k,i,l,n])=>`<button class="mi ${cur==k?'on':''}" onclick="go('${k}')"><span>${i}</span><em>${l}</em>${n?`<i class="dot2">${n}</i>`:''}</button>`).join('')}<div style="flex:1;min-height:20px"></div><button class="mi" onclick="menu(0);setTimeout(pinDlg,400)"><span>🔑</span><em>Cambiar mi PIN</em></button><button class="mi" style="color:var(--bad)" onclick="menu(0);logout()"><span>🚪</span><em>Salir</em></button></div>`;
+ document.body.classList.add('nolock');requestAnimationFrame(()=>{d.classList.add('open');const f=d.querySelector('.mi');if(f)f.focus({preventScroll:true})})}
+/* Los apartados de hoy se suman solos a la carga al guardar el inventario */
+const paNow=(b,f)=>{const r=resv(b,f);if(!loadDone(b))return r;const fz=+(((S.loads[b]||{}).pa||{})['f'+f])||0,dl=S.sales.filter(x=>x.branch==b&&x.f==f&&x.pre&&x.type=='vendido').reduce((a,x)=>a+x.qty,0);return Math.max(r,Math.min(fz,r+dl))};
+/* Menú de abajo personalizable (administrador) */
+const NAVALL={res:['📊','Resumen'],inv:['📦','Inventario'],tr:['🔁','Traspasos'],ct:['🧾','Cortes'],ap:['📌','Apartados'],rp:['📈','Reportes'],us:['👥','Usuarios'],aj:['⚙️','Ajustes']},NAVDEF=['res','inv','tr','ct'];
+const navSel=()=>{const a=(S.cfg.anav||NAVDEF).filter((k,i,r)=>NAVALL[k]&&r.indexOf(k)==i).slice(0,4);return a.length>=2?a:NAVDEF};
+const navBadge=k=>k=='res'?lowList().length:k=='ap'?preN():0;
+async function setNav(a){try{await db.doc('config/main').set({anav:a},{merge:true})}catch(e){err(e)}}
+function navOff(i){const a=navSel().slice();if(a.length<=2)return toast('Deja al menos 2 secciones en el menú');a.splice(i,1);S.cfg.anav=a;render(true);setNav(a)}
+function navOn(k){const a=navSel().slice();if(a.length>=4)return toast('Máximo 4. Quita una primero');a.push(k);S.cfg.anav=a;render(true);setNav(a)}
+function navTog(k){const i=navSel().indexOf(k);i>=0?navOff(i):navOn(k)}
+function navReset(){S.cfg.anav=NAVDEF.slice();render(true);setNav(NAVDEF.slice())}
+/* Arrastrar y soltar en la vista previa del menú */
+function navDrag(e){if(e.button>0)return;const el=e.currentTarget,items=[...el.parentNode.querySelectorAll('.nvi')],from=items.indexOf(el),w=el.getBoundingClientRect().width,x0=e.clientX;let cur=from;
+ e.preventDefault();try{el.setPointerCapture(e.pointerId)}catch(_){}el.classList.add('drag');
+ const mv=ev=>{const dx=ev.clientX-x0;el.style.transform='translateX('+dx+'px)';cur=Math.max(0,Math.min(items.length-1,from+Math.round(dx/w)));
+  items.forEach((o,k)=>{if(o===el)return;o.style.transform=(from<cur&&k>from&&k<=cur)?'translateX('+(-w)+'px)':(from>cur&&k<from&&k>=cur)?'translateX('+w+'px)':''})},
+ up=()=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);
+  if(cur!=from){const a=navSel().slice(),[k]=a.splice(from,1);a.splice(cur,0,k);S.cfg.anav=a;render(true);setNav(a)}else{items.forEach(o=>o.style.transform='');el.classList.remove('drag')}};
+ el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)}
+function navCard(){const a=navSel();
+ return `<div class="card"><h3>Menú de abajo</h3><small>Arrastra los botones para cambiar el orden. Toca una sección de abajo para ponerla o quitarla (de 2 a 4).</small>
+ <div class="nvp">${a.map(k=>`<div class="nvi" role="button" aria-label="${NAVALL[k][1]}: arrastra para mover" onpointerdown="navDrag(event)"><span>${NAVALL[k][0]}</span>${NAVALL[k][1]}</div>`).join('')}<div class="nvi nvm"><span>⋯</span>Más</div></div>
+ <div class="form">${Object.keys(NAVALL).map(k=>`<button class="${a.includes(k)?'':'alt'}" onclick="navTog('${k}')">${a.includes(k)?'✓ ':''}${NAVALL[k][1]}</button>`).join('')}</div>
+ <div class="form"><button class="gh" onclick="navReset()">Restablecer</button></div></div>`}
+/* ===== Apartados por fecha: de hoy y de otros días ===== */
+const tmr=k=>{const d=new Date();d.setDate(d.getDate()+(k==null?1:k));return dstr(d)};
+const fdate=x=>{const[y,m,d]=x.split('-').map(Number),t=new Date(y,m-1,d),n=new Date(),a=new Date(n.getFullYear(),n.getMonth(),n.getDate()),df=Math.round((t-a)/864e5),l=t.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'short'});return df==1?'mañana · '+l:df==2?'pasado mañana · '+l:l};
+const preN=()=>S.pre.filter(p=>p.date<=D).length;
+const preTxt=p=>Object.entries(p.items||{}).map(([k,v])=>v+'× '+F[+k.slice(1)]).join(', ');
+const preTot=p=>Object.entries(p.items||{}).reduce((a,[k,v])=>a+v*price(+k.slice(1)),0);
+const preQty=p=>Object.values(p.items||{}).reduce((a,v)=>a+(+v||0),0);
+const preSum=l=>F.map((n,f)=>[n,l.reduce((a,p)=>a+(+((p.items||{})['f'+f])||0),0)]).filter(x=>x[1]>0).map(x=>x[1]+' '+x[0]).join(' · ');
+function nd(){if(!S.nd)S.nd={date:tmr(1),items:{},name:'',phone:'',note:'',branch:BI()[0]};if(S.nd.date<D)S.nd.date=tmr(1);if(!BI().includes(S.nd.branch))S.nd.branch=BI()[0];if(S.nd.date<D||(S.nd.date==D&&(S.me.role=='vend'||encBlk(S.nd.branch))))S.nd.date=tmr(1);return S.nd}
+function pdAdd(f,n){const x=nd();x.items={...x.items,[f]:Math.max(0,(x.items[f]||0)+n)};render(true)}
+function pdBr(i){nd().branch=i;render(true)}
+function pdDate(v){if(!v||v<D)return toast('Elige hoy o una fecha futura');if(v==D&&S.me.role=='vend')return toast('Para hoy no se puede: lo hace el administrador');if(v==D&&encBlk(nd().branch))return toast('Para hoy ya no se puede: el inventario de esa sucursal ya se hizo');nd().date=v;render(true)}
+function preCard(p){const m=S.me,V=m.role=='vend',A=m.role=='admin',can=A||V||p.by==m.user;
+ return `<div class="card"><div class="row"><div><b>${esc(p.client)}</b>${p.phone?' · '+esc(p.phone):''}<br><small>${V?'':esc(brs()[p.branch])+' · '}${p.date<D?'<b class="bad">Pendiente desde '+esc(fdate(p.date))+'</b> · ':p.date>D?esc(fdate(p.date))+' · ':''}lo apartó ${esc(p.byName||p.by)}${p.ok?' · <b class="ok">✅ Aceptado</b>':''}</small></div><b>${money(preTot(p))}</b></div><div>${esc(preTxt(p))}</div>${p.note?`<small>📝 ${esc(p.note)}</small>`:''}<div class="form">${(V||A)&&p.date<=D?`<button class="go" onclick="deliverPre('${p._id}')">Entregar y cobrar</button>`:''}${can?`<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>`:''}</div></div>`}
+const newBtn='<div class="form" style="margin:0 0 10px"><button class="alt" style="flex:1" onclick="S.apt=\'o\';S.anew=false;admNew()">＋ Nuevo apartado</button></div>';
+function preToday(l){if(!l.length)return newBtn+'<div class="card"><small>No hay apartados para entregar hoy.</small></div>';
+ const g={};l.forEach(p=>(g[p.date]=g[p.date]||[]).push(p));
+ return newBtn+Object.keys(g).sort().map(d=>(d<D?`<h3 style="margin:12px 4px 6px;text-transform:capitalize">Sin entregar · ${esc(fdate(d))}</h3>`:`<h3 style="margin:6px 4px">Para hoy</h3>`)+g[d].sort((a,c)=>a.ts-c.ts).map(preCard).join('')).join('')}
+function preLater(l){if(!l.length)return '<div class="card"><small>No hay apartados para otros días.</small></div>';
+ const g={};l.forEach(p=>(g[p.date]=g[p.date]||[]).push(p));
+ return Object.keys(g).sort().map(d=>`<h3 style="margin:14px 4px 2px;text-transform:capitalize">${esc(fdate(d))}</h3><small style="display:block;margin:0 4px 6px">${g[d].length} apartado${g[d].length>1?'s':''} · ${esc(preSum(g[d]))}</small>`+g[d].sort((a,c)=>a.ts-c.ts).map(preCard).join('')).join('')}
+function apForm(hoy){const m=S.me,V=m.role=='vend',n=nd(),fb=!V&&S.apb!=null&&BI().includes(S.apb),_f=fb&&(n.branch=S.apb),cl=V||encBlk(n.branch),sel=n.items,tot=Object.values(sel).reduce((a,v)=>a+v,0);
+ return `<div class="card" id="apf"><h3>Nuevo apartado</h3><small>Elige para qué día. El administrador lo ve antes de preparar el inventario de ese día.</small>
+ ${V?'':fb?`<small style="display:block;margin-top:8px">Sucursal: <b>${esc(brs()[n.branch])}</b></small>`:`<small style="display:block;margin-top:8px">¿Para qué sucursal?</small>`+bchips(n.branch,'pdBr')}
+ ${hoy?`<small style="display:block;margin-top:8px">Fecha</small><small style="display:block"><b>Hoy · ${esc(fdate(D))}</b></small>${!V&&loadDone(n.branch)?`<small style="display:block">${loadEmpty(n.branch)?'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.':encBlk(n.branch)?'La carga de hoy ya está guardada: ya no se puede apartar para hoy en '+esc(brs()[n.branch])+'.':'La carga de hoy ya está guardada: el apartado se descuenta de lo que queda en '+esc(brs()[n.branch])+'.'}</small>`:''}`:`<small style="display:block;margin-top:8px">Fecha</small>${cl?(encBlk(n.branch)?`<small class="low" style="display:block">La carga de hoy ya está guardada: ya no se puede apartar para hoy en ${esc(brs()[n.branch])}.</small>`:''):(!V&&loadDone(n.branch)?`<small style="display:block">${loadEmpty(n.branch)?'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.':encBlk(n.branch)?'La carga de hoy ya está guardada: ya no se puede apartar para hoy en '+esc(brs()[n.branch])+'.':'La carga de hoy ya está guardada: el apartado de hoy se descuenta de lo que queda en '+esc(brs()[n.branch])+'.'}</small>`:`<small style="display:block">Para hoy solo se puede antes de hacer el inventario.</small>`)}<div class="seg" style="margin:4px 0">${[0,1,2].filter(k=>!(k==0&&cl)).map(k=>`<button class="${n.date==tmr(k)?'on':''}" onclick="pdDate('${tmr(k)}')">${k==0?'Hoy':k==1?'Mañana':'Pasado mañana'}</button>`).join('')}</div>
+ <div class="form"><input type="date" id="pdd" aria-label="Fecha del apartado" min="${cl?tmr(1):D}" value="${n.date}" onchange="pdDate(this.value)" style="flex:1"></div>`}
+ ${F.map((nm,f)=>`<div class="fl ${sel[f]?'sel':''}"><div class="fn"><b>${esc(nm)}</b><small>${money(price(f))}</small></div><div class="st"><button class="gh" onclick="pdAdd(${f},-1)">−</button><b>${sel[f]||0}</b><button onclick="pdAdd(${f},1)">+</button></div></div>`).join('')}
+ <div class="form"><input id="pdn" placeholder="Nombre del cliente" value="${esc(n.name)}" oninput="nd().name=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1"></div>
+ <div class="form"><input placeholder="Nota (hora de entrega, detalles)" value="${esc(n.note)}" oninput="nd().note=this.value" style="flex:1"></div>
+ </div><div class="cart"><div class="ct"><button class="go" style="flex:1" onclick="savePre()"${hoy&&encBlk(n.branch)?' disabled':''}>Guardar apartado${tot?' · '+tot+(tot==1?' tamal':' tamales'):''}</button></div></div>`}
+async function savePre(){const n=nd(),V=S.me.role=='vend',b=V?S.me.branch:n.branch,items={};Object.entries(n.items).forEach(([f,v])=>{if(v>0)items['f'+f]=v});
+ if(!Object.keys(items).length)return toast('Elige los tamales que apartan');
+ if(!n.name.trim()){toast('Escribe el nombre del cliente');const e=$('#pdn');if(e){e.scrollIntoView({block:'center',behavior:'smooth'});setTimeout(()=>{try{e.focus({preventScroll:true})}catch(_){e.focus()}},350);e.classList.add('need');setTimeout(()=>e.classList.remove('need'),3000)}return}
+ if(!n.date||n.date<D)return toast('Elige hoy o una fecha futura');if(n.date==D&&S.me.role=='vend')return toast('Para hoy no se puede: lo hace el administrador');if(n.date==D&&encBlk(b))return toast('Para hoy ya no se puede: el inventario de esa sucursal ya se hizo');if(n.date==D&&loadDone(b)){const sh=loadEmpty(b)?null:Object.entries(items).find(([k,v])=>v>left(b,+k.slice(1)));if(sh)return toast('En '+brs()[b]+' solo quedan '+Math.max(0,left(b,+sh[0].slice(1)))+' de '+F[+sh[0].slice(1)]+'. Sube la carga o aparta menos')}
+ try{await db.collection('pre').add({branch:b,date:n.date,items,client:n.name.trim(),phone:n.phone.trim(),note:n.note.trim(),status:'pendiente',by:S.me.user,byName:S.me.name,role:S.me.role,ts:Date.now()});S.nd=null;S.anew=false;S.apt=n.date==D?'h':'o';toast(n.date==D?'Apartado guardado para hoy':'Apartado guardado para '+fdate(n.date));render(true)}catch(e){err(e)}}
+function cancelPre(id){const p=S.pre.find(x=>x._id==id);if(!p)return;ask('¿Cancelar el apartado de '+p.client+'? Los tamales vuelven a quedar disponibles.',async()=>{try{await db.doc('pre/'+id).update({status:'cancelado',doneAt:Date.now(),doneBy:S.me.user});toast('Apartado cancelado');logEv({branch:p.branch,kind:'cancelacion',label:'Apartado cancelado',txt:p.client+' · '+preTxt(p)+(p.date!=D?' · para '+fdate(p.date):''),amt:preTot(p)})}catch(e){err(e)}})}
+function deliverPre(id){const p=S.pre.find(x=>x._id==id);if(!p)return;
+ payAsk(preTot(p),'Entregar y cobrar · '+p.client,preTxt(p),async pg=>{const q=S.pre.find(x=>x._id==id);if(!q)return toast('Este apartado ya no está pendiente');
+  const ts=Date.now(),it=Object.entries(q.items||{}).filter(([_,v])=>v>0);
+  if(!lock('pre'+id))return;
+  try{const bt=db.batch();bt.update('pre/'+id,{status:'entregado',doneAt:ts,doneBy:S.me.user});it.forEach(([k,v],i)=>bt.add('sales',{day:D,branch:q.branch,f:+k.slice(1),qty:v,type:'vendido',price:price(+k.slice(1)),pre:id,client:q.client,by:S.me.user,ts:ts+i}));await bt.commit();
+   try{navigator.vibrate&&navigator.vibrate(40)}catch(_){}note('Apartado entregado · '+q.client,preTxt(q),preTot(q),pg)}catch(e){err(e)}})}
+function apView(){const m=S.me,V=m.role=='vend',A=m.role=='admin',t=S.apt||(V&&pin()?'s':'h');
+ const l=S.pre.filter(p=>V?p.branch==m.branch:(A&&S.apb!=null?p.branch==S.apb:true)),hoy=l.filter(p=>p.date<=D),otro=l.filter(p=>p.date>D);
+ const tabs=[['h','Hoy'+(hoy.length?' ('+hoy.length+')':'')],['o','Otro día'+(otro.length?' ('+otro.length+')':'')],...(V?[['s','Entre sucursales'+(pin()?' ('+pin()+')':'')]]:[])];
+ const bf=A?`<div class="seg" style="margin-bottom:8px"><button class="${S.apb==null?'on':''}" onclick="S.apb=null;render(true)">Todas</button>${brs().map((n,i)=>!isOpen(i)?'':`<button class="${S.apb===i?'on':''}" onclick="S.apb=${i};render(true)">${esc(n)}</button>`).join('')}</div>`:'';
+ return bf+`<div class="seg" style="margin-bottom:10px">${tabs.map(([k,n])=>`<button class="${t==k?'on':''}" onclick="S.apt='${k}';S.anew=false;if(S.me.role=='vend'){S.apt=='s'?stockOn():stockOff()}render(true)">${n}</button>`).join('')}</div>`+(t=='o'?admBtn()+preLater(otro)+admFrm('o'):t=='s'&&V?reqView():preToday(hoy))}
+function preBanner(){const n=preN();return n?`<div class="card" style="border:2px solid var(--ac)" onclick="S.apt='h';setVt('r')"><b>📌 ${n} apartado${n>1?'s':''} para entregar hoy</b><br><small>Toca para ver</small></div>`:''}
+function preInvCard(b){const mine=S.pre.filter(p=>p.branch==b),td=mine.filter(p=>p.date==D).sort((a,c)=>a.ts-c.ts),od=mine.filter(p=>p.date<D).sort((a,c)=>a.ts-c.ts),q=td.reduce((a,p)=>a+preQty(p),0),
+ fz=f=>+(((S.loads[b]||{}).pa||{})['f'+f])||0,miss=F.reduce((a,_,f)=>a+Math.max(0,resv(b,f)-fz(f)),0),
+ oth=BI().filter(i=>i!=b).map(i=>[i,S.pre.filter(p=>p.branch==i&&p.date==D).reduce((a,p)=>a+preQty(p),0)]).filter(x=>x[1]),ot=S.pre.filter(p=>p.date>D).length;
+ return `<div class="card"><h3>📌 Apartados de hoy${q?' · '+q+(q==1?' tamal':' tamales'):''}</h3>
+ ${td.length?td.map(p=>`<div class="row"><div><b>${esc(p.client)}</b>${p.ok?' ✅':' ⏳'}<br><small>${esc(preTxt(p))}${p.note?' · 📝 '+esc(p.note):''}</small></div></div>`).join('')+(loadDone(b)?(miss?`<small class="low" style="display:block;margin-top:8px"><b>${miss} ${miss==1?'tamal apartado':'tamales apartados'} después de guardar la carga: ${loadEmpty(b)?'guarda la carga otra vez para incluirlos.':'ya se descontaron de lo que queda.'}</b></small>`:'<small class="ok" style="display:block;margin-top:8px">✅ Ya incluidos en la carga</small>'):'<small style="display:block;margin-top:8px">Se suman solos a la carga al guardar</small>'):`<small>Sin apartados para hoy en ${esc(brs()[b])}.</small>`}
+ ${od.length?`<div class="row"><div><small class="bad"><b>${od.length} pendiente${od.length>1?'s':''} de días anteriores</b> · no se suman a la carga de hoy</small></div><button class="gh" onclick="admAp(${b})">Ver</button></div>`:''}
+ ${oth.length?`<small style="display:block;margin-top:10px">También hay apartados hoy en:</small><div class="form">${oth.map(([i,n])=>`<button class="alt" onclick="setIb(${i})">${esc(brs()[i])} · ${n}</button>`).join('')}</div>`:''}
+ ${ot?`<div class="row"><div><small>📅 ${ot} apartado${ot>1?'s':''} para otros días</small></div><button class="gh" onclick="S.apt='o';S.anew=false;S.apb=null;setTab('ap')">Ver</button></div>`:''}</div>`}
+/* Cambiar mi PIN */
+function pinDlg(){const m=$('#modal');
+ m.innerHTML=`<div class="card mv pd"><h3>Cambiar mi PIN</h3><small>Tu PIN debe tener 6 números o más.</small><div class="form" style="flex-direction:column"><input id="po" type="password" inputmode="numeric" placeholder="PIN actual" autocomplete="current-password"><input id="pn" type="password" inputmode="numeric" placeholder="PIN nuevo" autocomplete="new-password"><input id="pr" type="password" inputmode="numeric" placeholder="Repite el PIN nuevo" autocomplete="new-password" onkeydown="if(event.key=='Enter')savePin()"></div><div class="form"><button class="gh" id="pc">Cancelar</button><button class="go" id="ps" onclick="savePin()">Guardar PIN</button></div></div>`;
+ m.style.display='flex';$('#pc').onclick=()=>m.style.display='none';setTimeout(()=>{const e=$('#po');if(e)e.focus()},150)}
+async function savePin(){const o=$('#po').value.trim(),n=$('#pn').value.trim(),r=$('#pr').value.trim();
+ if(!o)return toast('Escribe tu PIN actual');if(!/^\d{6,}$/.test(n))return toast('El PIN nuevo debe tener solo números, mínimo 6');if(n!==r)return toast('Los PIN nuevos no coinciden');if(n===o)return toast('El PIN nuevo debe ser distinto al actual');
+ const b=$('#ps');b.disabled=true;
+ try{await FB.changePin(o,n);$('#modal').style.display='none';toast('PIN cambiado')}catch(e){b.disabled=false;toast(['auth/invalid-credential','auth/wrong-password','auth/invalid-login-credentials'].includes(e.code)?'El PIN actual es incorrecto':fe(e))}}
+function go(k){menu(0);const m=S.me;if(m.role=='admin')setTab(k);else if(m.role=='vend')setVt(k)}
+document.addEventListener('keydown',e=>{if(e.key=='Escape'){menu(0);const m=$('#modal');if(m)m.style.display='none'}});
+/* ===== Móvil: teclado virtual, conexión y captura rápida ===== */
+const adNav=k=>k=='more'?menu(1):setTab(k);
+(()=>{const vv=window.visualViewport;let H=0,W=0;const kb=()=>{if(innerWidth!=W){W=innerWidth;H=innerHeight}H=Math.max(H,innerHeight);document.body.classList.toggle('kb',H-(vv?vv.height:innerHeight)>150)};
+ if(vv)vv.addEventListener('resize',kb);addEventListener('resize',kb);kb();
+ const net=()=>{const e=$('#net');if(e)e.style.display=navigator.onLine?'none':'block'};addEventListener('online',net);addEventListener('offline',net);net();
+ document.addEventListener('focusin',e=>{const t=e.target;if(t.tagName!='INPUT'&&t.tagName!='SELECT'||t.type=='checkbox')return;if(t.type=='number')try{t.select()}catch(_){}setTimeout(()=>{try{t.scrollIntoView({block:'center',behavior:'smooth'})}catch(_){}},300)});
+ document.addEventListener('keydown',e=>{const t=e.target;if(e.key!='Enter'||t.tagName!='INPUT')return;if(t.id=='pg'){const k=$('#mk');if(k)k.click();return}if(t.type!='number')return;const l=[...document.querySelectorAll('#app input[type=number]')],n=l[l.indexOf(t)+1];e.preventDefault();n?n.focus():t.blur()})})();
+/* ===== Botón "atrás" del celular: regresa a la pantalla anterior (o cierra menú/diálogo) y no sale de la app ===== */
+(()=>{
+ let nid=0,nuid=null,skip=0,exitT=0;
+ const curKey=()=>{const m=S.me;return !m?'':m.role=='admin'?'a:'+(S.tab||'res'):m.role=='vend'?'v:'+(S.vt||'v'):'e'};
+ const isOpen=o=>o=='m'?$('#modal').style.display=='flex':o=='d'?$('#drawer').classList.contains('open'):false;
+ const pushView=k=>{if(!nid||k===curKey())return;const st=history.state||{};
+  /* si encima hay un menú/diálogo que ya se cerró, su entrada se reemplaza en vez de apilar otra */
+  if(st.o&&!isOpen(st.o))history.replaceState({k,s:nid},'');else history.pushState({k,s:nid},'')};
+ const sT=setTab,sV=setVt;
+ setTab=t=>{pushView('a:'+t);sT(t)};
+ setVt=t=>{pushView('v:'+t);sV(t)};
+ const applyView=k=>{const m=S.me;if(!m)return;const p=k.split(':'),v=p[1];
+  if(p[0]=='a'&&m.role=='admin')sT(v);else if(p[0]=='v'&&m.role=='vend')sV(v);else return;scrollTo(0,0)};
+ /* al iniciar sesión se arma el historial: [tope] + [pantalla inicial] */
+ const rn=renderNow;
+ renderNow=function(f){
+  if(S.me&&S.me.id!==nuid){nuid=S.me.id;nid=Date.now();history.replaceState({g:1,s:nid},'');history.pushState({k:curKey(),s:nid},'')}
+  else if(!S.fu&&nuid){nuid=null;nid=0}
+  return rn.call(this,f)};
+ /* menú lateral y diálogos: cada uno ocupa una entrada del historial mientras está abierto */
+ const watch=(el,o,attr)=>{let was=false;
+  new MutationObserver(()=>{const v=isOpen(o);
+   if(v&&!was){was=true;if(nid)history.pushState({o,s:nid},'')}
+   else if(!v&&was){was=false;if((history.state||{}).o==o){skip++;history.back()}}
+  }).observe(el,{attributes:true,attributeFilter:[attr]})};
+ watch($('#modal'),'m','style');watch($('#drawer'),'d','class');
+ addEventListener('popstate',e=>{
+  if(skip){skip--;return}
+  const st=e.state||{};
+  if(!nid)return;
+  if(st.s!==nid){history.back();return}
+  if(st.g){
+   if(exitT){history.back();return}
+   toast('Presiona otra vez para salir');exitT=setTimeout(()=>exitT=0,2000);
+   history.pushState({k:curKey(),s:nid},'');return}
+  const wantM=st.o=='m',wantD=st.o=='d'||st.o=='m';
+  if(isOpen('m')&&!wantM)$('#modal').style.display='none';
+  if(isOpen('d')&&!wantD)menu(0);
+  if(st.o&&!isOpen(st.o)){history.back();return}
+  if(st.k&&st.k!==curKey())applyView(st.k)});
+})();
+/* Ojito para mostrar/ocultar el PIN en todos los campos de contraseña */
+(()=>{const E='<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',X='<svg viewBox="0 0 24 24"><path d="M17.9 17.9A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18 18 0 0 1 5.1-5.9M9.9 5.1A10 10 0 0 1 12 5c7 0 11 7 11 7a18 18 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2M1 1l22 22"/></svg>';
+ const wrap=i=>{i.dataset.pw=1;const f=document.activeElement===i,w=document.createElement('span'),b=document.createElement('button');w.className='pw';i.parentNode.insertBefore(w,i);w.appendChild(i);
+  b.type='button';b.className='eye';b.tabIndex=-1;b.setAttribute('aria-label','Mostrar PIN');b.innerHTML=E;b.onpointerdown=e=>e.preventDefault();
+  b.onclick=()=>{const v=i.type=='password';i.type=v?'text':'password';b.innerHTML=v?X:E;b.setAttribute('aria-label',v?'Ocultar PIN':'Mostrar PIN')};w.appendChild(b);if(f)i.focus()};
+ const scan=()=>document.querySelectorAll('input[type=password]:not([data-pw])').forEach(wrap);
+ new MutationObserver(scan).observe(document.body,{childList:true,subtree:true});scan()})();
+/* Diálogos: tocar fuera de la tarjeta también los cierra */
+(()=>{const m=$('#modal');m.addEventListener('click',e=>{if(e.target===m)m.style.display='none'})})();
+/* La barra flotante "Enviar solicitud" solo aparece mientras el botón de la tarjeta todavía no se ve (más abajo) */
+(()=>{const vis=()=>{const i=$('#rdi'),b=$('#rdb');if(!i||!b)return;b.style.display=i.getBoundingClientRect().top>innerHeight-76?'':'none'};
+ addEventListener('scroll',vis,{passive:true});addEventListener('resize',vis);
+ const rn=renderNow;renderNow=function(f){const x=rn.call(this,f);requestAnimationFrame(vis);return x}})();
+(async()=>{
+ for(let i=0;i<150&&!window.FB;i++)await new Promise(r=>setTimeout(r,100));
+ if(!window.FB){$('#app').innerHTML='<p class="mut" style="padding:24px">No se pudo cargar Firebase. Revisa tu conexión.</p>';return}
+ db=FB.db;FB.onAuth(onUser);
+ setInterval(()=>{if(day()!==D)location.reload()},60000);
+ setInterval(()=>{if(S.me&&((S.rq||[]).length||S.sales.some(x=>x.exp)))render()},30000);
+})();
+
+/* ===== ADMIN · Apartados: hoy por sucursal, otros días y entre sucursales ===== */
+const loadEmpty=b=>loadDone(b)&&!F.some((_,f)=>load(b,f)+tx(b,f,'to')>0);
+const encBlk=b=>S.me&&S.me.role=='enc'&&loadDone(b)&&!loadEmpty(b);
+const admBtn=()=>'<div class="form" style="margin:0 0 10px"><button class="alt" style="flex:1" onclick="admNew()">'+(S.anew?'✕ Cerrar formulario':'＋ Nuevo apartado')+'</button></div>';
+const admFrm=t=>{if(!S.anew)return '';if(t=='o')return apForm();nd().date=D;return apForm(true)};
+function admNew(){S.anew=!S.anew;if(S.anew){const x=nd();x.date=S.apt=='o'?(x.date>D?x.date:tmr(1)):D;if(S.apb!=null&&BI().includes(S.apb))x.branch=S.apb}render(true);if(S.anew)setTimeout(()=>{const e=$('#apf');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},80)}
+function admTab(k){S.anew=false;S.apt=k;if(k=='o'){const x=nd();if(x.date<=D)x.date=tmr(1)}render(true)}
+const admAp=b=>{S.apt='h';S.anew=false;setTab('ap')},admInv=b=>{S.ib=b;setTab('inv')};
+function admCard(p){const od=p.date<D,fut=p.date>D,A=S.me.role=='admin',bt=(A?(p.ok?`<button class="gh" onclick="accPre('${p._id}')">Deshacer aceptación</button>`:`<button class="go" onclick="accPre('${p._id}')">Aceptar</button>`):'')+(A?`<button class="alt" onclick="admRejectPre('${p._id}')">Rechazar</button>`:'')+(A||p.by==S.me.user?`<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>`:'');
+ return `<div class="card"><div class="row"><div><b>${esc(p.client)}</b>${p.phone?' · '+esc(p.phone):''}<br><small>${esc(brs()[p.branch])} · ${od?'<b class="bad">Pendiente desde '+esc(fdate(p.date))+'</b>':fut?esc(fdate(p.date)):'Para hoy'} · lo apartó ${esc(p.byName||p.by)}${p.ok?' · <b class="ok">✅ Aceptado</b>':''}</small></div><b>${money(preTot(p))}</b></div><div>${esc(preTxt(p))}</div>${p.note?`<small>📝 ${esc(p.note)}</small>`:''}${bt?`<div class="form">${bt}</div>`:''}</div>`}
+function admToday(l){const q=l.reduce((a,p)=>a+preQty(p),0),tot=l.reduce((a,p)=>a+preTot(p),0),g={};l.forEach(p=>(g[p.branch]=g[p.branch]||[]).push(p));
+ if(!l.length)return admBtn()+'<div class="card"><small>No hay apartados para entregar hoy.</small></div>'+admFrm();
+ return admBtn()+Object.keys(g).map(Number).sort((a,b)=>a-b).map(b=>{const a=g[b].sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:x.ts-y.ts),td=a.filter(p=>p.date==D),od=a.filter(p=>p.date<D),pt=[];
+  if(td.length)pt.push(preSum(td));if(a.length)pt.push(a.filter(p=>p.ok).length+'/'+a.length+' aceptados');if(od.length)pt.push('<b class="bad">'+od.length+' de días anteriores</b>');if(td.length)pt.push(loadDone(b)?'✅ ya en la carga':'se suma al guardar la carga');
+  return `<div class="row" style="margin:12px 4px 6px;border:0;padding:0"><div><h3 style="margin:0">${esc(brs()[b])}${isOpen(b)?'':' · cerrada'}</h3><small>${pt.join(' · ')}</small></div>${S.me.role=='admin'?`<button class="gh" onclick="admInv(${b})">Inventario</button>`:''}</div>`+a.map(admCard).join('')}).join('')+admFrm()}
+function admLater(l){if(!l.length)return '<div class="card"><small>No hay apartados para otros días.</small></div>';const g={};l.forEach(p=>(g[p.date]=g[p.date]||[]).push(p));
+ return Object.keys(g).sort().map(d=>`<h3 style="margin:14px 4px 2px;text-transform:capitalize">${esc(fdate(d))}</h3><small style="display:block;margin:0 4px 6px">${g[d].length} apartado${g[d].length>1?'s':''} · ${esc(preSum(g[d]))}</small>`+g[d].sort((a,c)=>a.ts-c.ts).map(admCard).join('')).join('')}
+function apViewAdm(){S.apb=null;
+ const t=['h','o',...(S.me.role=='admin'?['s']:[])].includes(S.apt)?S.apt:'h',l=S.pre.filter(p=>S.apb==null||p.branch==S.apb),hoy=l.filter(p=>p.date<=D),otro=l.filter(p=>p.date>D),rp=(S.rq||[]).filter(r=>rqSt(r)=='pendiente').length,
+
+ tabs=[['h','Hoy'+(hoy.length?' ('+hoy.length+')':'')],['o','Otro día'+(otro.length?' ('+otro.length+')':'')],...(S.me.role=='admin'?[['s','Entre sucursales'+(rp?' ('+rp+')':'')]]:[])];
+ return `<div class="seg" style="margin-bottom:10px">${tabs.map(([k,n])=>`<button class="${t==k?'on':''}" onclick="admTab('${k}')">${n}</button>`).join('')}</div>`+(t=='o'?admBtn()+admLater(otro)+admFrm('o'):t=='s'?(reqAdmin()||'<div class="card"><small>Hoy no hay apartados entre sucursales.</small></div>'):admToday(hoy))}
+/* Checklist del administrador: marca (o desmarca) que aceptó el apartado. La entrega y el cobro los hace la sucursal. */
+async function accPre(id){const p=S.pre.find(x=>x._id==id);if(!p||S.me.role!='admin')return;const v=!p.ok;
+ try{await db.doc('pre/'+id).update({ok:v,okAt:v?Date.now():null,okBy:v?S.me.user:null});toast(v?'Aceptado: '+p.client:'Se quitó la aceptación de '+p.client)}catch(e){err(e)}}
+
+/* Rechazar un apartado que no se puede surtir (ej. sin materia prima): queda con motivo y los tamales se liberan */
+function admRejectPre(id){const p=S.pre.find(x=>x._id==id);if(!p)return;const m=$('#modal');
+ m.innerHTML=`<div class="card"><h3>Rechazar apartado</h3><small>${esc(p.client)} · ${esc(preTxt(p))}. Los tamales vuelven a quedar disponibles.</small><div class="form"><input id="rjr" placeholder="Motivo" value="Sin materia prima" style="flex:1"></div><div class="form"><button id="rjk">Rechazar</button><button class="alt" id="rjn">Volver</button></div></div>`;
+ m.style.display='flex';$('#rjn').onclick=()=>m.style.display='none';
+ $('#rjk').onclick=async()=>{const r=($('#rjr').value||'').trim()||'Sin materia prima';m.style.display='none';if(!S.pre.find(x=>x._id==id))return toast('Este apartado ya no está pendiente');
+  try{await db.doc('pre/'+id).update({status:'rechazado',reason:r,doneAt:Date.now(),doneBy:S.me.user});toast('Apartado rechazado');logEv({branch:p.branch,kind:'cancelacion',label:'Apartado rechazado',txt:p.client+' · '+preTxt(p)+' · '+r,amt:preTot(p)})}catch(e){err(e)}}}
+
+/* ===== Al recargar, vuelve a la misma pantalla donde estabas (se guarda en este dispositivo) ===== */
+let vRest=false,vSig='';
+function restoreView(u){if(!u||vRest)return;vRest=true;
+ try{const x=JSON.parse(localStorage.getItem('tm_v')||'null');if(!x||x.id!==u.uid)return;
+  if(['res','inv','tr','ct','aj','us','ap','rp'].includes(x.tab))S.tab=x.tab;
+  if(['v','h','r','m'].includes(x.vt))S.vt=x.vt;
+  if(['d','a'].includes(x.et))S.et=x.et;
+  if(['h','o','s'].includes(x.apt))S.apt=x.apt;
+  if(Number.isInteger(x.apb))S.apb=x.apb;
+  if(Number.isInteger(x.ib))S.ib=x.ib;
+  if(S.vt=='r')stockOn()}catch(e){}}
+(()=>{const rn=renderNow;renderNow=function(f){const x=rn.call(this,f);
+ try{if(S.me){const j=JSON.stringify({id:S.me.id,tab:S.tab,vt:S.vt,et:S.et,apt:S.apt,apb:S.apb,ib:S.ib});if(j!==vSig){vSig=j;localStorage.setItem('tm_v',j)}}}catch(e){}
+ return x}})();
+
+/* ===== Reportes (administrador): ventas por rango de fechas, se consultan bajo demanda ===== */
+const rpA=a=>a.reduce((x,s)=>x+s.qty*s.price,0);
+const dayAdd=(d,n)=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return dstr(x)};
+const dayDiff=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);
+const dayList=(a,b)=>{const l=[];for(let d=a;d<=b&&l.length<400;d=dayAdd(d,1))l.push(d);return l};
+/* Filtros del reporte: se aplican en el celular sobre lo ya descargado (no gastan lecturas) */
+const rpKeep=()=>{const r=S.rp||{};return{br:r.br==null?null:r.br,cat:r.cat||'t',cmp:!!r.cmp,gr:r.gr!==false}};
+const rpCatOk=(c,f)=>c=='b'?f>=100:c=='d'?(f>=8&&f<100):c=='s'?f<8:true;
+const rpF=rows=>{const r=S.rp||{};return rows.filter(s=>s.type!='apartado'&&(r.br==null||s.branch==r.br)&&rpCatOk(r.cat,s.f))};
+const rpScope=()=>{const r=S.rp||{},c={s:'Salados',d:'Dulces',b:'Bebidas'}[r.cat];return [r.br!=null?brs()[r.br]:'',c||''].filter(Boolean).join(' · ')};
+function rpSetRange(f,t){S.rp={...rpKeep(),from:f,to:t,rows:null};render(true)}
+function rpRange(n){rpSetRange(dayAdd(D,-n+1),D)}
+function rpMonth(){rpSetRange(D.slice(0,8)+'01',D)}
+function rpPreset(k){let f,t;
+ if(k=='hoy')f=t=D;else if(k=='ayer')f=t=dayAdd(D,-1);
+ else if(k=='sem'){const m=dayAdd(D,-((new Date().getDay()+6)%7)-7);f=m;t=dayAdd(m,6)}
+ else{const n=new Date();f=dstr(new Date(n.getFullYear(),n.getMonth()-1,1));t=dstr(new Date(n.getFullYear(),n.getMonth(),0))}
+ rpSetRange(f,t)}
+function rpDate(k,v){const r=S.rp;if(!v)return;r[k]=v;if(r.rows){r.rows=null;r.prev=null;r.mm=null;r.ct=null}render(true)}
+/* ---- Caché de días cerrados ----
+   Un día que ya pasó no cambia: se lee de Firestore una sola vez y se guarda en este dispositivo.
+   Así repetir un reporte, cambiar de rango o comparar con el periodo anterior casi no gasta lecturas.
+   Hoy siempre se lee de nuevo. Cada consulta pide solo los tramos de días que faltan. */
+const RC={},RCK='tm_rc1_';
+function rcGet(n){if(!RC[n]){let o={};try{o=JSON.parse(localStorage.getItem(RCK+n)||'{}')||{}}catch(e){}RC[n]=o}return RC[n]}
+function rcSave(n){const o=RC[n],ks=Object.keys(o).sort();let t='';
+ for(;;){t=JSON.stringify(o);if(t.length<=1500000||ks.length<=7)break;delete o[ks.shift()]}
+ while(ks.length>150){delete o[ks.shift()]}
+ try{localStorage.setItem(RCK+n,JSON.stringify(o))}catch(e){try{localStorage.removeItem(RCK+n)}catch(_){}}}
+function rcClear(n,f,t){const c=rcGet(n);dayList(f,t).forEach(d=>delete c[d])}
+async function rcFetch(n,col,f,t,pack){const c=rcGet(n),days=dayList(f,t),out={},need=d=>d>=D||!c[d];let reads=0,i=0;
+ while(i<days.length){if(!need(days[i])){i++;continue}
+  let j=i;while(j+1<days.length&&need(days[j+1]))j++;
+  const q=await db.collection(col).where('day','>=',days[i]).where('day','<=',days[j]).get(),g={};
+  q.docs.forEach(d=>{const x=d.data(),k=pack(x,d.id);if(k)(g[x.day]=g[x.day]||[]).push(k)});reads+=q.docs.length;
+  for(let k=i;k<=j;k++){const d=days[k];out[d]=g[d]||[];if(d<D)c[d]=out[d]}
+  i=j+1}
+ if(reads)rcSave(n);
+ const rows=[];days.forEach(d=>(out[d]||c[d]||[]).forEach(x=>rows.push([d,x])));return{rows,reads}}
+const rpEst=(n,per)=>{const c=rcGet(n),r=S.rp;return dayList(r.from,r.to).filter(d=>d>=D||!c[d]).length*per};
+/* Venta compacta (se omiten los apartados sin entregar): [sucursal,sabor,cant,precio,tipo,hora,vendedor,pedido,regresa,motivo] */
+const spk=(d,id)=>d.type=='apartado'?null:[d.branch,d.f,d.qty,d.price,d.type=='devolucion'?'d':'v',d.ts,d.by||'',d.order||d.pre||d.req||id,d.restock?1:0,d.type=='devolucion'?(d.reason||''):''];
+const sup=([day,a])=>({day,branch:a[0],f:a[1],qty:a[2],price:a[3],type:a[4]=='d'?'devolucion':'vendido',ts:a[5],by:a[6],order:a[7],restock:a[8]==1,reason:a[9]});
+async function rpRun(force){const r=S.rp||{};if(!r.from||!r.to||r.from>r.to)return toast('Revisa las fechas');if(r.to>D)r.to=D;
+ const len=dayDiff(r.from,r.to)+1;if(len>92)return toast('Máximo 3 meses por consulta');
+ const f=r.from,t=r.to,keep=rpKeep(),pf=dayAdd(f,-len),pt=dayAdd(f,-1);
+ if(force===1)rcClear('sales',keep.cmp?pf:f,t);
+ S.rp={...keep,from:f,to:t,rows:null,busy:true};render(true);
+ try{const a=await rcFetch('sales','sales',f,t,spk);let reads=a.reads,prev=null;
+  if(keep.cmp){const b=await rcFetch('sales','sales',pf,pt,spk);reads+=b.reads;prev=b.rows.map(sup)}
+  S.rp={...keep,from:f,to:t,busy:false,reads,stamp:Date.now(),rows:a.rows.map(sup),prev,pf,pt}}
+ catch(e){S.rp={...keep,from:f,to:t,rows:null};err(e)}render(true)}
+/* ===== Reportes con gráficas y utilidad (costo por sabor opcional, se captura en Ajustes) ===== */
+const cst=f=>f>=100?0:+((S.cfg.costs||{})['f'+f])||0;
+const BCCSS='.bc{display:grid;grid-template-columns:minmax(5rem,9rem) 1fr auto;gap:8px;align-items:center;margin:6px 0;font-size:14px}.bc i{display:block;height:16px;border-radius:8px;background:var(--ac);min-width:2px}.bc i.u{background:var(--go)}.bc b{white-space:nowrap}';
+function rpAgg(rows,kf){const m={};rows.forEach(s=>{const k=kf(s),x=m[k]=m[k]||{u:0,a:0,c:0},q=nz(s.qty);if(s.type=='devolucion'){x.u-=q;x.a-=q*nz(s.price);if(s.restock)x.c-=q*cst(s.f)}else{x.u+=q;x.a+=q*nz(s.price);x.c+=q*cst(s.f)}});return Object.entries(m)}
+const bars=(l,val,ut)=>{const tot=l.reduce((a,x)=>a+Math.max(0,val(x)),0)||1,mx=Math.max(...l.map(val));return `<div class="wrap"><table><tr><th></th><th>Ventas</th><th>% del total</th>${ut?'<th>Utilidad</th>':''}</tr>${l.map(x=>`<tr><td>${esc(x[0])}${val(x)==mx&&l.length>1?' ⭐':''}</td><td>${money(val(x))}</td><td>${Math.round(Math.max(0,val(x))/tot*100)}%</td>${ut?`<td>${money(ut(x))}</td>`:''}</tr>`).join('')}</table></div>`};
+function rpCharts(rows){if(!F.some((_,f)=>cst(f)>0))return '';const ut=x=>x[1].a-x[1].c,fl=rpAgg(rows,s=>s.f).map(([k,x])=>[nm(+k)+' ('+x.u+' pzas)',x]).sort((a,b)=>ut(b)-ut(a));
+ return `<div class="card"><h3>Utilidad por sabor</h3>${bars(fl,x=>x[1].a,ut)}<small>El champurrado no tiene costo registrado.</small></div>`}
+function rpHtml(){const r=S.rp;if(!r||!r.rows)return;const rows=rpF(r.rows),prev=r.cmp&&r.prev?rpF(r.prev):null;if(!rows.length)return toast('No hay ventas para descargar');
+ const css=':root{--ac:#b8321f;--go:#1f7a4d;--bd:#e9dcc6;--mut:#86725e}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font:15px/1.4 system-ui,sans-serif;max-width:760px;margin:0 auto;padding:16px;color:#2a1f17}.card{border:1px solid var(--bd);border-radius:14px;padding:12px;margin:12px 0;break-inside:avoid}h1,h3{margin:0 0 8px}small{color:var(--mut)}.kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}.kg div{border:1px solid var(--bd);border-radius:12px;padding:10px}.kg b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:right}td:first-child,th:first-child{text-align:left}.wrap{overflow-x:auto}.how{font-size:13px;color:var(--mut);margin:8px 0 0}h2{margin:22px 0 4px}small.ok,td.ok{color:#1f7a4d}small.bad,td.bad,b.bad{color:#c2261a}small.low,td.low,b.low{color:#b7791f}',
+ sc=rpScope(),
+ h=`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reporte ${esc(r.from)} a ${esc(r.to)}</title><style>${css}</style><h1>🫔 Reporte de ventas</h1><small>${esc(r.from)} al ${esc(r.to)}${sc?' · '+esc(sc):''}</small>${rpTxt(rows)}${rpKpi(rows)}${prev?rpCmp(rows,prev):''}<h2>📊 Gráficos</h2>${rpGraf(rows)}<h2>📋 Detalle en tablas</h2>${rpCharts(rows)}${rpSell(rows)}${rpMore(rows)}${rpMermaHtml(r)}${rpControlHtml(r)}<script>${TIPJS}<\/script></html>`,
+ a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h],{type:'text/html'}));a.download='reporte_'+r.from+'_'+r.to+'.html';a.click()}
+/* ===== Estadísticas: resumen corto en la app; detalle y gráficas solo en el reporte descargable ===== */
+const fdd=d=>{const t=new Date(d+'T12:00:00');return isNaN(t)?esc(d):t.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'})};
+const okey=s=>s.order||s.pre||s.req||s._id;
+function rpS(rows){const ve=rows.filter(s=>s.type=='vendido'),de=rows.filter(s=>s.type=='devolucion'),oc={},H={};
+ ve.forEach(s=>{const v=nz(s.qty)*nz(s.price),k=okey(s),h=new Date(s.ts).getHours();oc[k]=(oc[k]||0)+v;const x=H[h]=H[h]||{u:0,a:0};x.u+=nz(s.qty);x.a+=v});
+ const n=Object.keys(oc).length,gross=ve.reduce((a,s)=>a+nz(s.qty)*nz(s.price),0),units=ve.reduce((a,s)=>a+nz(s.qty),0),dy=rpAgg(rows,s=>s.day).sort((a,b)=>b[1].a-a[1].a),
+ fl=rpAgg(rows,s=>s.f).sort((a,b)=>b[1].a-a[1].a),dr=de.reduce((a,s)=>a+nz(s.qty)*nz(s.price),0),net=rows.reduce((a,s)=>a+(s.type=='devolucion'?-1:1)*nz(s.qty)*nz(s.price),0);
+ return{V:ve,D:de,H,n,gross,units,dy,fl,dr,net,tk:n?gross/n:0,pp:n?units/n:0,dp:gross?dr/gross*100:0,avg:dy.length?net/dy.length:0,ut:fl.reduce((t,[k,v])=>t+v.a-v.c,0)}}
+function rpBrief(rows){const x=rpS(rows);if(!x.n)return '';const ph=Object.entries(x.H).sort((a,b)=>b[1].a-a[1].a)[0],t=x.fl[0],bd=x.dy[0];
+ const L=[['Pedidos',x.n],['Ticket promedio',money(x.tk)],['Piezas por pedido',x.pp.toFixed(1)],['Hora pico',ph[0]+':00 h'],['Mejor día',bd?fdd(bd[0])+' · '+money(bd[1].a):'—'],['Sabor estrella',t?nm(+t[0])+' · '+t[1].u+' pzas':'—'],['Devoluciones',x.dp.toFixed(1)+'% de lo vendido']];
+ return `<div class="card"><h3>Lo importante</h3>${L.map(([a,b])=>`<div class="row"><div>${a}</div><b>${b}</b></div>`).join('')}<small>Descarga el reporte para ver gráficas y el detalle completo.</small></div>`}
+function rpKpi(rows){const x=rpS(rows),hc=F.some((_,f)=>cst(f)>0),L=[['Total neto',money(x.net)]];if(hc)L.push(['Utilidad estimada',money(x.ut)+' · '+(x.net?Math.round(x.ut/x.net*100):0)+'%']);
+ L.push(['Pedidos',x.n],['Ticket promedio',money(x.tk)],['Piezas por pedido',x.pp.toFixed(1)],['Promedio por día',money(x.avg)],['Devoluciones',money(x.dr)+' · '+x.dp.toFixed(1)+'%']);
+ return `<div class="kg">${L.map(([a,b])=>`<div><small>${a}</small><b>${b}</b></div>`).join('')}</div>`}
+function rpMore(rows){const x=rpS(rows),V=x.V,tot=x.net||1,pc=l=>l,
+ cat=pc(rpAgg(rows,s=>s.f>=100?'Bebidas':isD(s.f)?'Dulces':'Salados').sort((a,b)=>b[1].a-a[1].a)),
+ hr=Object.entries(x.H).sort((a,b)=>a[0]-b[0]).map(([h,v])=>[h+':00',v]),
+ W={};x.dy.forEach(([d,v])=>{const w=new Date(d+'T12:00:00').getDay(),o=W[w]=W[w]||{a:0,n:0};o.a+=v.a;o.n++});
+ const wd=Object.entries(W).sort((a,b)=>(+a[0]+6)%7-(+b[0]+6)%7).map(([w,o])=>[['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][w]+' ('+o.n+')',{a:o.a/o.n}]),
+ bt=brs().map((n,i)=>{const v=V.filter(s=>s.branch==i);if(!v.length)return null;const o={};v.forEach(s=>{o[okey(s)]=(o[okey(s)]||0)+nz(s.qty)*nz(s.price)});const a=Object.values(o).reduce((p,c)=>p+c,0);return[n,Object.keys(o).length,a]}).filter(Boolean),
+ ga=bt.reduce((t,r)=>t+r[2],0)||1,mb=[...new Set(V.map(s=>s.branch))].sort(),m={};V.forEach(s=>{const k=s.f+'|'+s.branch;m[k]=(m[k]||0)+nz(s.qty)});
+ const fr=[...new Set(V.map(s=>s.f))].sort((a,b)=>a-b).map(f=>[f,mb.map(b=>m[f+'|'+b]||0)]),mx=Math.max(1,...fr.flatMap(r=>r[1])),
+ sold=new Set(V.map(s=>s.f)),idle=F.map((n,f)=>sold.has(f)?null:n).filter(Boolean),rs={};x.D.forEach(s=>{const k=(s.reason||'Sin motivo').split(':')[0];rs[k]=(rs[k]||0)+nz(s.qty)});
+ const T=(h,b)=>`<div class="wrap"><table><tr>${h.map(c=>`<th>${c}</th>`).join('')}</tr>${b}</table></div>`;
+ return `<div class="card"><h3>Pedidos por sucursal</h3>${T(['Sucursal','Pedidos','Ticket prom.','% del total'],bt.map(r=>`<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${money(r[2]/r[1])}</td><td>${Math.round(r[2]/ga*100)}%</td></tr>`).join(''))}</div>`
+ +`<div class="card"><h3>Ventas por categoría</h3>${bars(cat,x=>x[1].a)}</div><div class="card"><h3>Ventas por hora</h3>${bars(hr,x=>x[1].a)}</div><div class="card"><h3>Promedio por día de la semana</h3><small>Entre paréntesis, cuántos días hubo en el periodo</small>${bars(wd,x=>x[1].a)}</div>`
+ +`<div class="card"><h3>Piezas por sabor y sucursal</h3>${T(['Sabor',...mb.map(b=>esc(brs()[b]||b)),'Total'],fr.map(([f,r])=>`<tr><td>${nm(f)}</td>${r.map(u=>`<td style="background:rgba(184,50,31,${(u/mx*.55).toFixed(2)})">${u}</td>`).join('')}<td><b>${r.reduce((a,c)=>a+c,0)}</b></td></tr>`).join(''))}</div>`
+ +`<div class="card"><h3>Sin ventas en el periodo</h3><small>${idle.length?esc(idle.join(', ')):'Todos los sabores tuvieron ventas.'}</small></div>`
+ +`<div class="card"><h3>Devoluciones por motivo</h3><small>${Object.keys(rs).length?Object.entries(rs).sort((a,b)=>b[1]-a[1]).map(([k,v])=>esc(k)+': '+v+' pzas').join(' · '):'Sin devoluciones.'}</small></div>`}
+function rpTxt(rows){const x=rpS(rows),r=S.rp;if(!x.n)return '<div class="card"><b>No hubo ventas en este periodo.</b></div>';
+ const t=x.fl[0],w=x.fl[x.fl.length-1],ph=Object.entries(x.H).sort((a,b)=>b[1].a-a[1].a)[0],bd=x.dy[0],
+ bb=brs().map((n,i)=>[n,rows.filter(s=>s.branch==i).reduce((a,s)=>a+(s.type=='devolucion'?-1:1)*nz(s.qty)*nz(s.price),0)]).sort((a,b)=>b[1]-a[1])[0],
+ L=[`Del ${fdd(r.from)} al ${fdd(r.to)} vendiste <b>${money(x.net)}</b> en <b>${x.n} pedidos</b>; cada pedido fue de ${money(x.tk)} en promedio (${x.pp.toFixed(1)} piezas).`,
+ `Tu sabor más vendido fue <b>${nm(+t[0])}</b> (${t[1].u} piezas)${w&&w!==t?` y el que menos se vendió fue <b>${nm(+w[0])}</b> (${w[1].u}).`:'.'}`,
+ bb&&bb[1]>0?`La sucursal que más vendió fue <b>${esc(bb[0])}</b> con ${money(bb[1])}.`:'',
+ `Vendes más entre las <b>${ph[0]}:00 y las ${+ph[0]+1}:00 h</b>.`,
+ bd?`Tu mejor día fue <b>${fdd(bd[0])}</b> con ${money(bd[1].a)}.`:'',
+ x.dr>0?`Hubo devoluciones por ${money(x.dr)} (${x.dp.toFixed(1)}% de lo vendido).`:'No hubo devoluciones.'];
+ return `<div class="card"><h3>Resumen en palabras</h3>${L.filter(Boolean).map(l=>`<p style="margin:6px 0">${l}</p>`).join('')}</div>`}
+/* ===== Gráficos del reporte (SVG propio, sin librerías) con su lectura en palabras ===== */
+const GST='<style>.hv{fill:#b8321f;fill-opacity:0;cursor:pointer}.hv:hover,.hv:active{fill-opacity:.1}.hs{cursor:pointer}.hs:hover,.hs:active{opacity:.78}</style>';
+const PAL=['#b8321f','#e08a2c','#1f7a4d','#2f6f9f','#7a4b9c','#c9a227','#8a6d5a'],svgW=(h,b)=>`<svg viewBox="0 0 640 ${h}" style="width:100%;height:auto" role="img">${GST}${b}</svg>`;
+const mk=v=>{v=Math.round(v);const a=Math.abs(v);return '$'+(a>=10000?Math.round(v/1000)+'k':a>=1000?(v/1000).toFixed(1).replace(/\.0$/,'')+'k':v)},ta=t=>'data-tip="'+esc(t)+'"';
+/* Globo de información al pasar el mouse o tocar (sirve igual dentro de la app y en el reporte descargado) */
+const TIPJS="(function(){var t=document.createElement('div');t.style.cssText='position:fixed;z-index:99;pointer-events:none;background:#2a1f17;color:#fff;font:600 12px/1.4 system-ui,sans-serif;padding:7px 10px;border-radius:8px;max-width:230px;display:none;box-shadow:0 4px 14px #0005;white-space:pre-line';document.body.appendChild(t);function f(e){var x=e.target.closest&&e.target.closest('[data-tip]');if(!x){t.style.display='none';return}t.textContent=x.getAttribute('data-tip');t.style.display='block';var w=t.offsetWidth,h=t.offsetHeight,l=Math.min(innerWidth-w-6,Math.max(6,e.clientX-w/2)),p=e.clientY-h-14;if(p<6)p=e.clientY+18;t.style.left=l+'px';t.style.top=p+'px'}['pointermove','pointerdown'].forEach(function(n){document.addEventListener(n,f)});addEventListener('scroll',function(){t.style.display='none'},true)})();";
+try{new Function(TIPJS)()}catch(e){console.warn('tip',e)}
+function gLine(p){const W=640,H=230,L=56,R=14,T=26,B=28,mx=Math.max(1,...p.map(x=>x[1])),mn=Math.min(...p.map(x=>x[1])),X=i=>L+i*(W-L-R)/(p.length-1),Y=v=>T+(H-T-B)*(1-Math.max(0,v)/mx),av=p.reduce((a,x)=>a+x[1],0)/p.length,pts=p.map((x,i)=>X(i)+','+Y(x[1])).join(' '),st=Math.ceil(p.length/8),bw=(W-L-R)/(p.length-1),all=p.length<=10,im=p.findIndex(x=>x[1]==mx),il=p.findIndex(x=>x[1]==mn);
+ const grid=[0,.5,1].map(f=>`<line x1="${L}" x2="${W-R}" y1="${Y(mx*f)}" y2="${Y(mx*f)}" stroke="#d9c8ad" stroke-opacity="${f?.45:1}"/><text x="${L-6}" y="${Y(mx*f)+4}" text-anchor="end" font-size="11" fill="#86725e">${mk(mx*f)}</text>`).join('');
+ return svgW(H,`${grid}<line x1="${L}" x2="${W-R}" y1="${Y(av)}" y2="${Y(av)}" stroke="#86725e" stroke-dasharray="5 4"/><text x="${W-R}" y="${Y(av)-5}" text-anchor="end" font-size="11" fill="#86725e">prom. ${mk(av)}</text><polygon points="${L},${Y(0)} ${pts} ${X(p.length-1)},${Y(0)}" fill="#b8321f22"/><polyline points="${pts}" fill="none" stroke="#b8321f" stroke-width="3" stroke-linejoin="round"/>${p.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x[1])}" r="${i==im?5.5:4}" fill="#b8321f"/>${i%st==0||i==p.length-1&&p.length<=8?`<text x="${X(i)}" y="${H-8}" text-anchor="${i==p.length-1?'end':i==0?'start':'middle'}" font-size="11" fill="#86725e">${esc(x[0])}</text>`:''}${all||i==im||i==il?`<text x="${X(i)}" y="${Y(x[1])-9}" text-anchor="${i==0?'start':i==p.length-1?'end':'middle'}" font-size="11" font-weight="700" fill="${i==im?'#b8321f':'currentColor'}">${mk(x[1])}</text>`:''}`).join('')}${p.map((x,i)=>`<rect class="hv" x="${X(i)-bw/2}" y="${T-8}" width="${bw}" height="${H-T-B+8}" ${ta(x[2]||x[0]+'\n'+money(x[1]))}/>`).join('')}`)}
+function gCols(p){const W=640,H=230,L=10,B=28,T=26,mx=Math.max(1,...p.map(x=>x[1])),bw=(W-L*2)/p.length,top=p.findIndex(x=>x[1]==mx),fs=p.length>12?10:12;
+ return svgW(H,`<line x1="${L}" x2="${W-L}" y1="${H-B}" y2="${H-B}" stroke="#d9c8ad"/>`+p.map((x,i)=>{const h=(H-T-B)*Math.max(0,x[1])/mx,cx=L+i*bw+bw/2;return `<rect x="${cx-bw*.35}" y="${H-B-h}" width="${bw*.7}" height="${h}" rx="4" fill="${i==top?'#b8321f':'#e0b9a8'}"/><text x="${cx}" y="${H-8}" text-anchor="middle" font-size="11" fill="#86725e">${esc(x[0])}</text>${x[1]>0?`<text x="${cx}" y="${H-B-h-5}" text-anchor="middle" font-size="${fs}" font-weight="${i==top?700:600}" fill="${i==top?'#b8321f':'currentColor'}">${mk(x[1])}</text>`:''}<rect class="hv" x="${cx-bw/2}" y="${T-8}" width="${bw}" height="${H-T-B+8}" ${ta(x[2]||x[0]+'\n'+money(x[1]))}/>`}).join(''))}
+function gDonut(it){const t=it.reduce((a,x)=>a+Math.max(0,x[1]),0)||1;let a0=-Math.PI/2;const R=88,r=54,P=(a,q)=>(100+q*Math.cos(a))+' '+(100+q*Math.sin(a)),
+ arcs=it.map((x,i)=>{const f=Math.max(0,x[1])/t,a1=a0+f*2*Math.PI,c=PAL[i%PAL.length],tp=ta(x[0]+'\n'+money(x[1])+' · '+Math.round(f*100)+'%'+(x[2]?'\n'+x[2]:''));let d;if(f>=.9999)d=`<circle class="hs" cx="100" cy="100" r="71" fill="none" stroke="${c}" stroke-width="34" ${tp}/>`;else d=`<path class="hs" d="M${P(a0,R)}A${R} ${R} 0 ${f>.5?1:0} 1 ${P(a1,R)}L${P(a1,r)}A${r} ${r} 0 ${f>.5?1:0} 0 ${P(a0,r)}Z" fill="${c}" ${tp}/>`;a0=a1;return d}).join('');
+ return `<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><svg viewBox="0 0 200 200" style="width:190px;height:190px" role="img">${GST}${arcs}<text x="100" y="98" text-anchor="middle" font-size="11" fill="#86725e" pointer-events="none">total</text><text x="100" y="114" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor" pointer-events="none">${money(Math.round(t))}</text></svg><div style="flex:1;min-width:190px">${it.map((x,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:5px 0"><i style="width:12px;height:12px;border-radius:3px;background:${PAL[i%PAL.length]}"></i><span style="flex:1">${esc(x[0])}<br><small>${money(Math.round(x[1]))}${x[2]?' · '+esc(x[2]):''}</small></span><b>${Math.round(Math.max(0,x[1])/t*100)}%</b></div>`).join('')}</div></div>`}
+function rpGraf(rows){const x=rpS(rows);if(!x.n)return '';const card=(t,svg,txt)=>`<div class="card"><h3>${t}</h3>${svg}<p class="how"><b>Cómo leerlo:</b> ${txt} Pasa el mouse (o toca) sobre cada punto, columna o color para ver el detalle.</p></div>`,out=[],days=[...x.dy].sort((a,b)=>a[0]<b[0]?-1:1),pc=(v,t)=>Math.round(v/(t||1)*100),
+ od={},oh={};x.V.forEach(s=>{const k=okey(s),h=new Date(s.ts).getHours();(od[s.day]=od[s.day]||new Set()).add(k);(oh[h]=oh[h]||new Set()).add(k)});
+ if(days.length>1){const v=days.map(d=>d[1].a),h=Math.floor(v.length/2),a1=v.slice(0,h).reduce((p,c)=>p+c,0)/h,a2=v.slice(h).reduce((p,c)=>p+c,0)/(v.length-h),ch=a1?Math.round((a2/a1-1)*100):0,bd=x.dy[0],wd=x.dy[x.dy.length-1];
+  out.push(card('Ventas por día',gLine(days.map(([d,o])=>{const c=x.avg?Math.round((o.a/x.avg-1)*100):0;return [d.slice(8)+'/'+d.slice(5,7),o.a,fdd(d)+'\nVentas: '+money(o.a)+'\n'+((od[d]||{size:0}).size)+' pedidos · '+o.u+' piezas\n'+pc(o.a,x.net)+'% del total del periodo\n'+(Math.abs(c)<1?'Igual a tu promedio':(c>0?'▲ ':'▼ ')+Math.abs(c)+'% vs tu promedio')]})),`la línea punteada es tu promedio (${money(Math.round(x.avg))} al día). Mejor día: ${fdd(bd[0])} (${money(bd[1].a)}). Día más bajo: ${fdd(wd[0])} (${money(wd[1].a)}). ${Math.abs(ch)<5?'Las ventas se mantienen estables.':ch>0?`La segunda mitad del periodo vendió ${ch}% más que la primera.`:`La segunda mitad del periodo vendió ${-ch}% menos que la primera.`}`))}
+ const hs=Object.keys(x.H).map(Number),h0=Math.min(...hs),h1=Math.max(...hs),hp=[];for(let h=h0;h<=h1;h++){const o=x.H[h]||{a:0,u:0};hp.push([h+'h',o.a,h+':00 a '+(h+1)+':00 h\nVentas: '+money(o.a)+'\n'+((oh[h]||{size:0}).size)+' pedidos · '+o.u+' piezas\n'+pc(o.a,x.gross)+'% del total vendido'])}
+ if(hp.length>1){const pk=hp.reduce((m,c)=>c[1]>m[1]?c:m),sm=hp.map((_,i)=>hp.slice(i,i+3).reduce((a,c)=>a+c[1],0)),bi=sm.indexOf(Math.max(...sm));
+  out.push(card('Ventas por hora',gCols(hp),`la columna roja es tu hora más fuerte (${pk[0]}, ${money(pk[1])}). Entre las ${h0+bi}:00 y las ${h0+bi+3}:00 h ocurre el ${pc(sm[bi],x.gross)}% de lo que vendes: ahí conviene tener todo listo.`))}
+ const W={};x.dy.forEach(([d,o])=>{const w=new Date(d+'T12:00:00').getDay(),q=W[w]=W[w]||{a:0,n:0};q.a+=o.a;q.n++});
+ if(Object.keys(W).length>1){const N=['domingos','lunes','martes','miércoles','jueves','viernes','sábados'],wk=[1,2,3,4,5,6,0].filter(w=>W[w]).map(w=>[N[w].slice(0,3),W[w].a/W[w].n,N[w][0].toUpperCase()+N[w].slice(1)+'\nPromedio por día: '+money(Math.round(W[w].a/W[w].n))+'\nTotal: '+money(W[w].a)+' en '+W[w].n+(W[w].n==1?' día':' días'),w]),bw=wk.reduce((m,c)=>c[1]>m[1]?c:m),lw=wk.reduce((m,c)=>c[1]<m[1]?c:m);
+  out.push(card('Promedio por día de la semana',gCols(wk),`cada columna es lo que vendes en promedio ese día. Los ${N[bw[3]]} son tus mejores días (${money(Math.round(bw[1]))}) y los ${N[lw[3]]} los más flojos (${money(Math.round(lw[1]))}).`))}
+ const bt=brs().map((n,i)=>{const l=rows.filter(s=>s.branch==i),V=l.filter(s=>s.type=='vendido'),o=new Set(V.map(okey)).size;return [n,l.reduce((a,s)=>a+(s.type=='devolucion'?-1:1)*nz(s.qty)*nz(s.price),0),o+' pedidos']}).filter(q=>q[1]>0).sort((a,b)=>b[1]-a[1]),bsum=bt.reduce((a,q)=>a+q[1],0);
+ if(bt.length>1)out.push(card('Qué sucursal vende más',gDonut(bt),`el círculo es el 100% de tus ventas. ${esc(bt[0][0])} aporta ${pc(bt[0][1],bsum)}% y ${esc(bt[bt.length-1][0])} el ${pc(bt[bt.length-1][1],bsum)}%.`));
+ const fl=x.fl.filter(q=>q[1].a>0).map(([k,v])=>[nm(+k),v.a,v.u+' piezas']),fs=fl.reduce((a,q)=>a+q[1],0),top=fl.slice(0,6),ot=fl.slice(6).reduce((a,q)=>a+q[1],0);if(ot>0)top.push(['Otros ('+(fl.length-6)+' sabores)',ot,fl.slice(6).reduce((a,q)=>a+parseInt(q[2]),0)+' piezas']);
+ if(fl.length>1)out.push(card('Qué sabores dejan más dinero',gDonut(top),`tus 3 sabores más vendidos suman el ${pc(fl.slice(0,3).reduce((a,q)=>a+q[1],0),fs)}% de las ventas. ${esc(fl[0][0])} va a la cabeza.`));
+ const ct=rpAgg(rows,s=>s.f>=100?'Bebidas':isD(s.f)?'Dulces':'Salados').map(([k,v])=>[k,v.a,v.u+' piezas']).filter(q=>q[1]>0).sort((a,b)=>b[1]-a[1]),cs=ct.reduce((a,q)=>a+q[1],0);
+ if(ct.length>1)out.push(card('Salados, dulces y bebidas',gDonut(ct),`${esc(ct[0][0])} es lo que más pesa en tus ventas (${pc(ct[0][1],cs)}%).`));
+ return out.join('')||'<div class="card"><small>No hay suficientes datos para graficar. Elige un periodo más largo.</small></div>'}
+function rpCsv(det){const r=S.rp;if(!r||!r.rows)return;const rows=rpF(r.rows),q=v=>'"'+String(v).replace(/"/g,'""')+'"';let t;
+ if(det)t='﻿dia,hora,sucursal,vendedor,producto,tipo,cantidad,precio,importe,pedido\n'+rows.slice().sort((a,b)=>a.ts-b.ts).map(s=>[s.day,hm(s.ts),brs()[s.branch]||s.branch,s.by,nm(s.f),s.type,s.qty,s.price,(s.type=='devolucion'?-1:1)*s.qty*s.price,s.order].map(q).join(',')).join('\n');
+ else{const m={};rows.forEach(s=>{const k=[s.day,brs()[s.branch]||s.branch,nm(s.f)].join('|'),x=m[k]=m[k]||{u:0,a:0},g=s.type=='devolucion'?-1:1;x.u+=g*s.qty;x.a+=g*s.qty*s.price});
+  t='﻿dia,sucursal,producto,unidades,importe\n'+Object.entries(m).sort().map(([k,x])=>k.split('|').map(q).join(',')+','+x.u+','+x.a).join('\n')}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download=(det?'detalle_':'ventas_')+r.from+'_'+r.to+'.csv';a.click()}
+/* ===== Comparativo, vendedores, merma y control: todo se calcula en el celular con lo ya descargado ===== */
+const dlt=(c,p,inv)=>{if(p==null)return '';if(!p)return c?'<small class="mut">antes: sin ventas</small>':'';const x=(c/p-1)*100;if(Math.abs(x)<.5)return '<small class="mut">= igual</small>';const up=x>0;return `<small class="${(inv?!up:up)?'ok':'bad'}">${up?'▲':'▼'} ${Math.abs(Math.round(x))}%</small>`};
+function rpCmp(rows,prev){const r=S.rp,a=rpS(rows),b=rpS(prev);
+ const L=[['Total neto',money(a.net),money(b.net),dlt(a.net,b.net)],['Pedidos',a.n,b.n,dlt(a.n,b.n)],['Ticket promedio',money(a.tk),money(b.tk),dlt(a.tk,b.tk)],['Piezas por pedido',a.pp.toFixed(1),b.pp.toFixed(1),dlt(a.pp,b.pp)],['Promedio por día',money(a.avg),money(b.avg),dlt(a.avg,b.avg)],['Devoluciones',money(a.dr),money(b.dr),dlt(a.dr,b.dr,1)]];
+ return `<div class="card"><h3>Contra el periodo anterior</h3><small>Antes: ${fdd(r.pf)} al ${fdd(r.pt)}</small><div class="wrap"><table><tr><th></th><th>Ahora</th><th>Antes</th><th>Cambio</th></tr>${L.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td><td>${x[3]}</td></tr>`).join('')}</table></div></div>`}
+function rpSell(rows){const m={},un=u=>(S.users.find(x=>x.user==u)||{}).name||u||'—';
+ rows.forEach(s=>{const x=m[s.by]=m[s.by]||{a:0,d:0,o:{}},v=nz(s.qty)*nz(s.price);if(s.type=='devolucion')x.d+=v;else{x.a+=v;x.o[okey(s)]=1}});
+ const l=Object.entries(m).map(([u,x])=>{const o=Object.keys(x.o).length;return{n:un(u),net:x.a-x.d,o,tk:o?x.a/o:0,dp:x.a?x.d/x.a*100:0}}).sort((a,b)=>b.net-a.net);if(!l.length)return '';
+ return `<div class="card"><h3>Ventas por vendedor</h3><div class="wrap"><table><tr><th>Vendedor</th><th>Neto</th><th>Pedidos</th><th>Ticket</th><th>Devol.</th></tr>${l.map((x,i)=>`<tr><td>${esc(x.n)}${i==0&&l.length>1?' ⭐':''}</td><td>${money(x.net)}</td><td>${x.o}</td><td>${money(x.tk)}</td><td${x.dp>=8?' class="bad"':''}>${x.dp.toFixed(1)}%</td></tr>`).join('')}</table></div><small>Devol. es el % de lo vendido que se devolvió${l.some(x=>x.dp>=8)?'; en rojo, 8% o más: conviene revisar':''}.</small></div>`}
+/* Merma y sobrantes: compara lo cargado con lo vendido. Lee las cargas del periodo (1 documento por sucursal y día) y solo la primera vez */
+const lpk=d=>{const q=d.q||{};return [d.branch,F.map((_,f)=>+q['f'+f]||0),+q.ch||0]};
+async function rpMerma(force){const r=S.rp;if(!r||!r.rows)return;if(force===1)rcClear('loads',r.from,r.to);
+ r.mm={busy:true};render(true);
+ try{const x=await rcFetch('loads','loads',r.from,r.to,lpk);r.mm={rows:x.rows,reads:x.reads}}catch(e){r.mm=null;err(e)}render(true)}
+function rpMermaHtml(r){const m=r.mm;if(!m)return '';if(m.busy)return '<div class="card"><small>Leyendo las cargas del periodo…</small></div>';
+ const ok=b=>r.br==null||b==r.br,ld={},use={};
+ m.rows.forEach(([d,a])=>{if(ok(a[0]))ld[d+'|'+a[0]]=a});
+ r.rows.forEach(s=>{if(!ok(s.branch))return;const k=s.day+'|'+s.branch;if(!ld[k])return;const u=use[k]=use[k]||{};u[s.f]=(u[s.f]||0)+(s.type=='devolucion'?(s.restock?-1:0):1)*nz(s.qty)});
+ const st=F.map(()=>({c:0,u:0,s:0,ag:0,k:0})),ch={c:0,u:0,s:0,ag:0,k:0},dias=new Set();
+ Object.entries(ld).forEach(([k,a])=>{const u=use[k]||{};dias.add(k.split('|')[0]);
+  F.forEach((_,f)=>{const c=a[1][f];if(c<=0)return;const us=Math.max(0,u[f]||0),x=st[f];x.c+=c;x.u+=us;x.s+=Math.max(0,c-us);x.k++;if(us>=c)x.ag++});
+  const lc=a[2];if(lc>0){const us=Math.max(0,CL.reduce((t,v,i)=>t+(u[100+i]||0)*v,0));ch.c+=lc;ch.u+=us;ch.s+=Math.max(0,lc-us);ch.k++;if(us>=lc-1e-9)ch.ag++}});
+ const rows=F.map((n,f)=>({n,f,...st[f]})).filter(x=>x.k&&rpCatOk(r.cat,x.f));
+ if(ch.k&&(r.cat=='t'||r.cat=='b'))rows.push({n:'Champurrado (L)',f:100,L:1,...ch,c:r2(ch.c),u:r2(ch.u),s:r2(ch.s)});
+ const head=`<div class="card"><h3>Merma y sobrantes</h3>`;
+ if(!rows.length)return head+'<small>No hay cargas guardadas en este periodo.</small></div>';
+ rows.forEach(x=>{x.p=x.c?x.s/x.c*100:0;x.a=x.k?x.ag/x.k:0});rows.sort((a,b)=>b.p-a.p);
+ const val=rows.filter(x=>!x.L).reduce((t,x)=>t+x.s*price(x.f),0),cost=rows.filter(x=>!x.L).reduce((t,x)=>t+x.s*cst(x.f),0),
+ baja=rows.filter(x=>x.p>=20&&x.a<.5).map(x=>esc(x.n)),sube=rows.filter(x=>x.a>=.5).map(x=>esc(x.n));
+ return head+`<small>${dias.size} día${dias.size==1?'':'s'} con carga${r.br!=null?' · '+esc(brs()[r.br]):''}</small>
+ <p style="margin:8px 0">Lo que sobró de tamales equivale a <b>${money(Math.round(val))}</b> a precio de venta${cost>0?' (<b>'+money(Math.round(cost))+'</b> de costo)':''}.</p>
+ ${baja.length?`<p style="margin:6px 0">📉 <b>Considera bajar la carga de:</b> ${baja.join(', ')}.</p>`:''}${sube.length?`<p style="margin:6px 0">📈 <b>Se agotan seguido, considera subir:</b> ${sube.join(', ')}.</p>`:''}
+ <div class="wrap"><table><tr><th>Sabor</th><th>Cargado</th><th>Vendido</th><th>Sobró</th><th>% sobró</th><th>Se agotó</th></tr>${rows.map(x=>`<tr><td>${esc(x.n)}</td><td>${x.c}</td><td>${x.u}</td><td>${x.s}</td><td class="${x.p>=35?'bad':x.p>=20?'low':''}">${Math.round(x.p)}%</td><td class="${x.a>=.5?'low':''}">${x.ag}/${x.k} días</td></tr>`).join('')}</table></div>
+ <small>Sobró = cargado − vendido, por día y sucursal. No considera traspasos entre sucursales ni apartados sin entregar, así que es una estimación.</small></div>`}
+/* Cortes de caja y anulaciones por persona (cortes y bitácora del periodo, solo la primera vez) */
+const cpk=d=>[d.branch,d.by||'',d.name||d.by||'',+d.dif||0,+d.entregar||0];
+const gpk=d=>[d.branch==null?-1:d.branch,d.branch2==null?-1:d.branch2,d.by||'',d.byName||d.by||'',+d.amt||0];
+async function rpControl(force){const r=S.rp;if(!r||!r.rows)return;if(force===1){rcClear('cuts',r.from,r.to);rcClear('logs',r.from,r.to)}
+ r.ct={busy:true};render(true);
+ try{const a=await rcFetch('cuts','cuts',r.from,r.to,cpk),b=await rcFetch('logs','logs',r.from,r.to,gpk);r.ct={cuts:a.rows,logs:b.rows,reads:a.reads+b.reads}}catch(e){r.ct=null;err(e)}render(true)}
+function rpControlHtml(r){const m=r.ct;if(!m)return '';if(m.busy)return '<div class="card"><small>Leyendo cortes y anulaciones…</small></div>';
+ const v={},g=(u,n)=>v[u]=v[u]||{n,c:0,dif:0,fal:0,sob:0,ent:0,an:0,am:0};
+ m.cuts.forEach(([d,a])=>{if(r.br!=null&&a[0]!=r.br)return;const x=g(a[1],a[2]);x.c++;x.dif+=a[3];x.ent+=a[4];if(a[3]<0)x.fal++;else if(a[3]>0)x.sob++});
+ m.logs.forEach(([d,a])=>{if(r.br!=null&&a[0]!=r.br&&a[1]!=r.br)return;if(!a[2])return;const x=g(a[2],a[3]);x.an++;x.am+=a[4]});
+ const l=Object.values(v).sort((a,b)=>a.dif-b.dif),head=`<div class="card"><h3>Cortes de caja y anulaciones</h3>`;
+ if(!l.length)return head+'<small>No hay cortes ni anulaciones en este periodo.</small></div>';
+ const rev=l.filter(x=>x.fal>=2||x.an>=5).map(x=>esc(x.n)+(x.fal>=2?' ('+x.fal+' cortes con faltante)':'')+(x.an>=5?' ('+x.an+' anulaciones)':''));
+ return head+`${rev.length?`<p style="margin:6px 0">⚠️ <b>Conviene revisar:</b> ${rev.join(', ')}.</p>`:''}<div class="wrap"><table><tr><th>Persona</th><th>Cortes</th><th>Diferencia</th><th>Faltó</th><th>Sobró</th><th>Entregó</th><th>Anulac.</th></tr>${l.map(x=>`<tr><td>${esc(x.n)}</td><td>${x.c}</td><td class="${x.dif<0?'bad':x.dif>0?'low':''}">${money(r2(x.dif))}</td><td>${x.fal}</td><td>${x.sob}</td><td>${money(x.ent)}</td><td>${x.an?x.an+' · '+money(x.am):'–'}</td></tr>`).join('')}</table></div><small>Diferencia: lo contado menos lo esperado (negativo = faltó dinero). Faltó/Sobró cuentan cuántos cortes salieron así. Anulac.: ventas, apartados o traspasos anulados y cancelados.</small></div>`}
+function rpBody(r){const rows=rpF(r.rows),prev=r.cmp&&r.prev?rpF(r.prev):null;let h='';
+ if(!rows.length)h='<div class="card"><small>No hay ventas con esos filtros en este rango.</small></div>';
+ else{const V=rows.filter(s=>s.type=='vendido'),R=rows.filter(s=>s.type=='devolucion'),tot=rpA(V)-rpA(R),dias=new Set(V.map(s=>s.day)).size||1,pS=prev?rpS(prev):null,
+  grp=f=>{const m={};rows.forEach(s=>{const g=s.type=='devolucion'?-1:1,k=f(s),x=m[k]=m[k]||{u:0,a:0};x.u+=g*s.qty;x.a+=g*s.qty*s.price});return Object.entries(m)},
+  tb=(t,c,l)=>`<div class="card"><h3>${t}</h3><div class="sc"><table><tr><th>${c}</th><th>Unid.</th><th>Importe</th></tr>${l.map(([k,x])=>`<tr><td>${esc(k)}</td><td class="n">${x.u}</td><td class="n">${money(x.a)}</td></tr>`).join('')}</table></div></div>`,
+  fd=x=>new Date(x+'T12:00:00').toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'});
+  h=`<div class="card"><div class="kp"><div><small>Total neto</small><b>${money(tot)}</b>${pS?dlt(tot,pS.net):''}</div><div><small>Promedio por día</small><b>${money(Math.round(tot/dias))}</b>${pS?dlt(tot/dias,pS.avg):''}</div><div><small>Devoluciones</small><b>${money(rpA(R))}</b>${pS?dlt(rpA(R),pS.dr,1):''}</div></div><small>${dias} día${dias>1?'s':''} con ventas${rpScope()?' · '+esc(rpScope()):''}. No cuenta apartados sin entregar ni movimientos anulados.</small><div class="form"><button class="alt" onclick="rpHtml()">⬇ Reporte con gráficas</button><button class="gh" onclick="rpCsv()">CSV</button><button class="gh" onclick="rpCsv(1)">CSV detalle</button></div></div>`
+  +(prev?rpCmp(rows,prev):'')+rpBrief(rows)+(r.gr!==false?rpGraf(rows):'')+rpSell(rows)
+  +tb('Por día','Día',grp(s=>s.day).sort((a,b)=>a[0]<b[0]?1:-1).map(([k,x])=>[fd(k),x]))
+  +tb('Por sucursal','Sucursal',grp(s=>s.branch).sort((a,b)=>b[1].a-a[1].a).map(([k,x])=>[brs()[+k]||'Sucursal '+k,x]))
+  +tb('Por sabor','Sabor',grp(s=>s.f).sort((a,b)=>b[1].u-a[1].u).map(([k,x])=>[nm(+k),x]))}
+ const ld=r.mm&&!r.mm.busy,lc=r.ct&&!r.ct.busy;
+ return h+`<div class="card"><h3>Análisis extra</h3><small>Cada botón lee más documentos de Firebase solo la primera vez; los días cerrados quedan guardados en este dispositivo.</small><div class="form"><button class="alt" onclick="rpMerma(${ld?1:0})">${ld?'↻ ':'📦 '}Merma y sobrantes<br><small>${ld?'volver a leer':'~'+rpEst('loads',BI().length)+' documentos'}</small></button><button class="alt" onclick="rpControl(${lc?1:0})">${lc?'↻ ':'🧾 '}Cortes y anulaciones<br><small>${lc?'volver a leer':'~'+rpEst('cuts',BI().length+2)+' documentos'}</small></button></div></div>`+rpMermaHtml(r)+rpControlHtml(r)}
+function rpView(){const r=S.rp=S.rp||{from:dayAdd(D,-6),to:D,rows:null};let body='';
+ if(r.busy)body='<div class="card"><small>Consultando…</small></div>';
+ else if(r.rows){const k=[r.stamp,r.br,r.cat,r.cmp?1:0,r.gr!==false?1:0,r.mm?(r.mm.busy?'b':'r'+r.mm.reads):'',r.ct?(r.ct.busy?'b':'r'+r.ct.reads):'',S.users.length].join('|');
+  if(r.hk!==k){r.hb=rpBody(r);r.hk=k}body=r.hb}
+ const chip=(on,fn,l)=>`<button class="${on?'on':''}" onclick="${fn}">${l}</button>`;
+ return `<div class="card"><h3>Reportes de ventas</h3><small>Elige el periodo y toca Consultar. Los días ya cerrados se leen de Firebase una sola vez y se guardan en este dispositivo; repetir la consulta casi no gasta.</small>
+ <div class="seg" style="margin:8px 0"><button onclick="rpPreset('hoy')">Hoy</button><button onclick="rpPreset('ayer')">Ayer</button><button onclick="rpRange(7)">7 días</button><button onclick="rpPreset('sem')">Semana pasada</button><button onclick="rpMonth()">Este mes</button><button onclick="rpPreset('mes')">Mes pasado</button></div>
+ <div class="form"><input type="date" id="rpf" aria-label="Desde" value="${r.from}" max="${D}" onchange="rpDate('from',this.value)" style="flex:1"><input type="date" id="rpt" aria-label="Hasta" value="${r.to}" max="${D}" onchange="rpDate('to',this.value)" style="flex:1"></div>
+ <small>Sucursal y categoría solo filtran lo ya descargado.</small>
+ <div class="seg" style="margin:6px 0">${chip(r.br==null,'S.rp.br=null;render(true)','Todas')}${brs().map((n,i)=>!isOpen(i)?'':chip(r.br===i,`S.rp.br=${i};render(true)`,esc(n))).join('')}</div>
+ <div class="seg" style="margin:6px 0">${[['t','Todo'],['s','Salados'],['d','Dulces'],['b','Bebidas']].map(([k,l])=>chip((r.cat||'t')==k,`S.rp.cat='${k}';render(true)`,l)).join('')}</div>
+ <label><input type="checkbox" ${r.cmp?'checked':''} onchange="S.rp.cmp=this.checked;render(true)"> Comparar con el periodo anterior</label>
+ <label><input type="checkbox" ${r.gr!==false?'checked':''} onchange="S.rp.gr=this.checked;render(true)"> Mostrar gráficas aquí</label>
+ ${r.rows&&r.cmp&&!r.prev?'<small class="low">Toca Consultar para traer el periodo anterior.</small>':''}
+ <div class="form"><button class="go" style="flex:1" onclick="rpRun()">Consultar</button>${r.rows?'<button class="gh" aria-label="Volver a leer desde Firebase" onclick="rpRun(1)">↻</button>':''}</div>
+ ${r.rows&&!r.busy?`<small>Lecturas de Firebase en esta consulta: <b>${r.reads}</b>${r.reads?'':' (todo salió de la memoria del dispositivo)'}. El botón ↻ vuelve a leer todo.</small>`:''}</div>${body}`}
+/* ===== Administrador: cambiar el PIN de otro usuario (Cloud Function resetPin) ===== */
+function pinUser(id){const u=S.users.find(x=>x.id==id);if(!u)return;S.pu=id;const m=$('#modal');
+ m.innerHTML=`<div class="card mv pd"><h3>Nuevo PIN de ${esc(u.name)}</h3><small>6 números o más. Dáselo en persona; su sesión actual se cerrará.</small><div class="form"><input id="npn" type="password" inputmode="numeric" placeholder="PIN nuevo" autocomplete="new-password" onkeydown="if(event.key=='Enter')doPinUser()"></div><div class="form"><button class="gh" id="pc">Cancelar</button><button class="go" id="ps" onclick="doPinUser()">Guardar PIN</button></div></div>`;
+ m.style.display='flex';$('#pc').onclick=()=>m.style.display='none';setTimeout(()=>{const e=$('#npn');if(e)e.focus()},150)}
+async function doPinUser(){const p=($('#npn').value||'').trim();if(!/^\d{6,}$/.test(p))return toast('El PIN debe ser solo números, mínimo 6');const b=$('#ps');b.disabled=true;
+ try{await FB.call('resetPin',{uid:S.pu,pin:p});$('#modal').style.display='none';toast('PIN cambiado')}catch(e){b.disabled=false;toast(e.code=='functions/not-found'?'Falta publicar las Cloud Functions':fe(e))}}
+(()=>{const e=document.createElement('div');e.id='sync';e.setAttribute('role','status');e.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 4px);right:8px;z-index:20;background:var(--low);color:#fff;font:700 12px/1 system-ui;padding:6px 10px;border-radius:14px;display:none';document.body.appendChild(e);let t=0;
+ addEventListener('wp',x=>{clearTimeout(t);const n=x.detail;if(!n){e.style.display='none';return}t=setTimeout(()=>{e.textContent=navigator.onLine?'Guardando…':'Sin conexión · '+n+' sin enviar';e.style.display='block'},n&&!navigator.onLine?0:2000)});
+ addEventListener('werr',x=>{const m=$('#modal');m.innerHTML='<div class="card"><h3>⚠️ No se guardó un movimiento</h3><p>'+esc(fe(x.detail))+'</p><small>Se mostró como guardado, pero el servidor lo rechazó. Revisa el historial y vuelve a registrarlo si falta.</small><div class="form"><button id="mk">Entendido</button></div></div>';m.style.display='flex';$('#mk').onclick=()=>m.style.display='none'});
+ document.addEventListener('input',x=>{const t=x.target;if(t.closest&&t.closest('#app')&&t.id!='sq')S.dt=Date.now()});
+ document.addEventListener('click',x=>{if(x.target.closest&&x.target.closest('button'))setTimeout(()=>{S.dt=0})},true)})();
+/* Vaciar: pone toda la carga en 0 (sabores y champurrado); se confirma con "Guardar carga" */
+function vaciarCarga(){const b=curIb();F.forEach((_,f)=>setField(b,'q'+f,0));setField(b,'qch',0);toast('Todo en 0. Toca «Guardar carga» para confirmar')}
+</script><script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,reauthenticateWithCredential,EmailAuthProvider,updatePassword} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,getDoc,getDocs,onSnapshot,addDoc,setDoc,updateDoc,deleteDoc,query,where,writeBatch} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+const cfg={apiKey:"AIzaSyCipjbj_Sy2t5hZYR6a-ctGzP8tUodmpz0",authDomain:"tamalescastro-ca1bf.firebaseapp.com",projectId:"tamalescastro-ca1bf",storageBucket:"tamalescastro-ca1bf.firebasestorage.app",messagingSenderId:"122126152237",appId:"1:122126152237:web:1e5d68e0ee2793aa42fea4"};
+const app=initializeApp(cfg),auth=getAuth(app);
+const fs=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+/* Sin internet las escrituras quedan en el celular y se suben solas: no esperamos la confirmación del servidor, pero sí vemos errores de permisos */
+let np=0;const pb=()=>window.dispatchEvent(new CustomEvent('wp',{detail:np}));
+const W=p=>{np++;pb();let d=0;const r=Promise.race([p,new Promise(x=>setTimeout(x,1500))]);r.then(()=>d=1,()=>d=1);p.then(()=>{np--;pb()},e=>{np--;pb();if(d)window.dispatchEvent(new CustomEvent('werr',{detail:e}))});return r};
+const C=(p,w=[])=>({where:(f,o,v)=>C(p,[...w,where(f,o,v)]),onSnapshot:(n,e)=>onSnapshot(w.length?query(collection(fs,p),...w):collection(fs,p),n,e),add:d=>W(addDoc(collection(fs,p),d)),get:()=>getDocs(w.length?query(collection(fs,p),...w):collection(fs,p))});
+const db={collection:p=>C(p),doc:p=>({set:(d,o)=>W(o?setDoc(doc(fs,p),d,o):setDoc(doc(fs,p),d)),update:d=>W(updateDoc(doc(fs,p),d)),delete:()=>W(deleteDoc(doc(fs,p))),get:()=>getDoc(doc(fs,p)),onSnapshot:(n,e)=>onSnapshot(doc(fs,p),n,e)}),batch:()=>{const b=writeBatch(fs),o={set:(p,d)=>(b.set(doc(fs,p),d),o),delete:p=>(b.delete(doc(fs,p)),o),update:(p,d)=>(b.update(doc(fs,p),d),o),add:(c,d)=>(b.set(doc(collection(fs,c)),d),o),commit:()=>W(b.commit())};return o}};
+let sa;
+window.FB={db,call:(n,d)=>httpsCallable(getFunctions(app),n)(d).then(r=>r.data),
+ login:(e,p)=>signInWithEmailAndPassword(auth,e,p),async changePin(o,n){const u=auth.currentUser;await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,o));await updatePassword(u,n)},logout:()=>signOut(auth),onAuth:f=>onAuthStateChanged(auth,f),
+ initExists:async()=>(await getDoc(doc(fs,'config/init'))).exists(),
+ async bootstrap(e,p,prof){const c=await createUserWithEmailAndPassword(auth,e,p),b=writeBatch(fs);b.set(doc(fs,'users/'+c.user.uid),prof);b.set(doc(fs,'config/init'),{at:Date.now()});await b.commit()},
+ async newUser(e,p,prof){sa=sa||initializeApp(cfg,'sec');const sx=getAuth(sa);try{let c;try{c=await createUserWithEmailAndPassword(sx,e,p)}catch(x){if(x.code!='auth/email-already-in-use')throw x;try{c=await signInWithEmailAndPassword(sx,e,p)}catch(y){throw{code:'old-user'}}}await setDoc(doc(fs,'users/'+c.user.uid),prof)}finally{await signOut(sx)}}};
+</script>
+</body></html>

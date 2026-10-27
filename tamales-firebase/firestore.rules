@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function hasProf() { return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function prof() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function ok() { return hasProf() && prof().active != false; }
+    function adm() { return ok() && prof().role == 'admin'; }
+    function enc() { return ok() && prof().role == 'enc'; }
+    function vend(b) { return ok() && prof().role == 'vend' && prof().branch == b; }
+    // IDs seguros (se usan dentro de atributos onclick) y venta con campos válidos
+    function okId(id) { return id.matches('^[A-Za-z0-9_-]{1,64}$'); }
+    function validSale(d) {
+      return d.qty is int && d.qty > 0 && d.qty < 500
+        && d.price is number && d.price >= 0 && d.price < 10000
+        && d.f is int && d.f >= 0 && d.f < 200
+        && d.type in ['vendido', 'apartado', 'devolucion']
+        && d.by == prof().user;
+    }
+
+    // Marca de que ya existe el primer administrador (se lee sin sesión para mostrar la pantalla de registro inicial)
+    match /config/init {
+      allow get: if true;
+      allow create: if request.auth != null
+        && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    match /config/{doc} {
+      allow read: if ok();
+      allow write: if adm();
+    }
+    match /users/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || adm());
+      allow create: if adm() || (request.auth != null && request.auth.uid == uid
+        && request.resource.data.role == 'admin'
+        && !exists(/databases/$(database)/documents/config/init)
+        && existsAfter(/databases/$(database)/documents/config/init));
+      allow update, delete: if adm();
+    }
+    match /loads/{id} {
+      allow read: if adm() || enc() || vend(resource.data.branch);
+      allow write: if adm();
+    }
+    match /sales/{id} {
+      allow read: if adm() || enc() || vend(resource.data.branch);
+      allow create: if adm() || (okId(id) && vend(request.resource.data.branch) && validSale(request.resource.data));
+      // El vendedor solo puede entregar un apartado (apartado -> vendido); no puede cambiar precio, cantidad ni ventas ya cobradas
+      allow update: if adm() || (vend(resource.data.branch)
+        && resource.data.type == 'apartado' && request.resource.data.type == 'vendido'
+        && request.resource.data.branch == resource.data.branch
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['type', 'by']));
+      // Anular una venta o devolución exige crear en el mismo lote su registro en la bitácora (logs/del_<id>)
+      allow delete: if adm() || (vend(resource.data.branch)
+        && (resource.data.type == 'apartado' || existsAfter(/databases/$(database)/documents/logs/$('del_' + id))));
+    }
+    // Resumen de disponibilidad por sucursal (para apartar en otra sucursal)
+    match /stock/{id} {
+      allow read: if ok();
+      allow write: if adm() || vend(request.resource.data.branch);
+    }
+    // Solicitudes de apartado entre sucursales
+    match /reqs/{id} {
+      allow read: if adm() || vend(resource.data.from) || vend(resource.data.to);
+      allow create: if adm() || (okId(id) && vend(request.resource.data.from) && request.resource.data.status == 'pendiente');
+      allow update: if adm()
+        || (vend(resource.data.to) && (
+              (resource.data.status == 'pendiente' && request.resource.data.status in ['aceptado', 'rechazado'])
+           || (resource.data.status == 'aceptado' && request.resource.data.status in ['entregado', 'cancelado'])))
+        || (vend(resource.data.from) && resource.data.status == 'pendiente' && request.resource.data.status == 'cancelado');
+      allow delete: if adm();
+    }
+    // Cortes de caja: el vendedor crea el suyo (no puede cambiarlo); solo el administrador lo anula
+    match /cuts/{id} {
+      allow read: if adm() || (ok() && resource.data.by == prof().user);
+      allow create: if adm() || (vend(request.resource.data.branch) && request.resource.data.by == prof().user);
+      allow update, delete: if adm();
+    }
+    // Lista pública mínima para la pantalla de perfiles (solo nombre, usuario, rol y activo). La mantiene el administrador.
+    match /profiles/{uid} {
+      allow read: if true;
+      allow write: if adm();
+    }
+    // Apartados por fecha (hoy y otros días). Vendedor: los de su sucursal. Pedidos: puede crear y cancelar los suyos.
+    match /pre/{id} {
+      allow read: if adm() || enc() || vend(resource.data.branch);
+      allow create: if okId(id) && (adm()
+        || (enc() && request.resource.data.by == prof().user && request.resource.data.status == 'pendiente')
+        || (vend(request.resource.data.branch) && request.resource.data.status == 'pendiente'));
+      // Solo se modifica un apartado que sigue pendiente: así dos dispositivos no pueden entregar el mismo apartado
+      allow update: if resource.data.status == 'pendiente' && (adm()
+        || (vend(resource.data.branch) && request.resource.data.branch == resource.data.branch)
+        || (enc() && resource.data.by == prof().user && request.resource.data.status == 'cancelado'));
+      allow delete: if adm();
+    }
+    // Bitácora de anulaciones y cancelaciones (solo el administrador la lee; no se puede editar ni borrar)
+    match /logs/{id} {
+      allow read: if adm();
+      allow create: if adm()
+        || (ok() && request.resource.data.by == prof().user && (prof().role == 'enc' || vend(request.resource.data.branch)));
+    }
+    match /transfers/{id} {
+      allow read: if adm() || enc() || vend(resource.data.from) || vend(resource.data.to);
+      allow create: if adm() || (okId(id) && vend(request.resource.data.from));
+      allow delete: if adm() || (vend(resource.data.from) && existsAfter(/databases/$(database)/documents/logs/$('del_tr_' + id)));
+    }
+  }
+}
