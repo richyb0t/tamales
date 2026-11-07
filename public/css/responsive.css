@@ -1,0 +1,127 @@
+/* ---------- 17 · Ajustes por plataforma y pantallas ---------- */
+/* Teléfono horizontal (altura corta): barra y cobro compactas, sin cabecera fija */
+@media (max-height: 520px) and (orientation: landscape) {
+  .top {
+    position: static;
+  }
+  body::before {
+    display: none;
+  }
+  .nav {
+    padding-block: 2px;
+  }
+  .nav button {
+    min-height: 44px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 6px;
+  }
+  .cart {
+    bottom: calc(68px + var(--safe-b));
+  }
+  .hero {
+    padding-top: 12px;
+  }
+  #gr.stk th {
+    top: 0;
+  }
+}
+/* iPhone (Safari y PWA): el campo de fecha y el buscador usan el aspecto propio; sin menú de «mantener pulsado» en botones */
+@supports (-webkit-touch-callout: none) {
+  button,
+  .fl,
+  .nav,
+  .mi {
+    -webkit-touch-callout: none;
+  }
+  input,
+  select,
+  textarea {
+    -webkit-appearance: none;
+  }
+  input[type='checkbox'] {
+    -webkit-appearance: none;
+  }
+}
+/* Puntero preciso (escritorio y tabletas con ratón): cursor y foco más finos */
+@media (hover: hover) and (pointer: fine) {
+  .fl:hover {
+    box-shadow:
+      var(--sh),
+      0 0 0 1px var(--line);
+  }
+  .fl.sel:hover {
+    box-shadow:
+      var(--sh),
+      0 0 0 2px var(--ac);
+  }
+  .pk button:hover {
+    box-shadow:
+      var(--sh),
+      0 0 0 1px var(--line);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+}
+/* Pantallas anchas: los sabores y el resumen respiran más */
+@media (min-width: 1024px) {
+  .kp b {
+    font-size: 24px;
+  }
+  .ttl {
+    font-size: 30px;
+  }
+}
+/* Pantallas muy angostas (320–360 px) */
+@media (max-width: 380px) {
+  #gr.stk th {
+    font-size: 10.5px;
+    letter-spacing: -0.02em;
+  }
+  .kp b {
+    font-size: 17px;
+  }
+  .kp > div {
+    padding: 8px 4px;
+  }
+  .ttl {
+    font-size: 22px;
+  }
+  .kp.kv b {
+    font-size: 19px;
+  }
+  .ct b {
+    font-size: 24px;
+  }
+  .fl .fn b {
+    font-size: 17px;
+  }
+}
+
+/* ---------- 18 · Accesibilidad de movimiento ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  button:active,
+  .fl:active,
+  .pf button:active .av,
+  .brc:active {
+    transform: none;
+  }
+  .vin > *,
+  .cch .ct b,
+  .cch .fl.sel .st b,
+  #toast,
+  #modal.ent,
+  #modal.ent .card {
+    animation: none;
+  }
+}

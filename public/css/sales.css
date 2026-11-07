@@ -1,0 +1,421 @@
+/* ---------- 12 · Sucursales ---------- */
+.pkh {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 2px 2px 8px;
+}
+.pk {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+.pk.two {
+  grid-template-columns: 1fr 1fr;
+}
+.pk button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--card);
+  color: var(--fg);
+  border-radius: var(--r-tile);
+  box-shadow: var(--sh);
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.15;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.pk button::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--warm);
+  box-shadow: 0 0 0 4px var(--warm-t);
+}
+.pk button::after {
+  content: '\203A';
+  flex: none;
+  margin-left: auto;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--mut);
+}
+.pk button span {
+  min-width: 0;
+}
+.pk button i {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--mut);
+}
+.pk.two button {
+  min-height: 72px;
+  font-size: 16px;
+}
+.pk.two button::after {
+  display: none;
+}
+.pk .pkl {
+  grid-column: 1/-1;
+  background: var(--acf);
+  color: var(--on-ac);
+}
+.pk .pkl::before {
+  background: var(--on-ac);
+  box-shadow: 0 0 0 4px #ffffff33;
+}
+.pk .pkl::after,
+.pk .pkl i {
+  color: var(--on-ac);
+}
+.pkt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding: 11px 14px;
+  border: 1.5px dashed var(--line);
+  border-radius: var(--r-tile);
+  color: var(--mut);
+  font-size: 15px;
+  font-weight: 600;
+}
+.pkt::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.pkt span:last-child {
+  margin-left: auto;
+  font-size: 13px;
+  text-align: right;
+}
+
+/* ---------- 13 · Vender: filtros y tarjetas de sabor ---------- */
+.seg {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.seg::-webkit-scrollbar {
+  display: none;
+}
+.seg button {
+  min-height: 44px;
+  padding: 6px 16px;
+  background: var(--fill);
+  color: var(--fg);
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.seg button.on {
+  background: var(--acf);
+  color: var(--on-ac);
+}
+.seg.wr {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+.sw {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0;
+}
+.sw .seg {
+  flex: 1;
+  margin: 0;
+  padding: 3px;
+  gap: 0;
+  overflow: visible;
+  background: var(--fill);
+  border-radius: var(--r-ctl);
+}
+.sw .seg button {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px;
+  background: transparent;
+  border-radius: 11px;
+  font-size: clamp(12px, 3.6vw, 14px);
+}
+.sw .seg button.on {
+  background: var(--seg);
+  color: var(--fg);
+  box-shadow:
+    0 1px 3px #15171c26,
+    0 0 0 0.5px var(--bd);
+}
+.sw .seg button:nth-child(2)::before,
+.sw .seg button:nth-child(3)::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  border-radius: 50%;
+}
+.sw .seg button:nth-child(2)::before {
+  background: var(--sal);
+}
+.sw .seg button:nth-child(3)::before {
+  background: var(--dul);
+}
+@media (max-width: 380px) {
+  .sw {
+    gap: 4px;
+  }
+}
+@media (min-width: 768px) {
+  .sw .seg button {
+    flex: 0 1 auto;
+    padding-inline: 18px;
+  }
+}
+.sx {
+  transform-origin: right;
+  animation: grow 0.2s ease-out;
+}
+.fl {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  margin-bottom: 8px;
+  padding: 10px 12px 10px 22px;
+  background: var(--card);
+  border-radius: var(--r-tile);
+  box-shadow: var(--sh);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    box-shadow var(--d2) var(--ease),
+    background-color var(--d2) var(--ease),
+    transform var(--d1) var(--ease),
+    opacity var(--d2) var(--ease);
+}
+.fl::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 4px;
+  background: var(--rail, var(--bd));
+}
+.fl.s {
+  --rail: var(--sal);
+}
+.fl.d {
+  --rail: var(--dul);
+}
+.fl.ch {
+  --rail: var(--mut);
+}
+.fl:active {
+  transform: scale(0.985);
+}
+.fl.sel {
+  background: var(--sel);
+  box-shadow:
+    var(--sh),
+    0 0 0 2px var(--ac);
+}
+.fl .fn {
+  flex: 1;
+  min-width: 0;
+}
+.fl .fn b {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+}
+.fl .fn small {
+  display: block;
+  margin-top: 1px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.fl .fn small .low {
+  color: var(--low);
+  font-weight: 700;
+}
+.fl.out .fn {
+  opacity: 0.6;
+}
+.fl.out::before {
+  opacity: 0.5;
+}
+.fm {
+  max-width: 11rem;
+  height: 4px;
+  margin-top: 7px;
+  border-radius: 4px;
+}
+.fm i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--ac);
+  transition: width var(--d3) var(--ease);
+}
+.fm i.low {
+  background: var(--low);
+}
+.fl .add {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--ac);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+.fl .st {
+  gap: 2px;
+  padding: 3px;
+  background: var(--fill);
+  border-radius: 999px;
+}
+.fl .st button {
+  width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  font-size: 22px;
+}
+.fl .st button.gh {
+  background: var(--card);
+  color: var(--fg);
+}
+.fl .st b {
+  min-width: 30px;
+  font-size: 21px;
+  font-weight: 700;
+}
+.fl .st input {
+  width: 56px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 21px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.chh {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 16px 0 8px;
+  text-align: left;
+}
+.chh .chx b {
+  display: block;
+  font-size: 17px;
+}
+.chh .chx small {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.chh .lt {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+.glv {
+  grid-column: 1/-1;
+  display: flex;
+  height: 8px;
+  border-radius: 8px;
+}
+.glv .g1 {
+  background: var(--ac);
+}
+.glv .g2 {
+  background: var(--c2);
+}
+@media (min-width: 600px) {
+  #fls {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    column-gap: 10px;
+  }
+  #fls > .card {
+    grid-column: 1/-1;
+  }
+}
+#gr.stk .sc {
+  overflow: visible;
+}
+#gr.stk th {
+  position: sticky;
+  top: calc(var(--top-h) + var(--safe-t));
+  z-index: 2;
+  padding: 6px 2px;
+  background: var(--card);
+  box-shadow: inset 0 -1px 0 var(--bd);
+  font-size: 11px;
+  text-align: center;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+#gr.stk th:first-child {
+  z-index: 3;
+  text-align: left;
+}
+#gr.stk td:first-child,
+#gr.stk th:first-child {
+  min-width: 0;
+  width: 4.5rem;
+  max-width: 5rem;
+  overflow-wrap: break-word;
+  font-size: 13px;
+}
+#gr.stk td.n {
+  font-size: 13px;
+}
+#gr.stk td.n {
+  padding: 4px 1px;
+}
+#gr.stk .chip {
+  padding: 2px 4px;
+  font-size: 12px;
+}

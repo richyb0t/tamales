@@ -1,0 +1,18 @@
+{
+  "name": "tamales",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Tamales · Control de sucursales (PWA en Firebase Hosting + Firestore)",
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write \"public/**/*.{js,css,html,json}\" firebase.json",
+    "format:check": "prettier --check \"public/**/*.{js,css,html,json}\" firebase.json",
+    "deploy": "firebase deploy"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "espree": "^10.0.0",
+    "globals": "^15.0.0",
+    "prettier": "^3.0.0"
+  }
+}

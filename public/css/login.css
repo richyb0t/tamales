@@ -1,0 +1,222 @@
+/* ---------- 11 · Acceso, perfiles y PIN ---------- */
+.hero {
+  padding: 48px 0 16px;
+  text-align: center;
+}
+.logo {
+  font-size: 0;
+  line-height: 0;
+}
+.logo svg {
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  box-shadow: var(--sh);
+}
+.logo svg > rect:first-child {
+  fill: var(--mark);
+}
+.logo svg rect[fill='#C9A96A'] {
+  fill: var(--warm);
+}
+.who {
+  padding-top: clamp(40px, 6vh, 56px);
+  text-align: center;
+}
+.who h1 {
+  margin: 0 0 4px;
+  font-size: clamp(1.6rem, 6vw, 2.4rem);
+}
+.pf {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px 0;
+  max-width: 24rem;
+  margin: 22px auto 0;
+}
+.pf button {
+  flex: 0 0 33.333%;
+  max-width: 33.333%;
+}
+.who .pk {
+  max-width: 24rem;
+  margin: 26px auto 0;
+}
+.who .pk button {
+  min-height: 76px;
+  font-size: 20px;
+}
+.pf button {
+  min-height: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  color: var(--fg);
+  font-weight: 700;
+}
+.pf b {
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.pf small {
+  font-weight: 600;
+}
+.av {
+  width: clamp(5rem, 26vw, 6.5rem);
+  aspect-ratio: 1;
+  font: 700 clamp(2rem, 10vw, 2.8rem)/1 var(--f-disp);
+  box-shadow: var(--sh);
+  transition:
+    transform var(--d2) var(--ease),
+    box-shadow var(--d2) var(--ease);
+}
+.av.big {
+  width: 6rem;
+  margin: 0 auto 12px;
+  font-size: 2.8rem;
+}
+.pf .av {
+  width: clamp(4.25rem, 22vw, 5.25rem);
+  font-size: clamp(1.7rem, 8.5vw, 2.3rem);
+}
+.pf b {
+  font-size: 15px;
+}
+.pf small {
+  font-size: 11px;
+  color: var(--mut);
+}
+.pf button:active .av {
+  transform: scale(0.94);
+}
+.pf button:focus-visible .av {
+  box-shadow: 0 0 0 3px var(--ac);
+}
+@media (hover: hover) and (pointer: fine) {
+  .pf button:hover .av {
+    transform: scale(1.04);
+    box-shadow: var(--shd-pop);
+  }
+}
+.pf button:active {
+  filter: none;
+}
+/* Selector de rol: tres filas idénticas en tamaño y estilo */
+.rls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-width: 24rem;
+  margin: 28px auto 0;
+  text-align: left;
+}
+.rb {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 14px;
+  align-items: center;
+  width: 100%;
+  min-height: 96px;
+  margin: 0;
+  padding: 16px 18px;
+  background: var(--card);
+  color: var(--fg);
+  border-radius: 22px;
+  box-shadow: var(--sh);
+  text-align: left;
+  transition:
+    transform var(--d2) var(--ease),
+    box-shadow var(--d2) var(--ease);
+}
+.rb:active {
+  transform: scale(0.97);
+  filter: none;
+}
+.rb .ri {
+  grid-row: 1/3;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: var(--warm-t);
+  color: var(--warm);
+}
+.rb .ri svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rb b {
+  align-self: end;
+  font: 700 19px/1.2 var(--f-disp);
+}
+.rb small {
+  align-self: start;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--mut);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rb:hover {
+    box-shadow:
+      var(--sh),
+      0 0 0 1.5px var(--ac);
+  }
+}
+.rb:focus-visible {
+  outline: 3px solid var(--ac);
+  outline-offset: 2px;
+}
+.pin {
+  max-width: 22rem;
+  margin: 22px auto 0;
+}
+.pin input {
+  width: 100%;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-align: center;
+}
+.pin input::placeholder {
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+.pin .pw {
+  display: flex;
+  width: 100%;
+}
+.pin .pw input {
+  padding-inline: 48px;
+}
+
+.who > div[style*='font-size:42px'] {
+  font-size: 0 !important;
+  line-height: 0 !important;
+}
+.who > div[style*='font-size:42px']::before {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 8px;
+  border-radius: 17px;
+  box-shadow: var(--sh);
+  background: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E%3Crect width=%22512%22 height=%22512%22 fill=%22%232447B8%22/%3E%3Cg transform=%22translate(15.4 15.4) scale(.94)%22%3E%3Cpath d=%22M180 186L196 104L256 156L316 104L332 186Z%22 fill=%22%23E8D3A8%22/%3E%3Cpath d=%22M180 346L196 428L256 376L316 428L332 346Z%22 fill=%22%23E8D3A8%22/%3E%3Crect x=%22164%22 y=%22170%22 width=%22184%22 height=%22190%22 rx=%2246%22 fill=%22%23F3E3C3%22/%3E%3Cpath d=%22M226 184V346M256 180V350M286 184V346%22 stroke=%22%23DCC796%22 stroke-width=%226%22 stroke-linecap=%22round%22 fill=%22none%22/%3E%3Crect x=%22156%22 y=%22200%22 width=%22200%22 height=%2216%22 rx=%228%22 fill=%22%23FF9366%22/%3E%3Crect x=%22156%22 y=%22314%22 width=%22200%22 height=%2216%22 rx=%228%22 fill=%22%23FF9366%22/%3E%3Cpath d=%22M222 88C202 72 242 60 222 42M256 80C236 64 276 52 256 34M290 88C270 72 310 60 290 42%22 stroke=%22%23F3E3C3%22 stroke-width=%2210%22 stroke-linecap=%22round%22 fill=%22none%22/%3E%3C/g%3E%3C/svg%3E')
+    center/cover;
+}

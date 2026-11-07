@@ -1,0 +1,277 @@
+/* ---------- 14 · Inventario, ajustes, reportes y resumen ---------- */
+.ivh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.ivh h3 {
+  margin: 0;
+}
+.ivt {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.ivt button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  font-size: 14px;
+}
+.ivt button span {
+  font-size: 20px;
+}
+.row.iv {
+  padding: 10px 0;
+}
+.row.iv .st {
+  gap: 6px;
+}
+.row.iv .st button {
+  width: 44px;
+  min-height: 44px;
+}
+.row.iv input[type='number'] {
+  width: 62px;
+  padding: 8px 2px;
+}
+/* Ajustes · precios y costos: nombre + 2 casillas fijas en una sola línea, también a 320 px */
+.row:has(> input[type='number']:nth-child(3)),
+.row.pch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px 84px;
+  gap: 8px;
+  align-items: center;
+}
+.row:has(> input[type='number']:nth-child(3)) > input {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 4px;
+}
+.row.pch {
+  padding: 6px 0 0;
+  border: 0;
+}
+.row.pch small {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.ajb {
+  flex-wrap: nowrap;
+  align-items: center;
+  margin: 6px 0;
+}
+/* Eliminar / Reabrir: tamaño propio; el nombre de la sucursal toma el resto */
+.ajb > button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 8px 16px;
+}
+.rpd {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.rpd label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+  min-height: 0;
+}
+.rpd input {
+  width: 100%;
+}
+.rps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 0 6px;
+  font-size: 17px;
+}
+.rph {
+  padding: 4px 0 10px;
+  text-align: center;
+}
+.rph b {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.rph small {
+  display: block;
+}
+.rsm {
+  padding: 12px;
+}
+.rsm .rph {
+  padding: 0 0 6px;
+}
+.rsm .rph b {
+  font-size: 30px;
+}
+.rsk {
+  display: flex;
+  gap: 6px;
+}
+.rsk > div {
+  flex: 1;
+  padding: 6px 4px;
+  background: var(--fill);
+  border-radius: 12px;
+  text-align: center;
+}
+.rsk b {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.rsk small {
+  font-size: 12px;
+}
+.brl {
+  padding: 10px 12px 4px;
+}
+.brl .pkh {
+  margin: 0 0 2px;
+}
+.brr {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  column-gap: 8px;
+  padding: 9px 0 12px;
+  border-bottom: 1px solid var(--bd);
+  cursor: pointer;
+}
+.brr:last-child {
+  border: 0;
+}
+.brn {
+  min-width: 0;
+}
+.brn b {
+  display: block;
+  font-size: 16px;
+}
+.brn small {
+  display: block;
+  font-size: 12px;
+}
+.brx {
+  text-align: right;
+}
+.brx b {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.brx small {
+  font-size: 12px;
+}
+.chv {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--mut);
+}
+.brr .bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  height: 4px;
+  margin: 0;
+}
+.brc {
+  cursor: pointer;
+}
+.brc:active {
+  transform: scale(0.985);
+}
+.brt {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.brt > div > b {
+  font-size: 17px;
+}
+.brm {
+  flex: none;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.brs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.brc .bar {
+  margin: 10px 0 6px;
+}
+.nvp {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0;
+  padding: 6px;
+  border: 2px dashed var(--line);
+  border-radius: var(--r-tile);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.nvi {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 2px;
+  overflow: hidden;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--sh);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  touch-action: none;
+  cursor: grab;
+  transition: transform 0.15s;
+}
+.nvi > span {
+  display: inline-flex;
+  font-size: 22px;
+  line-height: 1.2;
+}
+.nvi.drag {
+  position: relative;
+  z-index: 3;
+  transition: none;
+  box-shadow:
+    var(--shd-pop),
+    0 0 0 2px var(--ac);
+}
+.nvm {
+  opacity: 0.45;
+  cursor: default;
+}

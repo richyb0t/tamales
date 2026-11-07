@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Tamales · Control de sucursales</title>
+    <meta
+      name="description"
+      content="Ventas, inventario, apartados y cortes de caja por sucursal"
+    />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#E7EAF3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#181E30" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Tamales" />
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+
+    <!-- Tema guardado: se aplica antes de pintar para evitar el parpadeo -->
+    <script src="/js/boot/theme-init.js"></script>
+
+    <!-- Estilos (el orden es el de la cascada) -->
+    <link rel="stylesheet" href="/css/tokens.css" />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/controls.css" />
+    <link rel="stylesheet" href="/css/surfaces.css" />
+    <link rel="stylesheet" href="/css/shell.css" />
+    <link rel="stylesheet" href="/css/overlays.css" />
+    <link rel="stylesheet" href="/css/login.css" />
+    <link rel="stylesheet" href="/css/sales.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+    <link rel="stylesheet" href="/css/orders.css" />
+    <link rel="stylesheet" href="/css/motion.css" />
+    <link rel="stylesheet" href="/css/responsive.css" />
+
+    <!-- Scripts clásicos con defer: comparten ámbito global y se ejecutan en este orden.
+         El módulo de Firebase va al final para que window.FB exista cuando arranque la app. -->
+    <script defer src="/js/core/constants.js"></script>
+    <script defer src="/js/core/utils.js"></script>
+    <script defer src="/js/core/state.js"></script>
+    <script defer src="/js/domain/inventory.js"></script>
+    <script defer src="/js/ui/feedback.js"></script>
+    <script defer src="/js/core/render.js"></script>
+    <script defer src="/js/core/session.js"></script>
+    <script defer src="/js/features/auth.js"></script>
+    <script defer src="/js/features/users.js"></script>
+    <script defer src="/js/features/branch-claim.js"></script>
+    <script defer src="/js/features/audit-log.js"></script>
+    <script defer src="/js/features/sales.js"></script>
+    <script defer src="/js/features/history.js"></script>
+    <script defer src="/js/features/cash-cut.js"></script>
+    <script defer src="/js/features/transfers.js"></script>
+    <script defer src="/js/features/dashboard.js"></script>
+    <script defer src="/js/features/inventory-admin.js"></script>
+    <script defer src="/js/features/voice-fill.js"></script>
+    <script defer src="/js/features/settings.js"></script>
+    <script defer src="/js/features/nav-settings.js"></script>
+    <script defer src="/js/features/flavors.js"></script>
+    <script defer src="/js/features/requests.js"></script>
+    <script defer src="/js/features/alerts.js"></script>
+    <script defer src="/js/features/reservations.js"></script>
+    <script defer src="/js/features/reservations-admin.js"></script>
+    <script defer src="/js/ui/layout.js"></script>
+    <script defer src="/js/ui/views.js"></script>
+    <script defer src="/js/reports/data.js"></script>
+    <script defer src="/js/reports/stats.js"></script>
+    <script defer src="/js/reports/charts.js"></script>
+    <script defer src="/js/reports/export.js"></script>
+    <script defer src="/js/reports/analysis.js"></script>
+    <script defer src="/js/reports/view.js"></script>
+    <script defer src="/js/app/events.js"></script>
+    <script defer src="/js/app/history-nav.js"></script>
+    <script defer src="/js/app/password-toggle.js"></script>
+    <script defer src="/js/app/request-bar.js"></script>
+    <script defer src="/js/app/view-restore.js"></script>
+    <script defer src="/js/app/sync-indicator.js"></script>
+    <script defer src="/js/app/pwa.js"></script>
+    <script defer src="/js/ui/modal-animation.js"></script>
+    <script defer src="/js/ui/visual-layer.js"></script>
+    <script defer src="/js/ui/swipe-menu.js"></script>
+    <script defer src="/js/ui/theme-toggle.js"></script>
+    <script defer src="/js/app/boot.js"></script>
+    <script type="module" src="/js/firebase.js"></script>
+  </head>
+  <body>
+    <noscript>Esta aplicación necesita JavaScript para funcionar.</noscript>
+    <main id="app"><p class="mut">Cargando…</p></main>
+    <div id="drawer"></div>
+    <div id="modal" role="dialog" aria-modal="true" aria-label="Diálogo"></div>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <div id="net" role="status">Sin conexión · tus cambios se suben solos al volver</div>
+  </body>
+</html>

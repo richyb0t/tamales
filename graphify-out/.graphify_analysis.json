@@ -1,0 +1,732 @@
+{
+  "communities": {
+    "0": [
+      "public_js_core_render",
+      "public_js_core_render_labelcontrols",
+      "public_js_core_render_render",
+      "public_js_core_render_rendernow",
+      "public_js_features_dashboard",
+      "public_js_features_dashboard_pricecard",
+      "public_js_features_dashboard_resview",
+      "public_js_features_dashboard_showmv",
+      "public_js_features_settings",
+      "public_js_features_settings_addbranch",
+      "public_js_features_settings_ajview",
+      "public_js_features_settings_closebr",
+      "public_js_features_settings_openbr",
+      "public_js_features_settings_pllock",
+      "public_js_features_settings_plunlock",
+      "public_js_features_settings_saveaj",
+      "public_js_features_users",
+      "public_js_features_users_adduser",
+      "public_js_features_users_deluser",
+      "public_js_features_users_dopinuser",
+      "public_js_features_users_pindlg",
+      "public_js_features_users_pinuser",
+      "public_js_features_users_rmuser",
+      "public_js_features_users_savepin",
+      "public_js_features_users_syncprof",
+      "public_js_features_users_usview",
+      "public_js_reports_view",
+      "public_js_reports_view_rpbody",
+      "public_js_reports_view_rphero",
+      "public_js_reports_view_rpview",
+      "public_js_ui_views",
+      "public_js_ui_views_adminview",
+      "public_js_ui_views_encview",
+      "public_js_ui_views_vendview"
+    ],
+    "1": [
+      "public_js_domain_inventory",
+      "public_js_domain_inventory_bi",
+      "public_js_domain_inventory_brs",
+      "public_js_domain_inventory_cartlit",
+      "public_js_domain_inventory_chleft",
+      "public_js_domain_inventory_chload",
+      "public_js_domain_inventory_chused",
+      "public_js_domain_inventory_cl",
+      "public_js_domain_inventory_cst",
+      "public_js_domain_inventory_encblk",
+      "public_js_domain_inventory_fondo",
+      "public_js_domain_inventory_hascost",
+      "public_js_domain_inventory_holdmin",
+      "public_js_domain_inventory_isopen",
+      "public_js_domain_inventory_left",
+      "public_js_domain_inventory_live",
+      "public_js_domain_inventory_load",
+      "public_js_domain_inventory_loaddone",
+      "public_js_domain_inventory_loadempty",
+      "public_js_domain_inventory_lowl",
+      "public_js_domain_inventory_lowt",
+      "public_js_domain_inventory_net",
+      "public_js_domain_inventory_noprice",
+      "public_js_domain_inventory_panow",
+      "public_js_domain_inventory_pendac",
+      "public_js_domain_inventory_price",
+      "public_js_domain_inventory_r2",
+      "public_js_domain_inventory_resv",
+      "public_js_domain_inventory_tx",
+      "public_js_domain_inventory_txc",
+      "public_js_domain_inventory_used"
+    ],
+    "2": [
+      "public_js_app_boot",
+      "public_js_core_session",
+      "public_js_core_session_onuser",
+      "public_js_core_session_restoreview",
+      "public_js_core_session_startsubs",
+      "public_js_core_session_stopsubs",
+      "public_js_core_session_subs",
+      "public_js_features_cash_cut",
+      "public_js_features_cash_cut_ancorte",
+      "public_js_features_cash_cut_cortebanner",
+      "public_js_features_cash_cut_corteblk",
+      "public_js_features_cash_cut_cortecard",
+      "public_js_features_cash_cut_cortedone",
+      "public_js_features_cash_cut_cortesview",
+      "public_js_features_cash_cut_cx",
+      "public_js_features_cash_cut_datechips",
+      "public_js_features_cash_cut_dif",
+      "public_js_features_cash_cut_dlong",
+      "public_js_features_cash_cut_docorte",
+      "public_js_features_cash_cut_pickday",
+      "public_js_features_cash_cut_setcday",
+      "public_js_features_cash_cut_subcsales",
+      "public_js_features_cash_cut_subcuts",
+      "public_js_features_requests_stockon",
+      "public_js_ui_feedback",
+      "public_js_ui_feedback_ask",
+      "public_js_ui_feedback_err",
+      "public_js_ui_feedback_lock",
+      "public_js_ui_feedback_toast"
+    ],
+    "3": [
+      "public_js_features_requests",
+      "public_js_features_requests_acceptreq",
+      "public_js_features_requests_cancelhold",
+      "public_js_features_requests_cancelreq",
+      "public_js_features_requests_deliverreq",
+      "public_js_features_requests_inbanner",
+      "public_js_features_requests_lastst",
+      "public_js_features_requests_onreqs",
+      "public_js_features_requests_pin",
+      "public_js_features_requests_rdadd",
+      "public_js_features_requests_rdset",
+      "public_js_features_requests_rdto",
+      "public_js_features_requests_rejectreq",
+      "public_js_features_requests_reqadmin",
+      "public_js_features_requests_reqview",
+      "public_js_features_requests_rl",
+      "public_js_features_requests_rqfrom",
+      "public_js_features_requests_rqshort",
+      "public_js_features_requests_rqst",
+      "public_js_features_requests_rqtot",
+      "public_js_features_requests_rqtxt",
+      "public_js_features_requests_schedst",
+      "public_js_features_requests_sendreq",
+      "public_js_features_requests_stockoff",
+      "public_js_features_requests_subreqs",
+      "public_js_features_requests_syncstock"
+    ],
+    "4": [
+      "eslint_config",
+      "eslint_config_shared",
+      "eslint_config_walk",
+      "package",
+      "package_description",
+      "package_devdependencies",
+      "package_devdependencies_eslint",
+      "package_devdependencies_espree",
+      "package_devdependencies_globals",
+      "package_devdependencies_prettier",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_deploy",
+      "package_scripts_format",
+      "package_scripts_format_check",
+      "package_scripts_lint",
+      "package_version",
+      "ref_eslint",
+      "ref_espree",
+      "ref_globals",
+      "ref_node_fs",
+      "ref_node_path",
+      "ref_prettier"
+    ],
+    "5": [
+      "public_js_features_reservations",
+      "public_js_features_reservations_apform",
+      "public_js_features_reservations_apview",
+      "public_js_features_reservations_cancelpre",
+      "public_js_features_reservations_deliverpre",
+      "public_js_features_reservations_nd",
+      "public_js_features_reservations_pdadd",
+      "public_js_features_reservations_pdbr",
+      "public_js_features_reservations_pddate",
+      "public_js_features_reservations_pdset",
+      "public_js_features_reservations_prebanner",
+      "public_js_features_reservations_precard",
+      "public_js_features_reservations_preinvcard",
+      "public_js_features_reservations_prelater",
+      "public_js_features_reservations_pren",
+      "public_js_features_reservations_preqty",
+      "public_js_features_reservations_presum",
+      "public_js_features_reservations_pretoday",
+      "public_js_features_reservations_pretot",
+      "public_js_features_reservations_pretxt",
+      "public_js_features_reservations_savepre"
+    ],
+    "6": [
+      "public_js_core_utils",
+      "public_js_core_utils_ago",
+      "public_js_core_utils_avc",
+      "public_js_core_utils_avc_47d0927119f5",
+      "public_js_core_utils_avi",
+      "public_js_core_utils_d",
+      "public_js_core_utils_day",
+      "public_js_core_utils_dayadd",
+      "public_js_core_utils_daydiff",
+      "public_js_core_utils_daylist",
+      "public_js_core_utils_dstr",
+      "public_js_core_utils_esc",
+      "public_js_core_utils_fdate",
+      "public_js_core_utils_fdd",
+      "public_js_core_utils_hm",
+      "public_js_core_utils_money",
+      "public_js_core_utils_nz",
+      "public_js_core_utils_pad",
+      "public_js_core_utils_tmr",
+      "public_js_core_utils_vib"
+    ],
+    "7": [
+      "public_js_reports_data",
+      "public_js_reports_data_rc",
+      "public_js_reports_data_rcclear",
+      "public_js_reports_data_rcfetch",
+      "public_js_reports_data_rcget",
+      "public_js_reports_data_rcsave",
+      "public_js_reports_data_rpa",
+      "public_js_reports_data_rpcatok",
+      "public_js_reports_data_rpdate",
+      "public_js_reports_data_rpest",
+      "public_js_reports_data_rpf",
+      "public_js_reports_data_rpkeep",
+      "public_js_reports_data_rpmonth",
+      "public_js_reports_data_rppreset",
+      "public_js_reports_data_rprange",
+      "public_js_reports_data_rprun",
+      "public_js_reports_data_rpscope",
+      "public_js_reports_data_rpsetrange",
+      "public_js_reports_data_spk",
+      "public_js_reports_data_sup"
+    ],
+    "8": [
+      "public_js_features_auth",
+      "public_js_features_auth_backprof",
+      "public_js_features_auth_backrole",
+      "public_js_features_auth_fe",
+      "public_js_features_auth_login",
+      "public_js_features_auth_loginform",
+      "public_js_features_auth_loginview",
+      "public_js_features_auth_logout",
+      "public_js_features_auth_mail",
+      "public_js_features_auth_noaccess",
+      "public_js_features_auth_pick",
+      "public_js_features_auth_pickrole",
+      "public_js_features_auth_pinview",
+      "public_js_features_auth_prlist",
+      "public_js_features_auth_profoff",
+      "public_js_features_auth_profsub",
+      "public_js_features_auth_ri",
+      "public_js_features_auth_setupview"
+    ],
+    "9": [
+      "public_js_features_branch_claim",
+      "public_js_features_branch_claim_brtaken",
+      "public_js_features_branch_claim_chbr",
+      "public_js_features_branch_claim_claimof",
+      "public_js_features_branch_claim_clearbr",
+      "public_js_features_branch_claim_freebr",
+      "public_js_features_branch_claim_lastbr",
+      "public_js_features_branch_claim_lastday",
+      "public_js_features_branch_claim_pickbr",
+      "public_js_features_branch_claim_pickview",
+      "public_js_features_branch_claim_resetifnewday",
+      "public_js_features_branch_claim_savebr",
+      "public_js_features_branch_claim_stopclaims",
+      "public_js_features_branch_claim_subclaims",
+      "public_js_features_branch_claim_vbr",
+      "public_js_features_branch_claim_vendready"
+    ],
+    "10": [
+      "public_manifest",
+      "public_manifest_background_color",
+      "public_manifest_categories",
+      "public_manifest_description",
+      "public_manifest_dir",
+      "public_manifest_display",
+      "public_manifest_icons",
+      "public_manifest_id",
+      "public_manifest_lang",
+      "public_manifest_name",
+      "public_manifest_orientation",
+      "public_manifest_prefer_related_applications",
+      "public_manifest_scope",
+      "public_manifest_short_name",
+      "public_manifest_start_url",
+      "public_manifest_theme_color"
+    ],
+    "11": [
+      "public_js_features_inventory_admin",
+      "public_js_features_inventory_admin_copyday",
+      "public_js_features_inventory_admin_curib",
+      "public_js_features_inventory_admin_drs",
+      "public_js_features_inventory_admin_dv",
+      "public_js_features_inventory_admin_invchips",
+      "public_js_features_inventory_admin_invstp",
+      "public_js_features_inventory_admin_invtot",
+      "public_js_features_inventory_admin_invtxt",
+      "public_js_features_inventory_admin_invview",
+      "public_js_features_inventory_admin_pickload",
+      "public_js_features_inventory_admin_saveinv",
+      "public_js_features_inventory_admin_setfield",
+      "public_js_features_inventory_admin_vaciarcarga"
+    ],
+    "12": [
+      "public_js_features_sales",
+      "public_js_features_sales_cadd",
+      "public_js_features_sales_cartbar",
+      "public_js_features_sales_chg",
+      "public_js_features_sales_ctot",
+      "public_js_features_sales_deliver",
+      "public_js_features_sales_note",
+      "public_js_features_sales_order",
+      "public_js_features_sales_pay",
+      "public_js_features_sales_payask",
+      "public_js_features_sales_pgset",
+      "public_js_features_sales_pqchg",
+      "public_js_features_sales_pqset",
+      "public_js_features_sales_preciobanner"
+    ],
+    "13": [
+      "public_js_features_flavors",
+      "public_js_features_flavors_chhead",
+      "public_js_features_flavors_flav",
+      "public_js_features_flavors_fllist",
+      "public_js_features_flavors_fso",
+      "public_js_features_flavors_fsq",
+      "public_js_features_flavors_grid",
+      "public_js_features_flavors_gridt",
+      "public_js_features_flavors_incat",
+      "public_js_features_flavors_isd",
+      "public_js_features_flavors_norm",
+      "public_js_features_flavors_seg",
+      "public_js_features_flavors_srch"
+    ],
+    "14": [
+      "public_js_features_reservations_admin",
+      "public_js_features_reservations_admin_accpre",
+      "public_js_features_reservations_admin_admap",
+      "public_js_features_reservations_admin_admbtn",
+      "public_js_features_reservations_admin_admcard",
+      "public_js_features_reservations_admin_admfrm",
+      "public_js_features_reservations_admin_adminv",
+      "public_js_features_reservations_admin_admlater",
+      "public_js_features_reservations_admin_admnew",
+      "public_js_features_reservations_admin_admrejectpre",
+      "public_js_features_reservations_admin_admtab",
+      "public_js_features_reservations_admin_admtoday",
+      "public_js_features_reservations_admin_apviewadm"
+    ],
+    "15": [
+      "public_js_firebase",
+      "public_js_firebase_app",
+      "public_js_firebase_auth",
+      "public_js_firebase_bootstrap",
+      "public_js_firebase_c",
+      "public_js_firebase_cfg",
+      "public_js_firebase_changepin",
+      "public_js_firebase_db",
+      "public_js_firebase_fs",
+      "public_js_firebase_newuser",
+      "public_js_firebase_pb",
+      "public_js_firebase_w",
+      "ref_https"
+    ],
+    "16": [
+      "public_js_features_nav_settings",
+      "public_js_features_nav_settings_navall",
+      "public_js_features_nav_settings_navbadge",
+      "public_js_features_nav_settings_navcard",
+      "public_js_features_nav_settings_navdef",
+      "public_js_features_nav_settings_navdrag",
+      "public_js_features_nav_settings_navoff",
+      "public_js_features_nav_settings_navon",
+      "public_js_features_nav_settings_navreset",
+      "public_js_features_nav_settings_navsel",
+      "public_js_features_nav_settings_navtog",
+      "public_js_features_nav_settings_setnav"
+    ],
+    "17": [
+      "public_js_features_transfers",
+      "public_js_features_transfers_deltr",
+      "public_js_features_transfers_dotr",
+      "public_js_features_transfers_trel",
+      "public_js_features_transfers_trfill",
+      "public_js_features_transfers_trform",
+      "public_js_features_transfers_trin",
+      "public_js_features_transfers_trlist",
+      "public_js_features_transfers_trstp",
+      "public_js_features_transfers_trtxt",
+      "public_js_features_transfers_trup",
+      "public_js_features_transfers_trview"
+    ],
+    "18": [
+      "public_js_features_history",
+      "public_js_features_history_anular",
+      "public_js_features_history_anularmany",
+      "public_js_features_history_anularr",
+      "public_js_features_history_devlist",
+      "public_js_features_history_devped",
+      "public_js_features_history_grphtml",
+      "public_js_features_history_histn",
+      "public_js_features_history_histview",
+      "public_js_features_history_reg",
+      "public_js_features_history_savedevped"
+    ],
+    "19": [
+      "public_js_reports_analysis",
+      "public_js_reports_analysis_cpk",
+      "public_js_reports_analysis_dlt",
+      "public_js_reports_analysis_gpk",
+      "public_js_reports_analysis_lpk",
+      "public_js_reports_analysis_rpcmp",
+      "public_js_reports_analysis_rpcontrol",
+      "public_js_reports_analysis_rpcontrolhtml",
+      "public_js_reports_analysis_rpmerma",
+      "public_js_reports_analysis_rpmermahtml",
+      "public_js_reports_analysis_rpsell"
+    ],
+    "20": [
+      "public_js_ui_layout",
+      "public_js_ui_layout_adnav",
+      "public_js_ui_layout_bchips",
+      "public_js_ui_layout_go",
+      "public_js_ui_layout_head",
+      "public_js_ui_layout_menu",
+      "public_js_ui_layout_nav",
+      "public_js_ui_layout_setib",
+      "public_js_ui_layout_settab",
+      "public_js_ui_layout_setvt",
+      "public_js_ui_layout_vnav"
+    ],
+    "21": [
+      "public_js_reports_stats",
+      "public_js_reports_stats_bars",
+      "public_js_reports_stats_okey",
+      "public_js_reports_stats_rpagg",
+      "public_js_reports_stats_rpbrief",
+      "public_js_reports_stats_rpcharts",
+      "public_js_reports_stats_rpkpi",
+      "public_js_reports_stats_rpmore",
+      "public_js_reports_stats_rps",
+      "public_js_reports_stats_rptxt"
+    ],
+    "22": [
+      "public_js_features_voice_fill",
+      "public_js_features_voice_fill_eqw",
+      "public_js_features_voice_fill_frac",
+      "public_js_features_voice_fill_lev",
+      "public_js_features_voice_fill_mic",
+      "public_js_features_voice_fill_micui",
+      "public_js_features_voice_fill_nu",
+      "public_js_features_voice_fill_parsevoice",
+      "public_js_features_voice_fill_voicefill"
+    ],
+    "23": [
+      "public_js_reports_charts",
+      "public_js_reports_charts_gcols",
+      "public_js_reports_charts_gdonut",
+      "public_js_reports_charts_gline",
+      "public_js_reports_charts_mk",
+      "public_js_reports_charts_pal",
+      "public_js_reports_charts_rpgraf",
+      "public_js_reports_charts_svgw",
+      "public_js_reports_charts_ta"
+    ],
+    "24": [
+      "prettierrc",
+      "prettierrc_arrowparens",
+      "prettierrc_endofline",
+      "prettierrc_printwidth",
+      "prettierrc_singlequote",
+      "prettierrc_tabwidth",
+      "prettierrc_trailingcomma"
+    ],
+    "25": [
+      "public_js_core_constants",
+      "public_js_core_constants_ch",
+      "public_js_core_constants_f",
+      "public_js_core_constants_nm",
+      "public_js_core_constants_role",
+      "public_js_core_constants_sec",
+      "public_js_core_constants_tl"
+    ],
+    "26": [
+      "public_sw",
+      "public_sw_cachefirst",
+      "public_sw_isappfile",
+      "public_sw_isexternalasset",
+      "public_sw_networkfirst",
+      "public_sw_precache"
+    ],
+    "27": [
+      "public_js_features_alerts",
+      "public_js_features_alerts_alertcard",
+      "public_js_features_alerts_chkalerts",
+      "public_js_features_alerts_lowlist"
+    ],
+    "28": [
+      "public_js_features_audit_log",
+      "public_js_features_audit_log_logd",
+      "public_js_features_audit_log_logev"
+    ],
+    "29": [
+      "public_js_reports_export",
+      "public_js_reports_export_rpcsv",
+      "public_js_reports_export_rphtml"
+    ],
+    "30": [
+      "public_js_core_state",
+      "public_js_core_state_s"
+    ],
+    "31": [
+      "public_js_app_events"
+    ],
+    "32": [
+      "public_js_app_history_nav"
+    ],
+    "33": [
+      "public_js_app_password_toggle"
+    ],
+    "34": [
+      "public_js_app_pwa"
+    ],
+    "35": [
+      "public_js_app_request_bar"
+    ],
+    "36": [
+      "public_js_app_sync_indicator"
+    ],
+    "37": [
+      "public_js_app_view_restore"
+    ],
+    "38": [
+      "public_js_boot_theme_init"
+    ],
+    "39": [
+      "public_js_ui_modal_animation"
+    ],
+    "40": [
+      "public_js_ui_swipe_menu"
+    ],
+    "41": [
+      "public_js_ui_theme_toggle"
+    ],
+    "42": [
+      "public_js_ui_visual_layer"
+    ]
+  },
+  "cohesion": {
+    "0": 0.07130124777183601,
+    "1": 0.10752688172043011,
+    "2": 0.11330049261083744,
+    "3": 0.13846153846153847,
+    "4": 0.10144927536231885,
+    "5": 0.19047619047619047,
+    "6": 0.14210526315789473,
+    "7": 0.1736842105263158,
+    "8": 0.16993464052287582,
+    "9": 0.2,
+    "10": 0.125,
+    "11": 0.32967032967032966,
+    "12": 0.26373626373626374,
+    "13": 0.3333333333333333,
+    "14": 0.2564102564102564,
+    "15": 0.1794871794871795,
+    "16": 0.3333333333333333,
+    "17": 0.30303030303030304,
+    "18": 0.23636363636363636,
+    "19": 0.2545454545454545,
+    "20": 0.3090909090909091,
+    "21": 0.4444444444444444,
+    "22": 0.3888888888888889,
+    "23": 0.5,
+    "24": 0.2857142857142857,
+    "25": 0.2857142857142857,
+    "26": 0.3333333333333333,
+    "27": 0.8333333333333334,
+    "28": 1.0,
+    "29": 0.6666666666666666,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0,
+    "39": 1.0,
+    "40": 1.0,
+    "41": 1.0,
+    "42": 1.0
+  },
+  "gods": [
+    {
+      "id": "public_js_ui_views_adminview",
+      "label": "adminView()",
+      "degree": 10
+    },
+    {
+      "id": "public_js_core_render_rendernow",
+      "label": "renderNow()",
+      "degree": 8
+    },
+    {
+      "id": "public_js_features_inventory_admin_curib",
+      "label": "curIb()",
+      "degree": 8
+    },
+    {
+      "id": "public_js_ui_feedback_err",
+      "label": "err()",
+      "degree": 8
+    },
+    {
+      "id": "public_js_reports_stats_rps",
+      "label": "rpS()",
+      "degree": 7
+    },
+    {
+      "id": "public_js_features_reservations_nd",
+      "label": "nd()",
+      "degree": 7
+    },
+    {
+      "id": "public_js_domain_inventory_chleft",
+      "label": "chLeft()",
+      "degree": 6
+    },
+    {
+      "id": "public_js_domain_inventory_left",
+      "label": "left()",
+      "degree": 6
+    },
+    {
+      "id": "public_js_features_inventory_admin_invview",
+      "label": "invView()",
+      "degree": 6
+    },
+    {
+      "id": "public_js_features_flavors_fllist",
+      "label": "flList()",
+      "degree": 6
+    }
+  ],
+  "surprises": [
+    {
+      "source": "renderNow()",
+      "target": "encView()",
+      "source_files": [
+        "public/js/core/render.js",
+        "public/js/ui/views.js"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "why": "inferred connection - not explicitly stated in source; peripheral node `encView()` unexpectedly reaches hub `renderNow()`"
+    },
+    {
+      "source": "renderNow()",
+      "target": "vendView()",
+      "source_files": [
+        "public/js/core/render.js",
+        "public/js/ui/views.js"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "why": "inferred connection - not explicitly stated in source; peripheral node `vendView()` unexpectedly reaches hub `renderNow()`"
+    },
+    {
+      "source": "adminView()",
+      "target": "ajView()",
+      "source_files": [
+        "public/js/ui/views.js",
+        "public/js/features/settings.js"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "why": "inferred connection - not explicitly stated in source; peripheral node `ajView()` unexpectedly reaches hub `adminView()`"
+    },
+    {
+      "source": "adminView()",
+      "target": "usView()",
+      "source_files": [
+        "public/js/ui/views.js",
+        "public/js/features/users.js"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "why": "inferred connection - not explicitly stated in source; peripheral node `usView()` unexpectedly reaches hub `adminView()`"
+    },
+    {
+      "source": "adminView()",
+      "target": "cortesView()",
+      "source_files": [
+        "public/js/ui/views.js",
+        "public/js/features/cash-cut.js"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "why": "inferred connection - not explicitly stated in source; bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `adminView()` connect `adminView` to `transfers.js`, `cash-cut.js`, `inventory-admin.js`, `reservations-admin.js`?",
+      "why": "High betweenness centrality (0.061) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 9 inferred relationships involving `adminView()` (e.g. with `renderNow()` and `cortesView()`) actually correct?",
+      "why": "`adminView()` has 9 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `adminView` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.07130124777183601 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `cortesView()` connect `cash-cut.js` to `adminView`?",
+      "why": "High betweenness centrality (0.039) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 3 inferred relationships involving `renderNow()` (e.g. with `adminView()` and `encView()`) actually correct?",
+      "why": "`renderNow()` has 3 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `inventory.js` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.10752688172043011 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `err()` connect `cash-cut.js` to `requests.js`?",
+      "why": "High betweenness centrality (0.037) - this node is a cross-community bridge."
+    }
+  ]
+}

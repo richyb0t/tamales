@@ -1,0 +1,289 @@
+/* ============================================================================
+   TAMALES · SISTEMA DE DISEÑO «Talavera y papel» · Liquid Glass (Apple HIG)
+   Azul talavera = acción · coral = calidez y cobro · papel cálido = superficies. Independiente del ícono.
+   Superficies --bg → --card → --raise · Vidrio --glass/--pill (barras, menú, navegación flotante)
+   Estado --ok/--low/--bad/--info (siempre con texto o ícono) · Categoría --sal/--dul (rieles, no texto)
+   Datos --c1…--c7 · Avatares --av1…--av8 · El tema oscuro redefine los MISMOS nombres.
+   ============================================================================ */
+
+/* ---------- 1 · Tokens ---------- */
+:root {
+  --f-ui:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --f-disp: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bg: #e7eaf3;
+  --card: #ffffff;
+  --raise: #ffffff;
+  --sel: #dce6ff;
+  --fg: #15171c;
+  --mut: #5a606b;
+  --ac: #2447b8;
+  --acf: #2b52c9;
+  --go: #2b52c9;
+  --on-ac: #ffffff;
+  --warm: #d9622b;
+  --on-warm: #15171c;
+  --cta: #e85c20;
+  --on-cta: #1a0e08;
+  --mark: #2447b8;
+  --ok: #1a6b3c;
+  --low: #8a5300;
+  --bad: #b3261e;
+  --info: #2a5e86;
+  --on-bad: #ffffff;
+  --on-low: #ffffff;
+  --ac-t: #2447b81a;
+  --warm-t: #d9622b24;
+  --ok-t: #1a6b3c1a;
+  --low-t: #8a53001f;
+  --bad-t: #b3261e1a;
+  --bd: #15171c1f;
+  --line: #7b818c;
+  --fill: #15171c12;
+  --seg: #ffffff;
+  --sal: #c2691f;
+  --dul: #b0407a;
+  --glass: #e7eaf3;
+  --glass-a: #e7eaf3cc;
+  --pill: #ffffff;
+  --pill-a: #ffffff99;
+  --hi: #ffffff;
+  --edge: #15171c2e;
+  --sheen: linear-gradient(180deg, #ffffffb3, #ffffff29);
+  --card-a: #ffffffe6;
+  --wash:
+    radial-gradient(75% 50% at 100% 0%, #2b52c94d, transparent 70%),
+    radial-gradient(70% 45% at 0% 100%, #d962303d, transparent 70%),
+    radial-gradient(60% 40% at 0% 25%, #0f7f8230, transparent 70%);
+  --sh: 0 0 0 0.5px #15171c14, 0 1px 2px #15171c0f, 0 10px 24px -14px #15171c38;
+  --shd-pop: 0 18px 40px -10px #1b2a5c73, 0 3px 10px #15171c2e;
+  --shd-sheet: 0 -10px 40px #15171c33;
+  --shd-drawer: -10px 0 40px #15171c33;
+  --scrim: #0b0d1280;
+  --scrim-lt: #0b0d1259;
+  --pop-bg: #15171c;
+  --pop-fg: #ffffff;
+  --gr: #d6dbea;
+  --bar-soft: #c9d5f5;
+  --cart-bg: #1b2233;
+  --cart-fg: #ffffff;
+  --c1: #2447b8;
+  --c2: #d9622b;
+  --c3: #0f7f82;
+  --c4: #b0407a;
+  --c5: #6b4fb0;
+  --c6: #5f8a2e;
+  --c7: #6f7682;
+  --av1: #2447b8;
+  --av2: #a3304f;
+  --av3: #8a5300;
+  --av4: #5a3fa6;
+  --av5: #0f6e70;
+  --av6: #8a2f7b;
+  --av7: #3f6b1e;
+  --av8: #b04a1b;
+  --r-card: 22px;
+  --r-tile: 18px;
+  --r-ctl: 14px;
+  --r-sheet: 30px;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --d1: 150ms;
+  --d2: 220ms;
+  --d3: 350ms;
+  --gut: 16px;
+  --app-w: 760px;
+  --top-h: 64px;
+  --nav-h: 76px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  accent-color: var(--ac);
+  color-scheme: light dark;
+}
+@media (max-width: 380px) {
+  :root {
+    --gut: 12px;
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --app-w: 880px;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #181e30;
+    --card: #222a3e;
+    --raise: #2a3349;
+    --sel: #2d3c66;
+    --fg: #f2f3f5;
+    --mut: #aeb4c1;
+    --ac: #8fb0ff;
+    --acf: #7fa3ff;
+    --go: #7fa3ff;
+    --on-ac: #0a1230;
+    --warm: #ff9366;
+    --on-warm: #1a0e08;
+    --cta: #ff8f5e;
+    --on-cta: #1a0e08;
+    --mark: #3b63d9;
+    --ok: #6fd39a;
+    --low: #f5be5a;
+    --bad: #ff9c8a;
+    --info: #8db8f0;
+    --on-bad: #3a0b05;
+    --on-low: #2b1b00;
+    --ac-t: #7fa3ff2e;
+    --warm-t: #ff936629;
+    --ok-t: #6fd39a26;
+    --low-t: #f5be5a26;
+    --bad-t: #ff9c8a26;
+    --bd: #f2f3f524;
+    --line: #8089a0;
+    --fill: #f2f3f51f;
+    --seg: #3b4560;
+    --sal: #f0a04b;
+    --dul: #f29bc4;
+    --edge: #f2f3f524;
+    --sheen: none;
+    --glass: #181e30;
+    --glass-a: #181e30c7;
+    --pill: #2a3349;
+    --pill-a: #2a3349b3;
+    --hi: #ffffff29;
+    --card-a: #222a3ee6;
+    --wash:
+      radial-gradient(75% 50% at 100% 0%, #7fa3ff4d, transparent 70%),
+      radial-gradient(70% 45% at 0% 100%, #ff936638, transparent 70%),
+      radial-gradient(60% 40% at 0% 30%, #5cd0cf1f, transparent 70%);
+    --sh: 0 0 0 0.5px #f2f3f524, 0 1px 2px #0000006e, 0 10px 24px -14px #00000080;
+    --shd-pop: 0 16px 40px #00000099, 0 0 0 0.5px #f2f3f52e;
+    --shd-sheet: 0 -8px 40px #00000099;
+    --shd-drawer: -8px 0 40px #00000099;
+    --scrim: #000000a0;
+    --scrim-lt: #00000080;
+    --pop-bg: #3a4460;
+    --pop-fg: #f2f3f5;
+    --gr: #343e58;
+    --bar-soft: #34478a;
+    --cart-bg: #2a3349;
+    --cart-fg: #f2f3f5;
+    --c1: #8fb0ff;
+    --c2: #ff9a66;
+    --c3: #5cd0cf;
+    --c4: #f29bc4;
+    --c5: #bca8f5;
+    --c6: #b5d56e;
+    --c7: #aeb4c1;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #181e30;
+  --card: #222a3e;
+  --raise: #2a3349;
+  --sel: #2d3c66;
+  --fg: #f2f3f5;
+  --mut: #aeb4c1;
+  --ac: #8fb0ff;
+  --acf: #7fa3ff;
+  --go: #7fa3ff;
+  --on-ac: #0a1230;
+  --warm: #ff9366;
+  --on-warm: #1a0e08;
+  --cta: #ff8f5e;
+  --on-cta: #1a0e08;
+  --mark: #3b63d9;
+  --ok: #6fd39a;
+  --low: #f5be5a;
+  --bad: #ff9c8a;
+  --info: #8db8f0;
+  --on-bad: #3a0b05;
+  --on-low: #2b1b00;
+  --ac-t: #7fa3ff2e;
+  --warm-t: #ff936629;
+  --ok-t: #6fd39a26;
+  --low-t: #f5be5a26;
+  --bad-t: #ff9c8a26;
+  --bd: #f2f3f524;
+  --line: #8089a0;
+  --fill: #f2f3f51f;
+  --seg: #3b4560;
+  --sal: #f0a04b;
+  --dul: #f29bc4;
+  --edge: #f2f3f524;
+  --sheen: none;
+  --glass: #181e30;
+  --glass-a: #181e30c7;
+  --pill: #2a3349;
+  --pill-a: #2a3349b3;
+  --hi: #ffffff29;
+  --card-a: #222a3ee6;
+  --wash:
+    radial-gradient(75% 50% at 100% 0%, #7fa3ff4d, transparent 70%),
+    radial-gradient(70% 45% at 0% 100%, #ff936638, transparent 70%),
+    radial-gradient(60% 40% at 0% 30%, #5cd0cf1f, transparent 70%);
+  --sh: 0 0 0 0.5px #f2f3f524, 0 1px 2px #0000006e, 0 10px 24px -14px #00000080;
+  --shd-pop: 0 16px 40px #00000099, 0 0 0 0.5px #f2f3f52e;
+  --shd-sheet: 0 -8px 40px #00000099;
+  --shd-drawer: -8px 0 40px #00000099;
+  --scrim: #000000a0;
+  --scrim-lt: #00000080;
+  --pop-bg: #3a4460;
+  --pop-fg: #f2f3f5;
+  --gr: #343e58;
+  --bar-soft: #34478a;
+  --cart-bg: #2a3349;
+  --cart-fg: #f2f3f5;
+  --c1: #8fb0ff;
+  --c2: #ff9a66;
+  --c3: #5cd0cf;
+  --c4: #f29bc4;
+  --c5: #bca8f5;
+  --c6: #b5d56e;
+  --c7: #aeb4c1;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+@media (prefers-contrast: more) {
+  :root {
+    --bd: #15171c59;
+    --line: #4b515b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bd: #f2f3f559;
+      --line: #b4bac6;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bd: #f2f3f559;
+    --line: #b4bac6;
+  }
+}
+/* Liquid Glass: el material translúcido solo donde el navegador difumina. :root:root:root gana a los bloques de tema (así también hay vidrio en oscuro) */
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  :root:root:root {
+    --glass: var(--glass-a);
+    --pill: var(--pill-a);
+  }
+  .top,
+  body::before,
+  .nav,
+  .ct,
+  #sync,
+  #drawer .pn {
+    -webkit-backdrop-filter: saturate(180%) blur(22px);
+    backdrop-filter: saturate(180%) blur(22px);
+  }
+  #modal {
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+}
