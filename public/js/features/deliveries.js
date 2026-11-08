@@ -29,6 +29,27 @@ function dvBr(i) {
   render(true);
 }
 
+function dvGps() {
+  if (!navigator.geolocation) return toast('Tu dispositivo no soporta ubicación');
+  const b = document.getElementById('dvgps');
+  if (b) { b.disabled = true; b.textContent = 'Capturando…'; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const n = dvn();
+      n.lat = pos.coords.latitude;
+      n.lng = pos.coords.longitude;
+      if (b) { b.disabled = false; b.textContent = '📍 Usar mi ubicación'; }
+      toast('Ubicación capturada');
+      render(true);
+    },
+    err => {
+      if (b) { b.disabled = false; b.textContent = '📍 Usar mi ubicación'; }
+      toast(err.code == 1 ? 'Permiso de ubicación denegado' : 'No se pudo obtener la ubicación');
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
 function dvAdd(f, n) {
   const x = dvn();
   x.items = { ...x.items, [f]: Math.max(0, Math.min(499, (x.items[f] || 0) + n)) };
@@ -79,7 +100,7 @@ ${CH.map((c, i) => {
 }).join('')}
   <div class="form"><input id="dvc" placeholder="Nombre del cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
  <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
-<div class="form"><input type="number" step="0.0001" placeholder="Latitud del pedido" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud del pedido" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div>
+<div class="form"><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Usar mi ubicación</button>${n.lat && n.lng ? `<small style="flex-basis:100%;opacity:.7">Ubicación capturada: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)}</small>` : '<small style="flex-basis:100%;opacity:.7">Opcional: captura la ubicación para saber qué sucursal queda más cerca.</small>'}</div>
 ${(() => {
   const lat = +n.lat, lng = +n.lng;
   if (!lat || !lng) return '';
