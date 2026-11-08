@@ -398,17 +398,21 @@ function dvCard(d, rep) {
  ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
 }
 
-/* Administrador y Pedidos */
-function dvPanel() {
+/* Administrador y Pedidos; el vendedor solo consulta (ro) */
+function dvPanel(ro) {
   const L = (S.dv || []).slice().sort((a, b) => b.ts - a.ts),
     n = s => L.filter(d => d.status == s).length,
     cash = L.filter(d => d.status == 'entregado').reduce((a, d) => a + nz(d.cobrado), 0);
   return `<div class="kp" style="margin-bottom:8px"><div><small>Por tomar</small><b>${n('pendiente')}</b></div><div><small>En camino</small><b>${n('en_ruta')}</b></div><div><small>Entregados</small><b>${n('entregado')}</b></div></div>
  ${S.me.role == 'admin' ? `<div class="card"><div class="row" style="border:0;padding:0"><div>Efectivo cobrado por repartidores<br><small>Lo que deben entregar hoy</small></div><b>${money(cash)}</b></div></div>` : ''}
- <div class="form" style="margin:0 0 10px"><button class="alt" style="flex:1" onclick="dvToggle()">${S.dvf ? '✕ Cerrar formulario' : '＋ Nuevo reparto'}</button></div>
- ${S.dvf ? dvForm() : ''}
+ ${ro ? '' : `<div class="form" style="margin:0 0 10px"><button class="alt" style="flex:1" onclick="dvToggle()">${S.dvf ? '✕ Cerrar formulario' : '＋ Nuevo reparto'}</button></div>`}
+ ${!ro && S.dvf ? dvForm() : ''}
  ${L.map(d => dvCard(d, false)).join('') || '<div class="card"><small>Todavía no hay repartos hoy.</small></div>'}`;
 }
+
+/* Repartos activos (por tomar o en camino) para el contador del menú */
+const dvActive = () =>
+  (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
 
 /* Repartidor */
 function repView() {

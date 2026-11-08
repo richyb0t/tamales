@@ -234,7 +234,7 @@ function restoreView(u) {
     const x = JSON.parse(localStorage.getItem('tm_v') || 'null');
     if (!x || x.id !== u.uid) return;
     if (['res', 'inv', 'tr', 'ct', 'aj', 'us', 'ap', 'rp', 'dv'].includes(x.tab)) S.tab = x.tab;
-    if (['v', 'h', 'r', 'm'].includes(x.vt)) S.vt = x.vt;
+    if (['v', 'h', 'r', 'd', 'm'].includes(x.vt)) S.vt = x.vt;
     if (['d', 'a', 'r'].includes(x.et)) S.et = x.et;
     if (['e', 'c', 't'].includes(x.rt)) S.rt = x.rt;
     if (['h', 'o', 's'].includes(x.apt)) S.apt = x.apt;

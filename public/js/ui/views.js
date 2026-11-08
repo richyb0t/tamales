@@ -40,13 +40,14 @@ srch() +
 `<div id="fls">${flList(b)}</div>`;
 else if (vt == 'h') body = histView(mine);
 else if (vt == 'r') body = apView();
+else if (vt == 'd') body = dvPanel(true);
 else body = corteCard() + trForm(b, false) + trList(b);
 return (
 head() +
 corteBanner() +
 inBanner(vt) +
 (vt == 'v' ? precioBanner(b) + preBanner() : '') +
-(vt == 'm' || vt == 'r' ? '' : kp) +
+(vt == 'm' || vt == 'r' || vt == 'd' ? '' : kp) +
 body +
 (vt == 'v' && !corteDone() ? cartBar() : '') +
 nav(
@@ -54,6 +55,7 @@ nav(
 ['v', '🛒', 'Vender'],
 ['h', '🧾', 'Historial', histN()],
 ['r', '📌', 'Apartados', pin() + preN()],
+['d', '🛵', 'Repartos', dvActive()],
 ['m', '⋯', 'Más'],
 ],
 vt,
