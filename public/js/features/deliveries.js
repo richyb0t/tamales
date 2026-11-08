@@ -36,8 +36,26 @@ async function dvGeocode() {
   const b = document.getElementById('dvgeo');
   if (b) { b.disabled = true; b.textContent = 'Buscando…'; }
   try {
-    const r = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q + ', Guadalajara, Jalisco, Mexico') + '&format=json&limit=1', { headers: { 'Accept-Language': 'es' } });
-    const data = await r.json();
+    const base = ', Guadalajara, Jalisco, México';
+    /* Si OSM no tiene el número de casa, se reintenta sin el número. */
+    const street = q
+      .replace(/^\s*\d{1,5}[A-Za-z-]?\s+/, '')
+      .replace(/\s+\d{1,5}[A-Za-z-]?\s*$/, '')
+      .trim();
+    const tries = [q + base];
+    if (street && street !== q) tries.push(street + base);
+    let data = null;
+    for (let i = 0; i < tries.length; i++) {
+      if (i) await new Promise(r => setTimeout(r, 1100));
+      const r = await fetch(
+        'https://nominatim.openstreetmap.org/search?q=' +
+          encodeURIComponent(tries[i]) +
+          '&format=json&limit=1&countrycodes=mx',
+        { headers: { 'Accept-Language': 'es' } }
+      );
+      data = await r.json();
+      if (data && data.length) break;
+    }
     if (!data || !data.length) {
       toast('No se encontró la dirección. Pega las coordenadas manualmente o usa GPS.');
       return;
