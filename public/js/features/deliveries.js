@@ -36,39 +36,66 @@ async function dvGeocode() {
   const b = document.getElementById('dvgeo');
   if (b) { b.disabled = true; b.textContent = 'Buscando…'; }
   try {
-    const base = ', Guadalajara, Jalisco, México';
-    /* Si OSM no tiene el número de casa, se reintenta sin el número. */
-    const street = q
-      .replace(/^\s*\d{1,5}[A-Za-z-]?\s+/, '')
-      .replace(/\s+\d{1,5}[A-Za-z-]?\s*$/, '')
-      .trim();
-    const tries = [q + base];
-    if (street && street !== q) tries.push(street + base);
-    let data = null;
-    for (let i = 0; i < tries.length; i++) {
-      if (i) await new Promise(r => setTimeout(r, 1100));
+    const full = q + ', Guadalajara, Jalisco, México';
+    let lat = null,
+      lng = null,
+      label = '';
+    /* 1) ArcGIS: acierta el número de casa, igual que Google Maps, sin API key. */
+    try {
       const r = await fetch(
-        'https://nominatim.openstreetmap.org/search?q=' +
-          encodeURIComponent(tries[i]) +
-          '&format=json&limit=1&countrycodes=mx',
-        { headers: { 'Accept-Language': 'es' } }
+        'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?SingleLine=' +
+          encodeURIComponent(full) +
+          '&f=json&maxLocations=1&countryCode=MEX&outSR=4326'
       );
-      data = await r.json();
-      if (data && data.length) break;
+      const d = await r.json();
+      const c = d.candidates && d.candidates[0];
+      if (c && c.score >= 80 && c.location) {
+        lat = +c.location.y;
+        lng = +c.location.x;
+        label = c.address || '';
+      }
+    } catch (e) {
+      /* sin conexión con ArcGIS: se usa el respaldo */
     }
-    if (!data || !data.length) {
+    /* 2) Respaldo: Nominatim, quitando el número de casa si no lo tiene. */
+    if (lat == null || lng == null) {
+      const street = q
+        .replace(/^\s*\d{1,5}[A-Za-z-]?\s+/, '')
+        .replace(/\s+\d{1,5}[A-Za-z-]?\s*$/, '')
+        .trim();
+      const tries = [full];
+      if (street && street !== q) tries.push(street + ', Guadalajara, Jalisco, México');
+      let data = null;
+      for (let i = 0; i < tries.length; i++) {
+        if (i) await new Promise(r => setTimeout(r, 1100));
+        const r = await fetch(
+          'https://nominatim.openstreetmap.org/search?q=' +
+            encodeURIComponent(tries[i]) +
+            '&format=json&limit=1&countrycodes=mx',
+          { headers: { 'Accept-Language': 'es' } }
+        );
+        data = await r.json();
+        if (data && data.length) break;
+      }
+      if (data && data.length) {
+        lat = +data[0].lat;
+        lng = +data[0].lon;
+        label = data[0].display_name || '';
+      }
+    }
+    if (lat == null || lng == null) {
       toast('No se encontró la dirección. Pega las coordenadas manualmente o usa GPS.');
       return;
     }
-    n.lat = +data[0].lat;
-    n.lng = +data[0].lon;
+    n.lat = lat;
+    n.lng = lng;
     const ranked = BI().map(i => {
       const l = (S.cfg.branchLocs || [])[i];
       const d = l ? distKm({ lat: n.lat, lng: n.lng }, l) : null;
       return { i, d };
     }).filter(x => x.d != null).sort((a, c) => a.d - c.d);
     if (ranked.length) n.branch = ranked[0].i;
-    toast('Ubicación encontrada: ' + (data[0].display_name || '').slice(0, 60));
+    toast('Ubicación encontrada: ' + (label || '').slice(0, 60));
     render(true);
   } catch (e) {
     toast('Error al buscar. Pega las coordenadas manualmente.');
