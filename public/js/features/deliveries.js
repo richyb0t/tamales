@@ -36,7 +36,7 @@ async function dvGeocode() {
   const b = document.getElementById('dvgeo');
   if (b) { b.disabled = true; b.textContent = 'Buscando…'; }
   try {
-    const r = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q) + '&format=json&limit=1', { headers: { 'Accept-Language': 'es' } });
+    const r = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q + ', Guadalajara, Jalisco, Mexico') + '&format=json&limit=1', { headers: { 'Accept-Language': 'es' } });
     const data = await r.json();
     if (!data || !data.length) {
       toast('No se encontró la dirección. Pega las coordenadas manualmente o usa GPS.');
