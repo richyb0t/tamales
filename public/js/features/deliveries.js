@@ -369,7 +369,10 @@ function dvCard(d, rep) {
   const t = DV[d.status] || ['', ''],
     me = S.me,
     ph = (d.phone || '').trim(),
-    mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.addr || ''),
+    mapUrl =
+      d.lat != null && d.lng != null
+        ? 'https://www.google.com/maps/search/?api=1&query=' + d.lat + ',' + d.lng
+        : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.addr || ''),
     A = me.role == 'admin';
   let bt = '';
   if (rep) {
