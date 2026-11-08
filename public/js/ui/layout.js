@@ -78,7 +78,7 @@ function menu(o) {
             ['tr', '🔁', 'Traspasos'],
             ['ct', '🧾', 'Cortes'],
             ['ap', '📌', 'Apartados', preN()],
-            ['dv', '📦', 'Repartos'],
+            ['dv', '🚚', 'Repartos'],
           ],
         ],
         [
@@ -105,7 +105,7 @@ function menu(o) {
       : [
           [
             '',
-            [m.role == 'rep' ? ['e', '📦', 'Mis repartos'] : ['e', '📋', 'Disponibilidad de hoy']],
+            [m.role == 'rep' ? ['e', '🚚', 'Mis repartos'] : ['e', '📋', 'Disponibilidad de hoy']],
           ],
         ];
   const cur = A ? S.tab || 'res' : V ? S.vt || 'v' : 'e',

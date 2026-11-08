@@ -93,7 +93,7 @@ const RI = {
   vend: '<svg viewBox="0 0 24 24"><path d="M3 4h2.2l2.3 10.2a1 1 0 0 0 1 .8h8.4a1 1 0 0 0 1-.8L19.5 8H6.1"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/></svg>',
   enc: '<svg viewBox="0 0 24 24"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2.5"/><path d="M9 4.5h6V7.5H9zM9.5 12h5M9.5 16h5"/></svg>',
   admin: '<svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V4M19 20v-5"/></svg>',
-  rep: '<svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>',
+  rep: '<svg viewBox="0 0 24 24"><path d="M1 3h13v13H1z"/><path d="M14 8h4l3 3v5h-7V8z"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></svg>',
 };
 
 function pickRole(r) {
