@@ -144,4 +144,10 @@ function go(k) {
 }
 
 const adNav = k => (k == 'more' ? menu(1) : setTab(k)),
-  vNav = k => (k == 'm' ? menu(1) : setVt(k));
+  vNav = k => (k == 'm' ? menu(1) : setVt(k)),
+  enNav = k => {
+    S.anew = false;
+    if (k == 'a') S.apt = S.apt == 's' ? 'h' : S.apt;
+    S.et = k;
+    render(true);
+  };
