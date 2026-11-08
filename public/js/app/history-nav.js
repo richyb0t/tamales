@@ -13,7 +13,9 @@
         ? 'a:' + (S.tab || 'res')
         : m.role == 'vend'
           ? 'v:' + (S.vt || 'v')
-          : 'e';
+          : m.role == 'rep'
+            ? 'e:' + (S.rt || 'e')
+            : 'e';
   };
   const isOpen = o =>
     o == 'm'
@@ -29,7 +31,8 @@
     else history.pushState({ k, s: nid }, '');
   };
   const sT = setTab,
-    sV = setVt;
+    sV = setVt,
+    sR = setRt;
   setTab = t => {
     pushView('a:' + t);
     sT(t);
@@ -38,6 +41,10 @@
     pushView('v:' + t);
     sV(t);
   };
+  setRt = t => {
+    pushView('e:' + t);
+    sR(t);
+  };
   const applyView = k => {
     const m = S.me;
     if (!m) return;
@@ -45,7 +52,10 @@
       v = p[1];
     if (p[0] == 'a' && m.role == 'admin') sT(v);
     else if (p[0] == 'v' && m.role == 'vend') sV(v);
-    else if (p[0] == 'e' && m.role == 'rep') render(true);
+    else if (p[0] == 'e' && m.role == 'rep') {
+      S.rt = v;
+      render(true);
+    }
     else return;
     scrollTo(0, 0);
   };

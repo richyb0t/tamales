@@ -349,7 +349,7 @@ function dvFail(id) {
   };
 }
 
-function dvCard(d, rep) {
+function dvCard(d, rep, mark) {
   const t = DV[d.status] || ['', ''],
     me = S.me,
     ph = (d.phone || '').trim(),
@@ -365,7 +365,7 @@ function dvCard(d, rep) {
     (d.status == 'pendiente' && d.by == me.user)
   )
     bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
-  return `<div class="card apc${d.status == 'entregado' ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b><div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
+  return `<div class="card apc${d.status == 'entregado' || mark ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b><div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}</div>
  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${d.lat != null && d.lng != null ? `<div style="margin:4px 0"><iframe src="https://www.google.com/maps?q=${d.lat},${d.lng}&z=16&output=embed" width="100%" height="180" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div style="margin-top:4px"><a href="https://www.google.com/maps?q=${d.lat},${d.lng}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div></div>` : ''}${(() => {
     if (d.lat == null || d.lng == null) return '';
@@ -396,22 +396,44 @@ function dvPanel() {
 /* Repartidor */
 function repView() {
   const me = S.me.user,
+    t = S.rt || 'e',
     L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
     free = L.filter(d => d.status == 'pendiente'),
     mine = L.filter(d => d.drv == me && d.status == 'en_ruta'),
     ok = L.filter(d => d.drv == me && d.status == 'entregado'),
     bad = L.filter(d => d.drv == me && d.status == 'fallido'),
+    done = [...ok, ...bad].sort((a, b) => (b.tsDone || b.ts) - (a.tsDone || a.ts)),
     cash = ok.reduce((a, d) => a + nz(d.cobrado), 0);
+  const kp =
+    t == 't'
+      ? `<div class="kp kv"><div><small>Entregados</small><b>${ok.length}</b></div><div><small>No entregados</small><b>${bad.length}</b></div><div><small>Efectivo cobrado</small><b>${money(cash)}</b></div></div>`
+      : `<div class="kp kv"><div><small>En camino</small><b>${mine.length}</b></div><div><small>Entregados</small><b>${ok.length}</b></div><div><small>Efectivo a rendir</small><b>${money(cash)}</b></div></div>`;
+  const body =
+    t == 't'
+      ? '<h3 style="margin:12px 4px 6px">Terminados hoy</h3>' +
+        (done.length
+          ? done.map(d => dvCard(d, true, true)).join('')
+          : '<div class="card"><small>No hay repartos terminados hoy.</small></div>')
+      : (mine.length
+          ? '<h3 style="margin:12px 4px 6px">Mis repartos en camino</h3>' + mine.map(d => dvCard(d, true)).join('')
+          : '') +
+        '<h3 style="margin:12px 4px 6px">Disponibles</h3>' +
+        (free.map(d => dvCard(d, true)).join('') ||
+          '<div class="card"><small>No hay repartos por tomar. Se actualiza solo.</small></div>');
   return (
     head() +
     alertSpace() +
-    `<div class="kp kv"><div><small>En camino</small><b>${mine.length}</b></div><div><small>Entregados</small><b>${ok.length}</b></div><div><small>Efectivo a rendir</small><b>${money(cash)}</b></div></div>` +
-    (mine.length ? '<h3 style="margin:12px 4px 6px">Mis repartos en camino</h3>' + mine.map(d => dvCard(d, true)).join('') : '') +
-    '<h3 style="margin:12px 4px 6px">Disponibles</h3>' +
-    (free.map(d => dvCard(d, true)).join('') || '<div class="card"><small>No hay repartos por tomar. Se actualiza solo.</small></div>') +
-    (ok.length + bad.length
-      ? '<h3 style="margin:12px 4px 6px">Terminados hoy</h3>' + [...ok, ...bad].map(d => dvCard(d, true)).join('')
-      : '')
+    kp +
+    body +
+    nav(
+      [
+        ['e', '🛵', 'Repartos', mine.length || ''],
+        ['t', '✅', 'Terminados', done.length || ''],
+        ['more', '⋯', 'Más'],
+      ],
+      t,
+      'repNav'
+    )
   );
 }
 

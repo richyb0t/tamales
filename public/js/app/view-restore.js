@@ -11,6 +11,7 @@
           tab: S.tab,
           vt: S.vt,
           et: S.et,
+          rt: S.rt,
           apt: S.apt,
           apb: S.apb,
           ib: S.ib,

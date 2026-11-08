@@ -3,7 +3,7 @@
   border-left: 4px solid var(--low);
 }
 .apc.ok {
-  border-left-color: var(--go);
+  border-left-color: var(--ok);
 }
 .aph {
   display: flex;
