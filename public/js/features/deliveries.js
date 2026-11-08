@@ -80,7 +80,12 @@ function dvGps() {
     },
     err => {
       if (b) { b.disabled = false; b.textContent = '📍 Usar mi ubicación'; }
-      toast(err.code == 1 ? 'Permiso de ubicación denegado' : 'No se pudo obtener la ubicación');
+      if (err.code == 1)
+        toast('Permiso de ubicación denegado. Actívalo en los ajustes del navegador o usa "Buscar ubicación" / coordenadas manuales.');
+      else if (err.code == 2)
+        toast('Ubicación no disponible. Intenta de nuevo o usa "Buscar ubicación".');
+      else
+        toast('Tiempo de espera agotado. Intenta de nuevo.');
     },
     { enableHighAccuracy: true, timeout: 10000 }
   );
