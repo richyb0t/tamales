@@ -101,9 +101,24 @@ function dvForm() {
   return `<div class="card" id="dvf"><h3>Nuevo reparto</h3><small>Escribe los datos del cliente y elige qué lleva. El repartidor lo verá y lo tomará.</small>
  <small style="display:block;margin-top:8px">¿De qué sucursal sale?</small>
 ${(() => {
+  const items = Object.entries(sel).filter(([k, v]) => v > 0);
+  const lat = +n.lat, lng = +n.lng;
+  // nearest branch (if location captured)
+  let nearest = null;
+  if (lat && lng) {
+    const ranked = BI().map(i => {
+      const l = (S.cfg.branchLocs || [])[i];
+      const d = l ? distKm({ lat, lng }, l) : null;
+      return { i, d };
+    }).filter(x => x.d != null).sort((a, b) => a.d - b.d);
+    if (ranked.length) nearest = ranked[0].i;
+  }
   return `<div class="seg" style="flex-wrap:wrap">${BI().map(i => {
-    return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})">${esc(brs()[i])}</button>`;
-  }).join('')}</div>`;
+    const ok = items.length ? items.every(([k, v]) => left(i, +k.slice(1)) >= v) : null;
+    const light = ok === null ? '' : (ok ? ' 🟢' : ' 🔴');
+    const isNear = i === nearest;
+    return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative">${isNear ? '<span style="position:absolute;top:2px;right:4px;font-size:9px">📍</span>' : ''}${esc(brs()[i])}${light}</button>`;
+  }).join('')}</div>${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Sucursal más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !items.every(([k, v]) => left(nearest, +k.slice(1)) >= v) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}`;
 })()}
  ${F.map((nombre, f) =>
    price(f)
