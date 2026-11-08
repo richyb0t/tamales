@@ -34,7 +34,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',
-      globals: { ...globals.browser, ...shared, FB: 'readonly' },
+      globals: { ...globals.browser, ...shared, FB: 'readonly', L: 'readonly' },
     },
     rules: {
       'no-undef': 'error',

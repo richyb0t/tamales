@@ -50,6 +50,7 @@ function renderNow(force) {
   if (!['vend', 'rep'].includes(S.me.role)) chkAlerts();
   if (!['enc', 'rep'].includes(S.me.role)) schedSt();
   labelControls();
+  if (typeof initMinimaps === 'function') initMinimaps();
 }
 
 function labelControls() {

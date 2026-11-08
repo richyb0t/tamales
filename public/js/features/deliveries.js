@@ -125,7 +125,7 @@ ${CH.map((c, i) => {
   <div class="form"><input id="dvc" placeholder="Nombre del cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
  <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
 <div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación de la dirección</button></div>
-<div class="form"><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Capturar ubicación del pedido</button>${n.lat && n.lng ? `<small style="flex-basis:100%;opacity:.7">Ubicación del pedido: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)}</small><iframe src="https://www.google.com/maps?q=${n.lat},${n.lng}&z=16&output=embed" width="100%" height="140" style="border:0;border-radius:8px;margin-top:4px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : '<small style="flex-basis:100%;opacity:.7">Ve al lugar del pedido (o pega las coordenadas del cliente) y captura la ubicación para saber qué sucursal queda más cerca.</small>'}</div>
+<div class="form"><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Capturar ubicación del pedido</button>${n.lat && n.lng ? `<small style="flex-basis:100%;opacity:.7">Ubicación del pedido: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)}</small><div class="minimap" data-lat="${n.lat}" data-lng="${n.lng}" data-branchlocs='${JSON.stringify(S.cfg.branchLocs || [])}' style="height:140px;border-radius:8px;margin-top:4px"></div>` : '<small style="flex-basis:100%;opacity:.7">Ve al lugar del pedido (o pega las coordenadas del cliente) y captura la ubicación para saber qué sucursal queda más cerca.</small>'}</div>
 <details style="margin:4px 0"><summary style="cursor:pointer;opacity:.7;font-size:12px">Ingresar coordenadas manualmente</summary><div class="form"><input type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div></details>
 ${(() => {
   const lat = +n.lat, lng = +n.lng;
@@ -287,7 +287,7 @@ function dvCard(d, rep) {
     bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b><div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}</div>
- <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${d.lat != null && d.lng != null ? `<div style="margin:4px 0"><iframe src="https://www.google.com/maps?q=${d.lat},${d.lng}&z=16&output=embed" width="100%" height="160" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div style="margin-top:4px"><a href="https://www.google.com/maps?q=${d.lat},${d.lng}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div></div>` : ''}${(() => {
+ <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${d.lat != null && d.lng != null ? `<div class="minimap" data-lat="${d.lat}" data-lng="${d.lng}" data-branchlocs='${JSON.stringify(S.cfg.branchLocs || [])}' style="height:160px;border-radius:8px;margin:4px 0"></div><div style="margin-top:4px"><a href="https://www.google.com/maps?q=${d.lat},${d.lng}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div>` : ''}${(() => {
     if (d.lat == null || d.lng == null) return '';
     const near = brs().map((nm, i) => {
       const l = (S.cfg.branchLocs || [])[i];
@@ -336,3 +336,30 @@ function repView() {
 }
 
 const alertSpace = () => '';
+
+function initMinimaps() {
+  if (typeof L === 'undefined') return;
+  document.querySelectorAll('.minimap').forEach(el => {
+    if (el.dataset.inited) return;
+    el.dataset.inited = '1';
+    const lat = +el.dataset.lat, lng = +el.dataset.lng;
+    if (!lat || !lng) return;
+    let locs = [];
+    try { locs = JSON.parse(el.dataset.branchlocs || '[]'); } catch (e) { locs = []; }
+    const map = L.map(el, { zoomControl: false, attributionControl: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    const bounds = [];
+    const ped = L.circleMarker([lat, lng], { radius: 8, color: '#c0392b', fillColor: '#e74c3c', fillOpacity: 1 }).addTo(map).bindPopup('Pedido');
+    bounds.push([lat, lng]);
+    locs.forEach((l, i) => {
+      if (l && l.lat != null && l.lng != null) {
+        L.circleMarker([l.lat, l.lng], { radius: 7, color: '#1f6feb', fillColor: '#58a6ff', fillOpacity: 0.9 }).addTo(map).bindPopup('Sucursal ' + (i + 1) + ' ' + (brs()[i] || ''));
+        bounds.push([l.lat, l.lng]);
+      }
+    });
+    if (bounds.length > 1) map.fitBounds(bounds, { padding: [20, 20] });
+    else map.setView([lat, lng], 15);
+    // invalidate on next frame (container may have just rendered)
+    setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 50);
+  });
+}
