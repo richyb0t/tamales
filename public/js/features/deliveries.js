@@ -339,31 +339,37 @@ const alertSpace = () => '';
 
 function initMinimaps() {
   if (typeof L === 'undefined') {
-    // Leaflet aún no cargó: reintentar
-    setTimeout(initMinimaps, 200);
+    setTimeout(initMinimaps, 300);
     return;
   }
-  document.querySelectorAll('.minimap').forEach(el => {
+  const maps = document.querySelectorAll('.minimap');
+  if (!maps.length) return;
+  maps.forEach(el => {
     if (el.dataset.inited) return;
     el.dataset.inited = '1';
     const lat = +el.dataset.lat, lng = +el.dataset.lng;
-    if (!lat || !lng) return;
+    if (!lat || !lng) { el.style.display = 'none'; return; }
     let locs = [];
     try { locs = JSON.parse(el.dataset.branchlocs || '[]'); } catch (e) { locs = []; }
-    const map = L.map(el, { zoomControl: false, attributionControl: false });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-    const bounds = [];
-    const ped = L.circleMarker([lat, lng], { radius: 8, color: '#c0392b', fillColor: '#e74c3c', fillOpacity: 1 }).addTo(map).bindPopup('Pedido');
-    bounds.push([lat, lng]);
-    locs.forEach((l, i) => {
-      if (l && l.lat != null && l.lng != null) {
-        L.circleMarker([l.lat, l.lng], { radius: 7, color: '#1f6feb', fillColor: '#58a6ff', fillOpacity: 0.9 }).addTo(map).bindPopup('Sucursal ' + (i + 1) + ' ' + (brs()[i] || ''));
-        bounds.push([l.lat, l.lng]);
-      }
-    });
-    if (bounds.length > 1) map.fitBounds(bounds, { padding: [20, 20] });
-    else map.setView([lat, lng], 15);
-    // invalidate on next frame (container may have just rendered)
-    setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 50);
+    try {
+      const map = L.map(el, { zoomControl: false, attributionControl: false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+      const bounds = [];
+      L.circleMarker([lat, lng], { radius: 8, color: '#c0392b', fillColor: '#e74c3c', fillOpacity: 1 }).addTo(map).bindPopup('Pedido');
+      bounds.push([lat, lng]);
+      locs.forEach((l, i) => {
+        if (l && l.lat != null && l.lng != null) {
+          L.circleMarker([l.lat, l.lng], { radius: 7, color: '#1f6feb', fillColor: '#58a6ff', fillOpacity: 0.9 }).addTo(map).bindPopup('Sucursal ' + (i + 1));
+          bounds.push([l.lat, l.lng]);
+        }
+      });
+      if (bounds.length > 1) map.fitBounds(bounds, { padding: [20, 20] });
+      else map.setView([lat, lng], 15);
+      setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 100);
+    } catch (e) {
+      console.error('minimap error', e);
+      // fallback: show google maps iframe
+      el.innerHTML = '<iframe src="https://www.google.com/maps?q=' + lat + ',' + lng + '&z=16&output=embed" width="100%" height="100%" style="border:0;border-radius:8px" loading="lazy"></iframe>';
+    }
   });
 }
