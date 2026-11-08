@@ -125,7 +125,15 @@ ${CH.map((c, i) => {
   <div class="form"><input id="dvc" placeholder="Nombre del cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
  <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
 <div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación de la dirección</button></div>
-<div class="form"><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Capturar ubicación del pedido</button>${n.lat && n.lng ? `<small style="flex-basis:100%;opacity:.7">Ubicación del pedido: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)}</small><div class="minimap" data-lat="${n.lat}" data-lng="${n.lng}" data-branchlocs='${JSON.stringify(S.cfg.branchLocs || [])}' style="height:140px;border-radius:8px;margin-top:4px"></div>` : '<small style="flex-basis:100%;opacity:.7">Ve al lugar del pedido (o pega las coordenadas del cliente) y captura la ubicación para saber qué sucursal queda más cerca.</small>'}</div>
+<div class="form"><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Capturar ubicación del pedido</button>${n.lat && n.lng ? (() => {
+  const locs = (S.cfg.branchLocs || []).filter(l => l && l.lat != null && l.lng != null);
+  const markers = (n.lat + ',' + n.lng + ',red-pushpin') + (locs.length ? '|' + locs.map(l => l.lat + ',' + l.lng + ',blue-pushpin').join('|') : '');
+  const all = [{lat:+n.lat,lng:+n.lng}].concat(locs);
+  const cLat = all.reduce((a,x)=>a+x.lat,0)/all.length;
+  const cLng = all.reduce((a,x)=>a+x.lng,0)/all.length;
+  const src = 'https://staticmap.openstreetmap.de/staticmap.php?center=' + cLat + ',' + cLng + '&zoom=14&size=400x140&markers=' + encodeURIComponent(markers);
+  return '<small style="flex-basis:100%;opacity:.7">Ubicación del pedido: ' + (+n.lat).toFixed(5) + ', ' + (+n.lng).toFixed(5) + '</small><img src="' + src + '" alt="Mapa" style="width:100%;height:140px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,0,0,.1);margin-top:4px" loading="lazy" onerror="this.style.display=\'none\'">';
+})() : '<small style="flex-basis:100%;opacity:.7">Ve al lugar del pedido (o pega las coordenadas del cliente) y captura la ubicación para saber qué sucursal queda más cerca.</small>'}</div>
 <details style="margin:4px 0"><summary style="cursor:pointer;opacity:.7;font-size:12px">Ingresar coordenadas manualmente</summary><div class="form"><input type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div></details>
 ${(() => {
   const lat = +n.lat, lng = +n.lng;
@@ -287,7 +295,15 @@ function dvCard(d, rep) {
     bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b><div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}</div>
- <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${d.lat != null && d.lng != null ? `<div class="minimap" data-lat="${d.lat}" data-lng="${d.lng}" data-branchlocs='${JSON.stringify(S.cfg.branchLocs || [])}' style="height:160px;border-radius:8px;margin:4px 0"></div><div style="margin-top:4px"><a href="https://www.google.com/maps?q=${d.lat},${d.lng}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div>` : ''}${(() => {
+ <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${d.lat != null && d.lng != null ? (() => {
+  const locs = (S.cfg.branchLocs || []).filter(l => l && l.lat != null && l.lng != null);
+  const markers = [d.lat + ',' + d.lng + ',red-pushpin'].concat(locs.map(l => l.lat + ',' + l.lng + ',blue-pushpin')).join('|');
+  const all = [{lat:d.lat,lng:d.lng}].concat(locs);
+  const cLat = all.reduce((a,x)=>a+x.lat,0)/all.length;
+  const cLng = all.reduce((a,x)=>a+x.lng,0)/all.length;
+  const src = 'https://staticmap.openstreetmap.de/staticmap.php?center=' + cLat + ',' + cLng + '&zoom=14&size=400x180&markers=' + encodeURIComponent(markers);
+  return '<div style="margin:4px 0"><img src="' + src + '" alt="Mapa" style="width:100%;height:180px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,0,0,.1)" loading="lazy" onerror="this.style.display=\'none\'"><div style="margin-top:4px"><a href="https://www.google.com/maps?q=' + d.lat + ',' + d.lng + '" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div></div>';
+})() : ''}${(() => {
     if (d.lat == null || d.lng == null) return '';
     const near = brs().map((nm, i) => {
       const l = (S.cfg.branchLocs || [])[i];
