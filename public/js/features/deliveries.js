@@ -427,7 +427,8 @@ function dvVendCard(d) {
     list = items.map(([k, v]) => v + '× ' + esc(nm(+k.slice(1)))).join(' · ');
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${list}</div>
- <div><b>Apartar: ${tam} ${tam == 1 ? 'tamal' : 'tamales'}${ch ? ' + ' + ch + ' ' + (ch == 1 ? 'champurrado' : 'champurrados') : ''}</b></div></div>`;
+ <div><b>Apartar: ${tam} ${tam == 1 ? 'tamal' : 'tamales'}${ch ? ' + ' + ch + ' ' + (ch == 1 ? 'champurrado' : 'champurrados') : ''}</b></div>
+ <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}</div>`;
 }
 
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */
