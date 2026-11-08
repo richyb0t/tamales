@@ -305,7 +305,7 @@ function apView() {
   return (
     bf +
     `<div class="seg" style="margin-bottom:10px">${tabs.map(([k, n]) => `<button class="${t == k ? 'on' : ''}" onclick="S.apt='${k}';S.anew=false;if(S.me.role=='vend'){S.apt=='s'?stockOn():stockOff()}render(true)">${n}</button>`).join('')}</div>` +
-    (t == 'o' ? admBtn() + preLater(otro) + admFrm('o') : t == 's' && V ? reqView() : preToday(hoy))
+    (t == 'o' ? admBtn() + preLater(otro) + admFrm('o') : t == 's' && V ? reqView() : preToday(hoy) + (V ? dvToday() : ''))
   );
 }
 

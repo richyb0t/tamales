@@ -54,7 +54,7 @@ function head() {
     A = m.role == 'admin',
     V = m.role == 'vend',
     n = V ? pin() : A ? lowList().length : 0;
-  return `<header class="top"><button class="hb" onclick="menu(1)" aria-label="Abrir menú">☰${n ? `<i class="dot">${n}</i>` : ''}</button><div class="ht"><b class="ttl">${esc(V ? (S.vt == 'd' ? 'Repartos · ' + brs()[m.branch] : brs()[m.branch]) : A ? SEC[S.tab] || 'Resumen' : m.role == 'rep' ? (S.rt == 't' ? 'Terminados' : S.rt == 'c' ? 'En camino' : 'Repartos') : 'Pedidos')}</b><small>${A ? 'Administrador · ' : ''}${esc(m.name)} · ${D}</small></div></header>`;
+  return `<header class="top"><button class="hb" onclick="menu(1)" aria-label="Abrir menú">☰${n ? `<i class="dot">${n}</i>` : ''}</button><div class="ht"><b class="ttl">${esc(V ? brs()[m.branch] : A ? SEC[S.tab] || 'Resumen' : m.role == 'rep' ? (S.rt == 't' ? 'Terminados' : S.rt == 'c' ? 'En camino' : 'Repartos') : 'Pedidos')}</b><small>${A ? 'Administrador · ' : ''}${esc(m.name)} · ${D}</small></div></header>`;
 }
 
 function menu(o) {
@@ -104,7 +104,6 @@ function menu(o) {
               ['v', '🛒', 'Vender'],
               ['h', '🧾', 'Historial', histN()],
               ['r', '📌', 'Apartados', pin() + preN()],
-              ['d', '🛵', 'Repartos', dvActive()],
               ['m', '💵', 'Corte y traspasos'],
             ],
           ],

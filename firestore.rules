@@ -192,7 +192,8 @@ service cloud.firestore {
         || (enc() && resource.data.by == prof().user && resource.data.status == 'pendiente'
             && request.resource.data.status == 'cancelado'
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
-      allow delete: if adm();
+      allow delete: if adm()
+        || (enc() && resource.data.by == prof().user && resource.data.status == 'pendiente');
     }
   }
 }
