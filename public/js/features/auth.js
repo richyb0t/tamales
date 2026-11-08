@@ -74,9 +74,9 @@ function loginView() {
     ok = l.every(p => ROLE[p.role]),
     R = ok
       ? [
-          ['rep', 'Repartidor', 'Repartidores', 'Entregas a domicilio'],
           ['vend', 'Vendedor', 'Vendedores', 'Vendo en una sucursal'],
           ['enc', 'Pedidos', 'Pedidos', 'Pedidos, apartados y disponibilidad'],
+          ['rep', 'Repartidor', 'Repartidores', 'Entregas a domicilio'],
           ['admin', 'Administrador', 'Administradores', 'Inventario, ventas y cortes'],
         ].filter(x => l.some(p => p.role == x[0]))
       : [];
