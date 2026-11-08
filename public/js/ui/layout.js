@@ -102,13 +102,25 @@ function menu(o) {
             ],
           ],
         ]
-      : [
-          [
-            '',
-            [m.role == 'rep' ? ['e', '🛵', 'Mis repartos'] : ['e', '📋', 'Disponibilidad de hoy']],
-          ],
-        ];
-  const cur = A ? S.tab || 'res' : V ? S.vt || 'v' : 'e',
+      : m.role == 'rep'
+        ? [
+            [
+              '',
+              [['e', '🛵', 'Mis repartos']],
+            ],
+          ]
+        : [
+            [
+              '',
+              [
+                ['d', '📋', 'Disponibilidad'],
+                ['r', '🛵', 'Repartos'],
+                ['a', '📌', 'Apartados'],
+                ['s', '🔁', 'Entre sucursales'],
+              ],
+            ],
+          ];
+  const cur = A ? S.tab || 'res' : V ? S.vt || 'v' : m.role == 'enc' ? S.et || 'd' : 'e',
     it = ([k, i, l, n]) =>
       `<button class="mi ${cur == k ? 'on' : ''}" onclick="go('${k}')"${cur == k ? ' aria-current="page"' : ''}><span>${i}</span><em>${l}</em>${n ? `<i class="dot2">${n}</i>` : ''}</button>`;
   d.innerHTML = `<div class="bk" onclick="menu(0)"></div><div class="pn"><div class="mh"><span class="mav" style="background:${avC(m.user || m.id)}">${avI(m.name)}</span><div class="mt"><b>${esc(m.name)}</b><small>${ROLE[m.role] || ''}</small>${V && m.branch != null ? `<span class="chip">📍 ${esc(brs()[m.branch])}</span>` : ''}</div><button class="mx" onclick="menu(0)" aria-label="Cerrar menú">✕</button></div>${G.map(([t, l]) => (t ? `<div class="mg">${t}</div>` : '') + l.map(it).join('')).join('')}<div class="mf">${V ? '<button class="mi" onclick="menu(0);setTimeout(chBr,400)"><span>📍</span><em>Cambiar de sucursal</em></button>' : ''}<button class="mi" onclick="menu(0);setTimeout(pinDlg,400)"><span>🔑</span><em>Cambiar mi PIN</em></button><button class="mi out" onclick="menu(0);logout()"><span>🚪</span><em>Salir</em></button></div></div>`;
@@ -125,7 +137,10 @@ function go(k) {
   const m = S.me;
   if (m.role == 'admin') setTab(k);
   else if (m.role == 'vend') setVt(k);
-  else render(true);
+  else if (m.role == 'enc') {
+    S.et = k;
+    render(true);
+  } else render(true);
 }
 
 const adNav = k => (k == 'more' ? menu(1) : setTab(k)),
