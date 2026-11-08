@@ -379,7 +379,8 @@ function dvCard(d, rep) {
     ph = (d.phone || '').trim(),
     q = (d.addr || '').trim() || (d.lat != null && d.lng != null ? d.lat + ',' + d.lng : ''),
     mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q),
-    A = me.role == 'admin';
+    A = me.role == 'admin',
+    rt = rep && d.status == 'en_ruta' && d.drv == me.user;
   let bt = '';
   if (rep) {
     if (d.status == 'pendiente') bt = `<button class="go p" onclick="dvTake('${d._id}')">Tomar reparto</button>`;
@@ -403,7 +404,53 @@ function dvCard(d, rep) {
     const best = near[0];
     return '<small style="display:block;margin-top:2px">Sucursal mas cercana: <b>' + esc(brs()[best.i]) + '</b> (' + best.dd.toFixed(1) + ' km)' + (near.length > 1 ? ' · ' + near.slice(1).map(x => esc(brs()[x.i]) + ' ' + x.dd.toFixed(1) + 'km').join(' · ') : '') + '</small>';
   })()}
- ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
+ ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}${rt ? (S.dvRoute == d._id ? dvRouteMap(d) : `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvRoute('${d._id}')">🧭 Ver recorrido: sucursal → domicilio</button></div>`) : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
+}
+
+/* Ubicación actual del repartidor (GPS del celular) */
+function dvWhere() {
+  return new Promise((ok, bad) => {
+    if (!navigator.geolocation) return bad(new Error('Este dispositivo no permite usar la ubicación'));
+    navigator.geolocation.getCurrentPosition(
+      p => ok({ lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) }),
+      () => bad(new Error('Activa el GPS y permite la ubicación para ver el recorrido')),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+    );
+  });
+}
+
+/* Recorrido: ubicación del repartidor → sucursal → domicilio del pedido */
+async function dvRoute(id) {
+  const d = (S.dv || []).find(x => x._id == id);
+  if (!d) return;
+  toast('Buscando tu ubicación…');
+  try {
+    S.dvLoc = await dvWhere();
+    S.dvRoute = id;
+    render(true);
+  } catch (e) {
+    toast((e && e.message) || 'No se pudo obtener tu ubicación');
+  }
+}
+
+function dvRouteMap(d) {
+  if (!S.dvLoc || S.dvRoute != d._id) return '';
+  const dest = (d.addr || '').trim() || (d.lat != null && d.lng != null ? d.lat + ',' + d.lng : '');
+  if (!dest) return '<div class="card"><small>Este reparto no tiene dirección para trazar el recorrido.</small></div>';
+  const b = (S.cfg.branchLocs || [])[d.branch],
+    bq = b && b.lat != null && b.lng != null ? b.lat + ',' + b.lng : '',
+    origin = S.dvLoc.lat + ',' + S.dvLoc.lng,
+    bn = brs()[d.branch] || 'sucursal',
+    leg = (a, z, label) =>
+      `<small style="display:block;margin-top:6px"><b>${label}</b></small><iframe src="https://www.google.com/maps?saddr=${encodeURIComponent(a)}&daddr=${encodeURIComponent(z)}&output=embed" width="100%" height="190" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`,
+    dir =
+      'https://www.google.com/maps/dir/?api=1&origin=' +
+      encodeURIComponent(origin) +
+      '&destination=' +
+      encodeURIComponent(dest) +
+      (bq ? '&waypoints=' + encodeURIComponent(bq) : '') +
+      '&travelmode=driving';
+  return `<div style="margin:6px 0">${bq ? leg(origin, bq, '1. Tu ubicación → ' + esc(bn)) : ''}${leg(bq || origin, dest, (bq ? '2. ' + esc(bn) + ' → ' : 'Tu ubicación → ') + 'domicilio')}<div style="display:flex;gap:6px;margin-top:6px"><a href="${dir}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:6px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;font-weight:700;text-decoration:none">🗺️ Navegar recorrido completo</a><button class="gh" onclick="dvRoute('${d._id}')">🔄</button></div></div>`;
 }
 
 /* Administrador y Pedidos */
