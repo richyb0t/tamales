@@ -10,7 +10,7 @@ const DV = {
 
 const dvTxt = d =>
   Object.entries(d.items || {})
-    .map(([k, v]) => v + '× ' + F[+k.slice(1)])
+    .map(([k, v]) => v + '× ' + nm(+k.slice(1)))
     .join(', ');
 
 const dvDue = d => nz(d.total) + nz(d.fee);
@@ -418,13 +418,25 @@ function dvPanel() {
  ${L.map(d => dvCard(d, false)).join('') || '<div class="card"><small>Todavía no hay repartos hoy.</small></div>'}`;
 }
 
+/* Tarjeta mínima para el vendedor: solo el pedido y cuánto apartar (sin dirección ni mapa) */
+function dvVendCard(d) {
+  const t = DV[d.status] || ['', ''],
+    items = Object.entries(d.items || {}).filter(([, v]) => v > 0),
+    tam = items.reduce((a, [k, v]) => a + (+k.slice(1) < 100 ? v : 0), 0),
+    ch = items.reduce((a, [k, v]) => a + (+k.slice(1) >= 100 ? v : 0), 0),
+    list = items.map(([k, v]) => v + '× ' + esc(nm(+k.slice(1)))).join(' · ');
+  return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
+ <div class="apt">${list}</div>
+ <div><b>Apartar: ${tam} ${tam == 1 ? 'tamal' : 'tamales'}${ch ? ' + ' + ch + ' ' + (ch == 1 ? 'champurrado' : 'champurrados') : ''}</b></div></div>`;
+}
+
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */
 function dvToday() {
   const L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts);
   return (
     '<h3 style="margin:16px 4px 6px">🛵 Repartos a domicilio de hoy</h3>' +
     (L.length
-      ? L.map(d => dvCard(d, false)).join('')
+      ? L.map(d => dvVendCard(d)).join('')
       : '<div class="card"><small>No hay repartos a domicilio hoy.</small></div>')
   );
 }
