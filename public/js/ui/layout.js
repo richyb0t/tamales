@@ -125,6 +125,7 @@ function go(k) {
   const m = S.me;
   if (m.role == 'admin') setTab(k);
   else if (m.role == 'vend') setVt(k);
+  else render(true);
 }
 
 const adNav = k => (k == 'more' ? menu(1) : setTab(k)),
