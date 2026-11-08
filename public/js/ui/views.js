@@ -1,105 +1,108 @@
 /* Pantallas completas por rol: vendedor, pedidos y administrador. */
 
 function vendView() {
-  const b = S.me.branch,
-    vt = S.vt || 'v',
-    mine = S.sales.filter(s => s.branch == b).sort((a, c) => c.ts - a.ts);
-  const sm = (t, k) =>
-    mine.filter(s => s.type == t && live(s)).reduce((a, s) => a + s.qty * (k ? s.price : 1), 0);
-  const dt = t => {
-    const d = mine.filter(s => s.type == t && s.f >= 100).reduce((a, s) => a + nz(s.qty), 0),
-      n = sm(t) - d;
-    return [
-      n ? n + (n > 1 ? ' tamales' : ' tamal') : '',
-      d ? d + (d > 1 ? ' bebidas' : ' bebida') : '',
-    ]
-      .filter(Boolean)
-      .join(' + ');
-  };
-  const pq = S.pre.filter(p => p.branch == b && p.date <= D).reduce((a, p) => a + preQty(p), 0),
-    dta = () => {
-      const d = mine
-          .filter(s => s.type == 'apartado' && live(s) && s.f >= 100)
-          .reduce((a, s) => a + nz(s.qty), 0),
-        n = sm('apartado') - d + pq;
-      return [
-        n ? n + (n > 1 ? ' tamales' : ' tamal') : '',
-        d ? d + (d > 1 ? ' bebidas' : ' bebida') : '',
-      ]
-        .filter(Boolean)
-        .join(' + ');
-    };
-  const kp = `<div class="kp kv"><div><small>Vendidos</small><b>${sm('vendido')}</b><small>${dt('vendido')}</small></div><div><small>Apartados</small><b>${sm('apartado') + pq}</b><small>${dta()}</small></div><div><small>Total neto</small><b>${money(sm('vendido', 1) - sm('devolucion', 1))}</b></div></div>`;
-  const any = F.some((_, f) => load(b, f) + tx(b, f, 'to') > 0) || chLoad(b) + txc(b, 'to') > 0;
-  let body;
-  if (vt == 'v')
-    body =
-      (any ? '' : '<div class="card">El administrador aún no carga el inventario de hoy.</div>') +
-      seg() +
-      srch() +
-      `<div id="fls">${flList(b)}</div>`;
-  else if (vt == 'h') body = histView(mine);
-  else if (vt == 'r') body = apView();
-  else body = corteCard() + trForm(b, false) + trList(b);
-  return (
-    head() +
-    corteBanner() +
-    inBanner(vt) +
-    (vt == 'v' ? precioBanner(b) + preBanner() : '') +
-    (vt == 'm' || vt == 'r' ? '' : kp) +
-    body +
-    (vt == 'v' && !corteDone() ? cartBar() : '') +
-    nav(
-      [
-        ['v', '🛒', 'Vender'],
-        ['h', '🧾', 'Historial', histN()],
-        ['r', '📌', 'Apartados', pin() + preN()],
-        ['m', '⋯', 'Más'],
-      ],
-      vt,
-      'vNav'
-    )
-  );
+const b = S.me.branch,
+vt = S.vt || 'v',
+mine = S.sales.filter(s => s.branch == b).sort((a, c) => c.ts - a.ts);
+const sm = (t, k) =>
+mine.filter(s => s.type == t && live(s)).reduce((a, s) => a + s.qty * (k ? s.price : 1), 0);
+const dt = t => {
+const d = mine.filter(s => s.type == t && s.f >= 100).reduce((a, s) => a + nz(s.qty), 0),
+n = sm(t) - d;
+return [
+n ? n + (n > 1 ? ' tamales' : ' tamal') : '',
+d ? d + (d > 1 ? ' bebidas' : ' bebida') : '',
+]
+.filter(Boolean)
+.join(' + ');
+};
+const pq = S.pre.filter(p => p.branch == b && p.date <= D).reduce((a, p) => a + preQty(p), 0),
+dta = () => {
+const d = mine
+.filter(s => s.type == 'apartado' && live(s) && s.f >= 100)
+.reduce((a, s) => a + nz(s.qty), 0),
+n = sm('apartado') - d + pq;
+return [
+n ? n + (n > 1 ? ' tamales' : ' tamal') : '',
+d ? d + (d > 1 ? ' bebidas' : ' bebida') : '',
+]
+.filter(Boolean)
+.join(' + ');
+};
+const kp = <div class="kp kv"><div><small>Vendidos</small><b>${sm('vendido')}</b><small>${dt('vendido')}</small></div><div><small>Apartados</small><b>${sm('apartado') + pq}</b><small>${dta()}</small></div><div><small>Total neto</small><b>${money(sm('vendido', 1) - sm('devolucion', 1))}</b></div></div>;
+const any = F.some((_, f) => load(b, f) + tx(b, f, 'to') > 0) || chLoad(b) + txc(b, 'to') > 0;
+let body;
+if (vt == 'v')
+body =
+(any ? '' : 'El administrador aún no carga el inventario de hoy.') +
+seg() +
+srch() +
+<div id="fls">${flList(b)}</div>;
+else if (vt == 'h') body = histView(mine);
+else if (vt == 'r') body = apView();
+else body = corteCard() + trForm(b, false) + trList(b);
+return (
+head() +
+corteBanner() +
+inBanner(vt) +
+(vt == 'v' ? precioBanner(b) + preBanner() : '') +
+(vt == 'm' || vt == 'r' ? '' : kp) +
+body +
+(vt == 'v' && !corteDone() ? cartBar() : '') +
+nav(
+[
+['v', '🛒', 'Vender'],
+['h', '🧾', 'Historial', histN()],
+['r', '📌', 'Apartados', pin() + preN()],
+['m', '⋯', 'Más'],
+],
+vt,
+'vNav'
+)
+);
 }
 
 function encView() {
-  const t = S.et || 'd';
-  return (
-    head() +
-    alertCard() +
-    `<div class="seg" style="margin:0 0 10px"><button class="${t == 'd' ? 'on' : ''}" onclick="S.et='d';S.anew=false;render(true)">Disponibilidad</button><button class="${t == 'a' ? 'on' : ''}" onclick="S.et='a';S.anew=false;S.apt=S.apt=='s'?'h':S.apt;render(true)">Apartados${S.pre.length ? ' (' + S.pre.length + ')' : ''}</button><button class="${t == 's' ? 'on' : ''}" onclick="S.et='s';S.anew=false;render(true)">Entre sucursales${(n => (n ? ' (' + n + ')' : ''))((S.rq || []).filter(r => ['pendiente', 'aceptado'].includes(rqSt(r))).length)}</button></div>` +
-    (t == 'a'
-      ? apViewAdm()
-      : t == 's'
-        ? reqView()
-        : `<div class="card"><h3>Disponibilidad de hoy</h3><small>Solo consulta · se actualiza sola.</small>${grid(BI())}</div>`)
-  );
+const t = S.et || 'd';
+return (
+head() +
+alertCard() +
+<div class="seg" style="margin:0 0 10px"><button class="${t == 'd' ? 'on' : ''}" onclick="S.et='d';S.anew=false;render(true)">Disponibilidad</button><button class="${t == 'r' ? 'on' : ''}" onclick="S.et='r';S.anew=false;render(true)">Repartos</button><button class="${t == 'a' ? 'on' : ''}" onclick="S.et='a';S.anew=false;S.apt=S.apt=='s'?'h':S.apt;render(true)">Apartados${S.pre.length ? ' (' + S.pre.length + ')' : ''}</button><button class="${t == 's' ? 'on' : ''}" onclick="S.et='s';S.anew=false;render(true)">Entre sucursales${(n => (n ? ' (' + n + ')' : ''))((S.rq || []).filter(r => ['pendiente', 'aceptado'].includes(rqSt(r))).length)}</button></div> +
+(t == 'r'
+? dvPanel()
+: t == 'a'
+? apViewAdm()
+: t == 's'
+? reqView()
+: <div class="card"><h3>Disponibilidad de hoy</h3><small>Solo consulta · se actualiza sola.</small>${grid(BI())}</div>)
+);
 }
 
 function adminView() {
-  const t = S.tab,
-    v = {
-      res: resView,
-      inv: invView,
-      tr: trView,
-      ct: cortesView,
-      aj: ajView,
-      us: usView,
-      ap: apViewAdm,
-      rp: rpView,
-    };
-  const sel = navSel(),
-    cu = t || 'res',
-    hid = Object.keys(NAVALL)
-      .filter(k => !sel.includes(k))
-      .reduce((a, k) => a + navBadge(k), 0);
-  return (
-    head() +
-    (v[t] || resView)() +
-    nav(
-      [...sel.map(k => [k, NAVALL[k][0], NAVALL[k][1], navBadge(k)]), ['more', '⋯', 'Más', hid]],
-      sel.includes(cu) ? cu : 'more',
-      'adNav'
-    )
-  );
+const t = S.tab,
+v = {
+res: resView,
+inv: invView,
+tr: trView,
+dv: dvPanel,
+ct: cortesView,
+aj: ajView,
+us: usView,
+ap: apViewAdm,
+rp: rpView,
+};
+const sel = navSel(),
+cu = t || 'res',
+hid = Object.keys(NAVALL)
+.filter(k => !sel.includes(k))
+.reduce((a, k) => a + navBadge(k), 0);
+return (
+head() +
+(v[t] || resView)() +
+nav(
+[...sel.map(k => [k, NAVALL[k][0], NAVALL[k][1], navBadge(k)]), ['more', '⋯', 'Más', hid]],
+sel.includes(cu) ? cu : 'more',
+'adNav'
+)
+);
 }

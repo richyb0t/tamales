@@ -66,7 +66,7 @@ function schedSt() {
 }
 
 async function syncStock() {
-  if (!S.me || S.me.role == 'enc') return;
+  if (!S.me || S.me.role == 'enc' || S.me.role == 'rep') return;
   if (S.me.role == 'vend' && !vendReady()) return;
   for (const b of S.me.role == 'vend' ? [S.me.branch] : BI()) {
     const f = {};

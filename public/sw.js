@@ -56,6 +56,7 @@ const PRECACHE = [
   '/js/features/alerts.js',
   '/js/features/reservations.js',
   '/js/features/reservations-admin.js',
+  '/js/features/deliveries.js',
   '/js/ui/layout.js',
   '/js/ui/views.js',
   '/js/reports/data.js',

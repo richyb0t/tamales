@@ -40,7 +40,7 @@ function subCuts() {
     cutUn = null;
   }
   const m = S.me;
-  if (!m || m.role == 'enc') return;
+  if (!m || m.role == 'enc' || m.role == 'rep') return;
   let q = db.collection('cuts').where('day', '==', m.role == 'admin' ? S.cday || D : D);
   if (m.role == 'vend') q = q.where('by', '==', m.user);
   cutUn = q.onSnapshot(r => {

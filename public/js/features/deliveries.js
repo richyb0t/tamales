@@ -1,0 +1,237 @@
+/* Repartos a domicilio: alta (administrador y pedidos) y entrega (repartidor). */
+
+const DV = {
+  pendiente: ['Por tomar', 'low'],
+  en_ruta: ['En camino', 'ok'],
+  entregado: ['Entregado', 'ok'],
+  fallido: ['No entregado', 'bad'],
+  cancelado: ['Cancelado', ''],
+};
+
+const dvTxt = d =>
+  Object.entries(d.items || {})
+    .map(([k, v]) => v + '× ' + F[+k.slice(1)])
+    .join(', ');
+
+const dvDue = d => nz(d.total) + nz(d.fee);
+
+const dvSum = n => Object.entries(n.items).reduce((a, [f, v]) => a + v * price(+f), 0);
+
+function dvn() {
+  if (!S.dvn)
+    S.dvn = { branch: BI()[0], items: {}, client: '', phone: '', addr: '', note: '', fee: '' };
+  if (!BI().includes(S.dvn.branch)) S.dvn.branch = BI()[0];
+  return S.dvn;
+}
+
+function dvBr(i) {
+  dvn().branch = i;
+  render(true);
+}
+
+function dvAdd(f, n) {
+  const x = dvn();
+  x.items = { ...x.items, [f]: Math.max(0, Math.min(499, (x.items[f] || 0) + n)) };
+  render(true);
+}
+
+/* Cantidad escrita a mano: no vuelve a pintar para no perder el foco */
+function dvQty(f, v, el) {
+  const q = Math.max(0, Math.min(499, Math.floor(+v) || 0));
+  dvn().items = { ...dvn().items, [f]: q };
+  const r = el.closest('.fl');
+  if (r) r.classList.toggle('sel', q > 0);
+}
+
+function dvToggle() {
+  S.dvf = !S.dvf;
+  render(true);
+}
+
+function dvForm() {
+  const n = dvn(),
+    sel = n.items,
+    tot = dvSum(n),
+    pcs = Object.values(sel).reduce((a, v) => a + v, 0);
+  return `<div class="card" id="dvf"><h3>Nuevo reparto</h3><small>Escribe los datos del cliente y elige qué lleva. El repartidor lo verá y lo tomará.</small>
+ <small style="display:block;margin-top:8px">¿De qué sucursal sale?</small>${bchips(n.branch, 'dvBr')}
+ ${F.map((nombre, f) =>
+   price(f)
+     ? `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>${esc(nombre)}</b><small>${money(price(f))}</small></div><div class="st"><button class="gh" onclick="dvAdd(${f},-1)" aria-label="Quitar uno">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de ${esc(nombre)}" oninput="dvQty(${f},this.value,this)" onchange="this.value=dvn().items[${f}]||0"><button onclick="dvAdd(${f},1)" aria-label="Agregar uno">+</button></div></div>`
+     : ''
+ ).join('')}
+ <div class="form"><input id="dvc" placeholder="Nombre del cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
+ <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
+ <div class="form"><input placeholder="Nota (referencias, hora)" value="${esc(n.note)}" oninput="dvn().note=this.value" style="flex:1"><input type="number" min="0" inputmode="decimal" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="dvn().fee=this.value"></div>
+ <small style="display:block">Productos: <b>${money(tot)}</b>${pcs ? ' · ' + pcs + (pcs == 1 ? ' tamal' : ' tamales') : ''}</small>
+ <div class="form"><button class="go" style="flex:1" onclick="saveDv()">Guardar reparto</button></div></div>`;
+}
+
+async function saveDv() {
+  const n = dvn(),
+    items = {};
+  Object.entries(n.items).forEach(([f, v]) => {
+    if (v > 0) items['f' + f] = v;
+  });
+  if (!Object.keys(items).length) return toast('Elige los tamales del reparto');
+  const z0 = noPrice(Object.keys(items).map(k => +k.slice(1)));
+  if (z0) return toast('Falta el precio de ' + z0 + '. Revisa Ajustes');
+  if (!n.client.trim()) return toast('Escribe el nombre del cliente');
+  if (!n.addr.trim()) return toast('Escribe la dirección de entrega');
+  if (!lock('dv')) return;
+  try {
+    await db.collection('deliveries').add({
+      day: D,
+      branch: n.branch,
+      items,
+      client: n.client.trim(),
+      phone: n.phone.trim(),
+      addr: n.addr.trim(),
+      note: n.note.trim(),
+      total: dvSum(n),
+      fee: Math.max(0, +n.fee || 0),
+      status: 'pendiente',
+      by: S.me.user,
+      byName: S.me.name,
+      drv: null,
+      drvName: null,
+      ts: Date.now(),
+    });
+    S.dvn = null;
+    S.dvf = false;
+    toast('Reparto guardado');
+    render(true);
+  } catch (e) {
+    delete lock.s.dv;
+    err(e);
+  }
+}
+
+async function dvSet(id, patch, msg) {
+  try {
+    await db.doc('deliveries/' + id).update(patch);
+    if (msg) toast(msg);
+  } catch (e) {
+    err(e);
+  }
+}
+
+const dvTake = id =>
+  dvSet(
+    id,
+    { status: 'en_ruta', drv: S.me.user, drvName: S.me.name, tsTake: Date.now() },
+    'Reparto tomado'
+  );
+
+const dvRelease = id =>
+  ask('¿Soltar este reparto? Vuelve a quedar disponible para otro repartidor.', () =>
+    dvSet(id, { status: 'pendiente', drv: null, drvName: null }, 'Reparto liberado')
+  );
+
+const dvCancel = id =>
+  ask('¿Cancelar este reparto?', () => dvSet(id, { status: 'cancelado' }, 'Reparto cancelado'));
+
+function dvChg(due) {
+  const v = $('#dvp').value,
+    e = $('#dvq');
+  if (v === '') {
+    e.textContent = '';
+    return;
+  }
+  const d = +v - due;
+  e.className = 'big ' + (d < 0 ? 'bad' : 'ok');
+  e.textContent = d < 0 ? 'Faltan ' + money(-d) : 'Cambio: ' + money(d);
+}
+
+function dvDone(id) {
+  const d = (S.dv || []).find(x => x._id == id);
+  if (!d) return;
+  const due = dvDue(d),
+    m = $('#modal');
+  m.innerHTML = `<div class="card"><small>Entregar · ${esc(d.client)}</small><p>${esc(dvTxt(d))}</p><small>Cobrar${d.fee ? ' (incluye envío ' + money(d.fee) + ')' : ''}</small><div class="big" style="font-size:38px">${money(due)}</div><div class="form"><input type="number" min="0" inputmode="decimal" id="dvp" class="wide" aria-label="Con cuánto paga el cliente" placeholder="Paga con $" oninput="dvChg(${due})"></div><div id="dvq" class="big" style="font-size:26px"></div><div class="form"><button id="mk">Confirmar entrega</button><button class="alt" id="mn">Cancelar</button></div></div>`;
+  m.style.display = 'flex';
+  $('#mn').onclick = () => (m.style.display = 'none');
+  $('#mk').onclick = () => {
+    const v = $('#dvp').value,
+      p = v === '' ? due : +v;
+    if (p < due) return toast('El pago no alcanza');
+    m.style.display = 'none';
+    dvSet(
+      id,
+      { status: 'entregado', cobrado: due, tsDone: Date.now() },
+      'Entregado' + (p > due ? ' · cambio ' + money(p - due) : '')
+    );
+  };
+}
+
+function dvFail(id) {
+  const d = (S.dv || []).find(x => x._id == id);
+  if (!d) return;
+  const m = $('#modal');
+  m.innerHTML = `<div class="card"><h3>No se pudo entregar</h3><small>${esc(d.client)} · ${esc(d.addr)}</small><div class="form"><select id="dvr" aria-label="Motivo"><option>Cliente no contestó</option><option>Cliente no estaba</option><option>Dirección incorrecta</option><option>Cliente canceló</option><option>Otro</option></select></div><div class="form"><button id="mk">Confirmar</button><button class="alt" id="mn">Volver</button></div></div>`;
+  m.style.display = 'flex';
+  $('#mn').onclick = () => (m.style.display = 'none');
+  $('#mk').onclick = () => {
+    const r = $('#dvr').value;
+    m.style.display = 'none';
+    dvSet(id, { status: 'fallido', reason: r, tsDone: Date.now() }, 'Marcado como no entregado');
+  };
+}
+
+function dvCard(d, rep) {
+  const t = DV[d.status] || ['', ''],
+    me = S.me,
+    ph = (d.phone || '').trim(),
+    mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.addr || ''),
+    A = me.role == 'admin';
+  let bt = '';
+  if (rep) {
+    if (d.status == 'pendiente') bt = `<button class="go p" onclick="dvTake('${d._id}')">Tomar reparto</button>`;
+    else if (d.status == 'en_ruta' && d.drv == me.user)
+      bt = `<button class="go p" onclick="dvDone('${d._id}')">Entregar y cobrar ${money(dvDue(d))}</button><button class="alt" onclick="dvFail('${d._id}')">No se pudo</button><button class="gh" onclick="dvRelease('${d._id}')">Soltar</button>`;
+  } else if (
+    (A && ['pendiente', 'en_ruta'].includes(d.status)) ||
+    (d.status == 'pendiente' && d.by == me.user)
+  )
+    bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
+  return `<div class="card apc${d.status == 'entregado' ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b><div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
+ <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}</div>
+ <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>
+ ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
+}
+
+/* Administrador y Pedidos */
+function dvPanel() {
+  const L = (S.dv || []).slice().sort((a, b) => b.ts - a.ts),
+    n = s => L.filter(d => d.status == s).length,
+    cash = L.filter(d => d.status == 'entregado').reduce((a, d) => a + nz(d.cobrado), 0);
+  return `<div class="kp" style="margin-bottom:8px"><div><small>Por tomar</small><b>${n('pendiente')}</b></div><div><small>En camino</small><b>${n('en_ruta')}</b></div><div><small>Entregados</small><b>${n('entregado')}</b></div></div>
+ ${S.me.role == 'admin' ? `<div class="card"><div class="row" style="border:0;padding:0"><div>Efectivo cobrado por repartidores<br><small>Lo que deben entregar hoy</small></div><b>${money(cash)}</b></div></div>` : ''}
+ <div class="form" style="margin:0 0 10px"><button class="alt" style="flex:1" onclick="dvToggle()">${S.dvf ? '✕ Cerrar formulario' : '＋ Nuevo reparto'}</button></div>
+ ${S.dvf ? dvForm() : ''}
+ ${L.map(d => dvCard(d, false)).join('') || '<div class="card"><small>Todavía no hay repartos hoy.</small></div>'}`;
+}
+
+/* Repartidor */
+function repView() {
+  const me = S.me.user,
+    L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
+    free = L.filter(d => d.status == 'pendiente'),
+    mine = L.filter(d => d.drv == me && d.status == 'en_ruta'),
+    ok = L.filter(d => d.drv == me && d.status == 'entregado'),
+    bad = L.filter(d => d.drv == me && d.status == 'fallido'),
+    cash = ok.reduce((a, d) => a + nz(d.cobrado), 0);
+  return (
+    head() +
+    alertSpace() +
+    `<div class="kp kv"><div><small>En camino</small><b>${mine.length}</b></div><div><small>Entregados</small><b>${ok.length}</b></div><div><small>Efectivo a rendir</small><b>${money(cash)}</b></div></div>` +
+    (mine.length ? '<h3 style="margin:12px 4px 6px">Mis repartos en camino</h3>' + mine.map(d => dvCard(d, true)).join('') : '') +
+    '<h3 style="margin:12px 4px 6px">Disponibles</h3>' +
+    (free.map(d => dvCard(d, true)).join('') || '<div class="card"><small>No hay repartos por tomar. Se actualiza solo.</small></div>') +
+    (ok.length + bad.length
+      ? '<h3 style="margin:12px 4px 6px">Terminados hoy</h3>' + [...ok, ...bad].map(d => dvCard(d, true)).join('')
+      : '')
+  );
+}
+
+const alertSpace = () => '';

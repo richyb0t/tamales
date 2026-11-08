@@ -48,7 +48,7 @@ function head() {
     A = m.role == 'admin',
     V = m.role == 'vend',
     n = V ? pin() : A ? lowList().length : 0;
-  return `<header class="top"><button class="hb" onclick="menu(1)" aria-label="Abrir menú">☰${n ? `<i class="dot">${n}</i>` : ''}</button><div class="ht"><b class="ttl">${esc(V ? brs()[m.branch] : A ? SEC[S.tab] || 'Resumen' : 'Pedidos')}</b><small>${A ? 'Administrador · ' : ''}${esc(m.name)} · ${D}</small></div></header>`;
+  return `<header class="top"><button class="hb" onclick="menu(1)" aria-label="Abrir menú">☰${n ? `<i class="dot">${n}</i>` : ''}</button><div class="ht"><b class="ttl">${esc(V ? brs()[m.branch] : A ? SEC[S.tab] || 'Resumen' : m.role == 'rep' ? 'Repartos' : 'Pedidos')}</b><small>${A ? 'Administrador · ' : ''}${esc(m.name)} · ${D}</small></div></header>`;
 }
 
 function menu(o) {
@@ -68,7 +68,7 @@ function menu(o) {
     A = m.role == 'admin',
     V = m.role == 'vend';
   /* Grupos del menú: el administrador ve «Operación» (el día a día) y «Análisis y gestión» (lo que se usa menos) */
-  const G = A
+    const G = A
     ? [
         [
           'Operación',
@@ -78,6 +78,7 @@ function menu(o) {
             ['tr', '🔁', 'Traspasos'],
             ['ct', '🧾', 'Cortes'],
             ['ap', '📌', 'Apartados', preN()],
+            ['dv', '🛵', 'Repartos'],
           ],
         ],
         [
@@ -101,7 +102,12 @@ function menu(o) {
             ],
           ],
         ]
-      : [['', [['e', '📋', 'Disponibilidad de hoy']]]];
+      : [
+          [
+            '',
+            [m.role == 'rep' ? ['e', '🛵', 'Mis repartos'] : ['e', '📋', 'Disponibilidad de hoy']],
+          ],
+        ];
   const cur = A ? S.tab || 'res' : V ? S.vt || 'v' : 'e',
     it = ([k, i, l, n]) =>
       `<button class="mi ${cur == k ? 'on' : ''}" onclick="go('${k}')"${cur == k ? ' aria-current="page"' : ''}><span>${i}</span><em>${l}</em>${n ? `<i class="dot2">${n}</i>` : ''}</button>`;

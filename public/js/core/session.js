@@ -101,7 +101,12 @@ function startSubs() {
       render();
     }, err)
   );
-  if (m.role != 'enc') subClaims();
+  if (m.role != 'enc' && m.role != 'rep') subClaims();
+  if (m.role != 'vend') subDv();
+  if (m.role == 'rep') {
+    render();
+    return;
+  } /* el repartidor solo necesita configuración y repartos */
   if (!rd) {
     render();
     return;
@@ -201,6 +206,20 @@ function startSubs() {
   if (M) subs.push(() => stockOff());
 }
 
+/* Repartos del día (administrador, pedidos y repartidor) */
+function subDv() {
+  S.dv = [];
+  subs.push(
+    db
+      .collection('deliveries')
+      .where('day', '==', D)
+      .onSnapshot(q => {
+        S.dv = q.docs.map(d => ({ _id: d.id, ...d.data() }));
+        render();
+      }, err)
+  );
+}
+
 let vRest = false,
   vSig = '';
 
@@ -210,9 +229,9 @@ function restoreView(u) {
   try {
     const x = JSON.parse(localStorage.getItem('tm_v') || 'null');
     if (!x || x.id !== u.uid) return;
-    if (['res', 'inv', 'tr', 'ct', 'aj', 'us', 'ap', 'rp'].includes(x.tab)) S.tab = x.tab;
+    if (['res', 'inv', 'tr', 'ct', 'aj', 'us', 'ap', 'rp', 'dv'].includes(x.tab)) S.tab = x.tab;
     if (['v', 'h', 'r', 'm'].includes(x.vt)) S.vt = x.vt;
-    if (['d', 'a'].includes(x.et)) S.et = x.et;
+    if (['d', 'a', 'r'].includes(x.et)) S.et = x.et;
     if (['h', 'o', 's'].includes(x.apt)) S.apt = x.apt;
     if (Number.isInteger(x.apb)) S.apb = x.apb;
     if (Number.isInteger(x.ib)) S.ib = x.ib;

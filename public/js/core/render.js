@@ -45,10 +45,10 @@ function renderNow(force) {
     return;
   }
   a.innerHTML = (
-    { admin: adminView, vend: vendView, enc: encView }[S.me.role] || (() => '<p>Rol no válido</p>')
+    { admin: adminView, vend: vendView, enc: encView, rep: repView  }[S.me.role] || (() => '<p>Rol no válido</p>')
   )();
-  if (S.me.role != 'vend') chkAlerts();
-  if (S.me.role != 'enc') schedSt();
+  if (!['vend', 'rep'].includes(S.me.role)) chkAlerts();
+  if (!['enc', 'rep'].includes(S.me.role)) schedSt();
   labelControls();
 }
 

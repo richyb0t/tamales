@@ -26,7 +26,7 @@ async function setNav(a) {
   } catch (e) {
     err(e);
   }
-}
+} 
 
 function navOff(i) {
   const a = navSel().slice();

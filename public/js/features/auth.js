@@ -74,6 +74,7 @@ function loginView() {
     ok = l.every(p => ROLE[p.role]),
     R = ok
       ? [
+          ['rep', 'Repartidor', 'Repartidores', 'Entregas a domicilio'],
           ['vend', 'Vendedor', 'Vendedores', 'Vendo en una sucursal'],
           ['enc', 'Pedidos', 'Pedidos', 'Pedidos, apartados y disponibilidad'],
           ['admin', 'Administrador', 'Administradores', 'Inventario, ventas y cortes'],
@@ -92,6 +93,7 @@ const RI = {
   vend: '<svg viewBox="0 0 24 24"><path d="M3 4h2.2l2.3 10.2a1 1 0 0 0 1 .8h8.4a1 1 0 0 0 1-.8L19.5 8H6.1"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/></svg>',
   enc: '<svg viewBox="0 0 24 24"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2.5"/><path d="M9 4.5h6V7.5H9zM9.5 12h5M9.5 16h5"/></svg>',
   admin: '<svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V4M19 20v-5"/></svg>',
+  rep: '<svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l4-8h4l4 8M10 9H8"/></svg>',
 };
 
 function pickRole(r) {
