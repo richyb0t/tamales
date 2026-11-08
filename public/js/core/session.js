@@ -236,7 +236,7 @@ function restoreView(u) {
     if (['res', 'inv', 'tr', 'ct', 'aj', 'us', 'ap', 'rp', 'dv'].includes(x.tab)) S.tab = x.tab;
     if (['v', 'h', 'r', 'm'].includes(x.vt)) S.vt = x.vt;
     if (['d', 'a', 'r'].includes(x.et)) S.et = x.et;
-    if (['e', 't'].includes(x.rt)) S.rt = x.rt;
+    if (['e', 'c', 't'].includes(x.rt)) S.rt = x.rt;
     if (['h', 'o', 's'].includes(x.apt)) S.apt = x.apt;
     if (Number.isInteger(x.apb)) S.apb = x.apb;
     if (Number.isInteger(x.ib)) S.ib = x.ib;

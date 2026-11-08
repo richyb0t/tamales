@@ -27,6 +27,7 @@ import {
   query,
   where,
   writeBatch,
+  runTransaction,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import {
   getFunctions,
@@ -96,6 +97,25 @@ const db = {
         commit: () => W(b.commit()),
       };
     return o;
+  },
+  /* Toma atómica: solo pasa de «pendiente» a «en_ruta» si nadie más la tomó */
+  takeDelivery: (id, user, name) => {
+    const ref = doc(fs, 'deliveries/' + id);
+    return runTransaction(fs, async tx => {
+      const snap = await tx.get(ref);
+      const d = snap.exists() ? snap.data() : null;
+      if (!d || d.status != 'pendiente' || d.drv) {
+        const e = new Error('taken');
+        e.code = 'taken';
+        throw e;
+      }
+      tx.update(ref, {
+        status: 'en_ruta',
+        drv: user,
+        drvName: name,
+        tsTake: Date.now(),
+      });
+    });
   },
 };
 let sa;

@@ -263,12 +263,15 @@ async function dvSet(id, patch, msg) {
   }
 }
 
-const dvTake = id =>
-  dvSet(
-    id,
-    { status: 'en_ruta', drv: S.me.user, drvName: S.me.name, tsTake: Date.now() },
-    'Reparto tomado'
-  );
+async function dvTake(id) {
+  try {
+    await db.takeDelivery(id, S.me.user, S.me.name);
+    toast('Reparto tomado');
+  } catch (e) {
+    if (e && e.code == 'taken') toast('Ese reparto ya lo tomó otro repartidor');
+    else err(e);
+  }
+}
 
 const dvRelease = id =>
   ask('¿Soltar este reparto? Vuelve a quedar disponible para otro repartidor.', () =>
@@ -403,23 +406,28 @@ function repView() {
     ok = L.filter(d => d.drv == me && d.status == 'entregado'),
     bad = L.filter(d => d.drv == me && d.status == 'fallido'),
     done = [...ok, ...bad].sort((a, b) => (b.tsDone || b.ts) - (a.tsDone || a.ts)),
-    cash = ok.reduce((a, d) => a + nz(d.cobrado), 0);
+    cash = ok.reduce((a, d) => a + nz(d.cobrado), 0),
+    due = mine.reduce((a, d) => a + dvDue(d), 0);
   const kp =
     t == 't'
       ? `<div class="kp kv"><div><small>Entregados</small><b>${ok.length}</b></div><div><small>No entregados</small><b>${bad.length}</b></div><div><small>Efectivo cobrado</small><b>${money(cash)}</b></div></div>`
-      : `<div class="kp kv"><div><small>En camino</small><b>${mine.length}</b></div><div><small>Entregados</small><b>${ok.length}</b></div><div><small>Efectivo a rendir</small><b>${money(cash)}</b></div></div>`;
+      : t == 'c'
+        ? `<div class="kp kv"><div><small>En camino</small><b>${mine.length}</b></div><div><small>Por cobrar</small><b>${money(due)}</b></div><div><small>Efectivo a rendir</small><b>${money(cash)}</b></div></div>`
+        : `<div class="kp kv"><div><small>Disponibles</small><b>${free.length}</b></div><div><small>En camino</small><b>${mine.length}</b></div><div><small>Entregados</small><b>${ok.length}</b></div></div>`;
   const body =
     t == 't'
       ? '<h3 style="margin:12px 4px 6px">Terminados hoy</h3>' +
         (done.length
           ? done.map(d => dvCard(d, true, true)).join('')
           : '<div class="card"><small>No hay repartos terminados hoy.</small></div>')
-      : (mine.length
-          ? '<h3 style="margin:12px 4px 6px">Mis repartos en camino</h3>' + mine.map(d => dvCard(d, true)).join('')
-          : '') +
-        '<h3 style="margin:12px 4px 6px">Disponibles</h3>' +
-        (free.map(d => dvCard(d, true)).join('') ||
-          '<div class="card"><small>No hay repartos por tomar. Se actualiza solo.</small></div>');
+      : t == 'c'
+        ? '<h3 style="margin:12px 4px 6px">Mis repartos en camino</h3>' +
+          (mine.length
+            ? mine.map(d => dvCard(d, true)).join('')
+            : '<div class="card"><small>No tienes repartos en camino.</small></div>')
+        : '<h3 style="margin:12px 4px 6px">Disponibles para tomar</h3>' +
+          (free.map(d => dvCard(d, true)).join('') ||
+            '<div class="card"><small>No hay repartos por tomar. Se actualiza solo.</small></div>');
   return (
     head() +
     alertSpace() +
@@ -427,7 +435,8 @@ function repView() {
     body +
     nav(
       [
-        ['e', '🛵', 'Repartos', mine.length || ''],
+        ['e', '🛵', 'Repartos', free.length || ''],
+        ['c', '🚚', 'En camino', mine.length || ''],
         ['t', '✅', 'Terminados', done.length || ''],
         ['more', '⋯', 'Más'],
       ],
