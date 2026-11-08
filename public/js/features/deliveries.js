@@ -101,16 +101,8 @@ function dvForm() {
   return `<div class="card" id="dvf"><h3>Nuevo reparto</h3><small>Escribe los datos del cliente y elige qué lleva. El repartidor lo verá y lo tomará.</small>
  <small style="display:block;margin-top:8px">¿De qué sucursal sale?</small>
 ${(() => {
-  const items = Object.entries(sel).filter(([k, v]) => v > 0);
-  const pcs = Object.values(sel).reduce((a, v) => a + (v || 0), 0);
   return `<div class="seg" style="flex-wrap:wrap">${BI().map(i => {
-    let info = '';
-    if (items.length) {
-      const ok = items.every(([k, v]) => left(i, +k.slice(1)) >= v);
-      const have = items.reduce((a, [k, v]) => a + Math.min(left(i, +k.slice(1)), v), 0);
-      info = ok ? '✓ disponible' : (have + '/' + pcs + ' disp.');
-    }
-    return `<button class="${i == n.branch ? 'on' : ''} ${items.length && !items.every(([k, v]) => left(i, +k.slice(1)) >= v) ? 'low' : ''}" onclick="dvBr(${i})" style="flex-direction:column"><span>${esc(brs()[i])}</span>${info ? `<small style="font-size:10px;opacity:.85">${info}</small>` : ''}</button>`;
+    return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})">${esc(brs()[i])}</button>`;
   }).join('')}</div>`;
 })()}
  ${F.map((nombre, f) =>
