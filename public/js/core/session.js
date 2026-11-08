@@ -102,7 +102,7 @@ function startSubs() {
     }, err)
   );
   if (m.role != 'enc' && m.role != 'rep') subClaims();
-  if (m.role != 'vend') subDv();
+  if (m.role != 'vend' || rd) subDv();
   if (m.role == 'rep') {
     render();
     return;
@@ -209,14 +209,17 @@ function startSubs() {
 /* Repartos del día (administrador, pedidos y repartidor) */
 function subDv() {
   S.dv = [];
+  const m = S.me;
+  let q = db.collection('deliveries').where('day', '==', D);
+  if (m && m.role == 'vend' && m.branch != null) q = q.where('branch', '==', m.branch);
   subs.push(
-    db
-      .collection('deliveries')
-      .where('day', '==', D)
-      .onSnapshot(q => {
-        S.dv = q.docs.map(d => ({ _id: d.id, ...d.data() }));
+    q.onSnapshot(
+      qq => {
+        S.dv = qq.docs.map(d => ({ _id: d.id, ...d.data() }));
         render();
-      }, err)
+      },
+      err
+    )
   );
 }
 

@@ -177,7 +177,7 @@ service cloud.firestore {
     }
     // Repartos a domicilio: los crea el administrador o Pedidos; el repartidor los toma y cierra
     match /deliveries/{id} {
-      allow read: if adm() || enc() || rep();
+      allow read: if adm() || enc() || rep() || vend(resource.data.branch);
       allow create: if adm() || (enc() && request.resource.data.by == prof().user
         && request.resource.data.status == 'pendiente');
       allow update: if adm()

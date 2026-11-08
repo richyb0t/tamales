@@ -91,6 +91,18 @@ async function saveDv() {
   if (z0) return toast('Falta el precio de ' + z0 + '. Revisa Ajustes');
   if (!n.client.trim()) return toast('Escribe el nombre del cliente');
   if (!n.addr.trim()) return toast('Escribe la dirección de entrega');
+  const b = n.branch;
+  const sh = Object.entries(items).find(([k, v]) => v > left(b, +k.slice(1)));
+  if (sh)
+    return toast(
+      'En ' +
+        brs()[b] +
+        ' solo quedan ' +
+        Math.max(0, left(b, +sh[0].slice(1))) +
+        ' de ' +
+        F[+sh[0].slice(1)] +
+        '. Elige otra sucursal o menos'
+    );
   if (!lock('dv')) return;
   try {
     await db.collection('deliveries').add({
