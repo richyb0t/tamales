@@ -338,7 +338,11 @@ function repView() {
 const alertSpace = () => '';
 
 function initMinimaps() {
-  if (typeof L === 'undefined') return;
+  if (typeof L === 'undefined') {
+    // Leaflet aún no cargó: reintentar
+    setTimeout(initMinimaps, 200);
+    return;
+  }
   document.querySelectorAll('.minimap').forEach(el => {
     if (el.dataset.inited) return;
     el.dataset.inited = '1';
