@@ -32,7 +32,11 @@ const avI = n => esc((String(n).trim()[0] || '?').toUpperCase());
 
 const hm = ts => {
   const d = new Date(ts);
-  return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  let h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return h + ':' + pad(m) + ' ' + ampm;
 };
 
 /* --- corte a ciegas: el vendedor no ve cuánto debe haber hasta hacerlo --- */

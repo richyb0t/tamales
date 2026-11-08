@@ -46,7 +46,11 @@ function showMv(b) {
   const m = $('#modal'),
     hm = ts => {
       const d = new Date(ts);
-      return pad(d.getHours()) + ':' + pad(d.getMinutes());
+      let h = d.getHours();
+      const m = d.getMinutes();
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return h + ':' + pad(m) + ' ' + ampm;
     },
     sa = S.sales.filter(s => s.branch == b),
     sum = t => sa.filter(s => s.type == t && live(s)).reduce((a, s) => a + s.qty * s.price, 0),
