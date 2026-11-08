@@ -23,7 +23,7 @@ const load = (b, f) => +(S.loads[b] || {})['f' + f] || 0;
 
 const used = (b, f) =>
   S.sales
-    .filter(s => s.branch == b && s.f == f)
+    .filter(s => s.branch == b && s.f == f && !s.dv)
     .reduce(
       (a, s) =>
         a +

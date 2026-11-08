@@ -281,16 +281,40 @@ function dvDone(id) {
   m.innerHTML = `<div class="card"><small>Entregar · ${esc(d.client)}</small><p>${esc(dvTxt(d))}</p><small>Cobrar${d.fee ? ' (incluye envío ' + money(d.fee) + ')' : ''}</small><div class="big" style="font-size:38px">${money(due)}</div><div class="form"><input type="number" min="0" inputmode="decimal" id="dvp" class="wide" aria-label="Con cuánto paga el cliente" placeholder="Paga con $" oninput="dvChg(${due})"></div><div id="dvq" class="big" style="font-size:26px"></div><div class="form"><button id="mk">Confirmar entrega</button><button class="alt" id="mn">Cancelar</button></div></div>`;
   m.style.display = 'flex';
   $('#mn').onclick = () => (m.style.display = 'none');
-  $('#mk').onclick = () => {
+  $('#mk').onclick = async () => {
     const v = $('#dvp').value,
       p = v === '' ? due : +v;
     if (p < due) return toast('El pago no alcanza');
     m.style.display = 'none';
-    dvSet(
-      id,
-      { status: 'entregado', cobrado: due, tsDone: Date.now() },
-      'Entregado' + (p > due ? ' · cambio ' + money(p - due) : '')
-    );
+    const ts = Date.now();
+    const it = Object.entries(d.items || {}).filter(([_, v]) => v > 0);
+    if (!lock('dv' + id)) return;
+    try {
+      const bt = db.batch();
+      bt.update('deliveries/' + id, { status: 'entregado', cobrado: due, tsDone: ts });
+      it.forEach(([k, v], i) =>
+        bt.set('sales/dv' + id + '_' + i, {
+          day: D,
+          branch: d.branch,
+          f: +k.slice(1),
+          qty: v,
+          type: 'vendido',
+          price: price(+k.slice(1)),
+          dv: id,
+          client: d.client,
+          by: S.me.user,
+          ts: ts + i,
+        })
+      );
+      await bt.commit();
+      try {
+        navigator.vibrate && navigator.vibrate(40);
+      } catch (_) {}
+      toast('Entregado' + (p > due ? ' · cambio ' + money(p - due) : ''));
+    } catch (e) {
+      delete lock.s['dv' + id];
+      err(e);
+    }
   };
 }
 
