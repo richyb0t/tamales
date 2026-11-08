@@ -104,50 +104,6 @@ async function dvGeocode() {
   }
 }
 
-function dvGps() {
-  if (!navigator.geolocation) return toast('Tu dispositivo no soporta ubicación');
-  const b = document.getElementById('dvgps');
-  const go = () => {
-    if (b) { b.disabled = true; b.textContent = 'Capturando…'; }
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const n = dvn();
-        n.lat = pos.coords.latitude;
-        n.lng = pos.coords.longitude;
-        const ranked = BI().map(i => {
-          const l = (S.cfg.branchLocs || [])[i];
-          const d = l ? distKm({ lat: n.lat, lng: n.lng }, l) : null;
-          return { i, d };
-        }).filter(x => x.d != null).sort((a, c) => a.d - c.d);
-        if (ranked.length) n.branch = ranked[0].i;
-        if (b) { b.disabled = false; b.textContent = '📍 Capturar ubicación'; }
-        toast('Ubicación capturada');
-        render(true);
-      },
-      err => {
-        if (b) { b.disabled = false; b.textContent = '📍 Capturar ubicación'; }
-        if (err.code == 1)
-          toast('Permiso de ubicación denegado. Toca el candado de la barra de direcciones → Permisos → Ubicación → Permitir, y recarga.');
-        else if (err.code == 2)
-          toast('Ubicación no disponible. Intenta de nuevo o usa "Buscar ubicación".');
-        else
-          toast('Tiempo de espera agotado. Intenta de nuevo.');
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
-  };
-  if (navigator.permissions && navigator.permissions.query) {
-    navigator.permissions
-      .query({ name: 'geolocation' })
-      .then(p => {
-        if (p.state == 'denied')
-          toast('La ubicación está bloqueada para este sitio. Toca el candado de la barra de direcciones → Permisos → Ubicación → Permitir, y recarga.');
-        else go();
-      })
-      .catch(go);
-  } else go();
-}
-
 function dvAdd(f, n) {
   const x = dvn();
   x.items = { ...x.items, [f]: Math.max(0, Math.min(499, (x.items[f] || 0) + n)) };
@@ -182,8 +138,8 @@ function dvForm() {
   if (step === 1) {
     body = `
      <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
-     <div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación</button><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Capturar ubicación</button></div>
-     ${n.lat && n.lng ? `<small style="display:block;opacity:.7;margin:4px 0">Ubicación: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)} (${esc(n.addr || '')})</small><iframe src="https://www.google.com/maps?q=${n.lat},${n.lng}&z=16&output=embed" width="100%" height="140" style="border:0;border-radius:8px;margin:4px 0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : '<small style="display:block;opacity:.7;margin:4px 0">Opcional: busca o captura la ubicación para saber qué sucursal queda más cerca.</small>'}
+     <div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación de la dirección</button></div>
+     ${n.lat && n.lng ? `<small style="display:block;opacity:.7;margin:4px 0">Ubicación: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)} (${esc(n.addr || '')})</small><iframe src="https://www.google.com/maps?q=${n.lat},${n.lng}&z=16&output=embed" width="100%" height="140" style="border:0;border-radius:8px;margin:4px 0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : '<small style="display:block;opacity:.7;margin:4px 0">Opcional: busca la ubicación para saber qué sucursal queda más cerca.</small>'}
      <details style="margin:4px 0"><summary style="cursor:pointer;opacity:.7;font-size:12px">Ingresar coordenadas manualmente</summary><div class="form"><input type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div></details>
      ${(() => {
        const lat = +n.lat, lng = +n.lng;
@@ -243,7 +199,7 @@ function dvForm() {
     body = `
      <div class="form"><input id="dvc" placeholder="Nombre del cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
      <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
-     <div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación</button><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Capturar ubicación</button></div>
+     <div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación de la dirección</button></div>
      ${n.lat && n.lng ? `<small style="display:block;opacity:.7;margin:4px 0">Ubicación: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)} (${esc(n.addr || '')})</small><iframe src="https://www.google.com/maps?q=${n.lat},${n.lng}&z=16&output=embed" width="100%" height="140" style="border:0;border-radius:8px;margin:4px 0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : ''}
      <details style="margin:4px 0"><summary style="cursor:pointer;opacity:.7;font-size:12px">Ingresar coordenadas manualmente</summary><div class="form"><input type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div></details>
      <div class="form"><input placeholder="Nota (referencias, hora)" value="${esc(n.note)}" oninput="dvn().note=this.value" style="flex:1"><input type="number" min="0" inputmode="decimal" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="dvn().fee=this.value" style="flex:1"></div>
