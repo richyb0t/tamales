@@ -107,33 +107,45 @@ async function dvGeocode() {
 function dvGps() {
   if (!navigator.geolocation) return toast('Tu dispositivo no soporta ubicación');
   const b = document.getElementById('dvgps');
-  if (b) { b.disabled = true; b.textContent = 'Capturando…'; }
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const n = dvn();
-      n.lat = pos.coords.latitude;
-      n.lng = pos.coords.longitude;
-      const ranked = BI().map(i => {
-        const l = (S.cfg.branchLocs || [])[i];
-        const d = l ? distKm({ lat: n.lat, lng: n.lng }, l) : null;
-        return { i, d };
-      }).filter(x => x.d != null).sort((a, c) => a.d - c.d);
-      if (ranked.length) n.branch = ranked[0].i;
-      if (b) { b.disabled = false; b.textContent = '📍 Usar mi ubicación'; }
-      toast('Ubicación capturada');
-      render(true);
-    },
-    err => {
-      if (b) { b.disabled = false; b.textContent = '📍 Usar mi ubicación'; }
-      if (err.code == 1)
-        toast('Permiso de ubicación denegado. Actívalo en los ajustes del navegador o usa "Buscar ubicación" / coordenadas manuales.');
-      else if (err.code == 2)
-        toast('Ubicación no disponible. Intenta de nuevo o usa "Buscar ubicación".');
-      else
-        toast('Tiempo de espera agotado. Intenta de nuevo.');
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
+  const go = () => {
+    if (b) { b.disabled = true; b.textContent = 'Capturando…'; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const n = dvn();
+        n.lat = pos.coords.latitude;
+        n.lng = pos.coords.longitude;
+        const ranked = BI().map(i => {
+          const l = (S.cfg.branchLocs || [])[i];
+          const d = l ? distKm({ lat: n.lat, lng: n.lng }, l) : null;
+          return { i, d };
+        }).filter(x => x.d != null).sort((a, c) => a.d - c.d);
+        if (ranked.length) n.branch = ranked[0].i;
+        if (b) { b.disabled = false; b.textContent = '📍 Capturar ubicación'; }
+        toast('Ubicación capturada');
+        render(true);
+      },
+      err => {
+        if (b) { b.disabled = false; b.textContent = '📍 Capturar ubicación'; }
+        if (err.code == 1)
+          toast('Permiso de ubicación denegado. Toca el candado de la barra de direcciones → Permisos → Ubicación → Permitir, y recarga.');
+        else if (err.code == 2)
+          toast('Ubicación no disponible. Intenta de nuevo o usa "Buscar ubicación".');
+        else
+          toast('Tiempo de espera agotado. Intenta de nuevo.');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions
+      .query({ name: 'geolocation' })
+      .then(p => {
+        if (p.state == 'denied')
+          toast('La ubicación está bloqueada para este sitio. Toca el candado de la barra de direcciones → Permisos → Ubicación → Permitir, y recarga.');
+        else go();
+      })
+      .catch(go);
+  } else go();
 }
 
 function dvAdd(f, n) {
