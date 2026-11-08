@@ -352,7 +352,7 @@ function dvFail(id) {
   };
 }
 
-function dvCard(d, rep, mark) {
+function dvCard(d, rep) {
   const t = DV[d.status] || ['', ''],
     me = S.me,
     ph = (d.phone || '').trim(),
@@ -368,7 +368,7 @@ function dvCard(d, rep, mark) {
     (d.status == 'pendiente' && d.by == me.user)
   )
     bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
-  return `<div class="card apc${d.status == 'entregado' || mark ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b><div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
+  return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b><div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}</div>
  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${d.lat != null && d.lng != null ? `<div style="margin:4px 0"><iframe src="https://www.google.com/maps?q=${d.lat},${d.lng}&z=16&output=embed" width="100%" height="180" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div style="margin-top:4px"><a href="https://www.google.com/maps?q=${d.lat},${d.lng}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div></div>` : ''}${(() => {
     if (d.lat == null || d.lng == null) return '';
@@ -418,7 +418,7 @@ function repView() {
     t == 't'
       ? '<h3 style="margin:12px 4px 6px">Terminados hoy</h3>' +
         (done.length
-          ? done.map(d => dvCard(d, true, true)).join('')
+          ? done.map(d => dvCard(d, true)).join('')
           : '<div class="card"><small>No hay repartos terminados hoy.</small></div>')
       : t == 'c'
         ? '<h3 style="margin:12px 4px 6px">Mis repartos en camino</h3>' +
@@ -437,7 +437,7 @@ function repView() {
       [
         ['e', '🛵', 'Repartos', free.length || ''],
         ['c', '🚚', 'En camino', mine.length || ''],
-        ['t', '✅', 'Terminados', done.length || ''],
+        ['t', '✅', 'Terminados'],
         ['more', '⋯', 'Más'],
       ],
       t,

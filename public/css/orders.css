@@ -5,6 +5,9 @@
 .apc.ok {
   border-left-color: var(--ok);
 }
+.apc.fail {
+  border-left-color: var(--bad);
+}
 .aph {
   display: flex;
   justify-content: space-between;
