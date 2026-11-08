@@ -29,6 +29,30 @@ function dvBr(i) {
   render(true);
 }
 
+async function dvGeocode() {
+  const n = dvn();
+  const q = (n.addr || '').trim();
+  if (!q) return toast('Escribe la dirección primero');
+  const b = document.getElementById('dvgeo');
+  if (b) { b.disabled = true; b.textContent = 'Buscando…'; }
+  try {
+    const r = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q) + '&format=json&limit=1', { headers: { 'Accept-Language': 'es' } });
+    const data = await r.json();
+    if (!data || !data.length) {
+      toast('No se encontró la dirección. Pega las coordenadas manualmente o usa GPS.');
+      return;
+    }
+    n.lat = +data[0].lat;
+    n.lng = +data[0].lon;
+    toast('Ubicación encontrada: ' + (data[0].display_name || '').slice(0, 60));
+    render(true);
+  } catch (e) {
+    toast('Error al buscar. Pega las coordenadas manualmente.');
+  } finally {
+    if (b) { b.disabled = false; b.textContent = '🔍 Buscar ubicación de la dirección'; }
+  }
+}
+
 function dvGps() {
   if (!navigator.geolocation) return toast('Tu dispositivo no soporta ubicación');
   const b = document.getElementById('dvgps');
@@ -100,6 +124,7 @@ ${CH.map((c, i) => {
 }).join('')}
   <div class="form"><input id="dvc" placeholder="Nombre del cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
  <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
+<div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación de la dirección</button></div>
 <div class="form"><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Capturar ubicación del pedido</button>${n.lat && n.lng ? `<small style="flex-basis:100%;opacity:.7">Ubicación del pedido: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)}</small>` : '<small style="flex-basis:100%;opacity:.7">Ve al lugar del pedido (o pega las coordenadas del cliente) y captura la ubicación para saber qué sucursal queda más cerca.</small>'}</div>
 <details style="margin:4px 0"><summary style="cursor:pointer;opacity:.7;font-size:12px">Ingresar coordenadas manualmente</summary><div class="form"><input type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div></details>
 ${(() => {
