@@ -447,7 +447,7 @@ function dvRouteMap(d) {
       encodeURIComponent(dest) +
       (bq ? '&waypoints=' + encodeURIComponent(bq) : '') +
       '&travelmode=driving';
-  return `<div style="margin:6px 0">${bq ? leg(origin, bq, '1. Tu ubicación → ' + esc(bn)) : ''}${leg(bq || origin, dest, (bq ? '2. ' + esc(bn) + ' → ' : 'Tu ubicación → ') + 'domicilio')}<div style="display:flex;gap:6px;margin-top:6px"><a href="${dir}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:6px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;font-weight:700;text-decoration:none">🗺️ Navegar recorrido completo</a><button class="gh" onclick="dvRoute('${d._id}')">🔄</button></div></div>`;
+  return `<div style="margin:6px 0">${bq ? leg(origin, bq, '1. Tu ubicación → ' + esc(bn)) : ''}${leg(bq || origin, dest, (bq ? '2. ' + esc(bn) + ' → ' : 'Tu ubicación → ') + 'domicilio')}<div style="display:grid;gap:8px;margin-top:8px"><a href="${dir}" target="_blank" rel="noopener" class="dvnv">🧭 Navegar recorrido completo</a><button class="gh" onclick="dvRoute('${d._id}')">🔄 Actualizar mi ubicación</button></div></div>`;
 }
 
 /* Administrador y Pedidos */

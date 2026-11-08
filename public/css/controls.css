@@ -55,6 +55,33 @@ button.gh.bad {
   background: var(--bad-t);
   color: var(--bad);
 }
+/* Enlace que se ve como botón principal (p. ej. abrir navegación) */
+.dvnv {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 11px 18px;
+  border-radius: var(--r-ctl);
+  background: var(--go);
+  color: var(--on-ac);
+  font-weight: 650;
+  letter-spacing: -0.006em;
+  line-height: 1.2;
+  text-decoration: none;
+  transition:
+    transform var(--d1) var(--ease),
+    filter var(--d2) var(--ease);
+}
+.dvnv:active {
+  transform: scale(0.97);
+  filter: brightness(0.94);
+}
+@media (hover: hover) and (pointer: fine) {
+  .dvnv:hover {
+    filter: brightness(1.07);
+  }
+}
 .st button.gh:not(:hover) {
   background: var(--fill);
 }
