@@ -67,7 +67,7 @@ const t = S.et || 'd';
 return (
 head() +
 alertCard() +
-`<div class="seg" style="margin:0 0 10px"><button class="${t == 'd' ? 'on' : ''}" onclick="S.et='d';S.anew=false;render(true)">Disponibilidad</button><button class="${t == 'r' ? 'on' : ''}" onclick="S.et='r';S.anew=false;render(true)">Repartos</button><button class="${t == 'a' ? 'on' : ''}" onclick="S.et='a';S.anew=false;S.apt=S.apt=='s'?'h':S.apt;render(true)">Apartados${S.pre.length ? ' (' + S.pre.length + ')' : ''}</button><button class="${t == 's' ? 'on' : ''}" onclick="S.et='s';S.anew=false;render(true)">Entre sucursales${(n => (n ? ' (' + n + ')' : ''))((S.rq || []).filter(r => ['pendiente', 'aceptado'].includes(rqSt(r))).length)}</button></div>` +
+`<div class="seg" style="margin:0 0 10px"><button class="${t == 'd' ? 'on' : ''}" onclick="S.et='d';S.anew=false;render(true)">Disponibilidad</button><button class="${t == 'a' ? 'on' : ''}" onclick="S.et='a';S.anew=false;S.apt=S.apt=='s'?'h':S.apt;render(true)">Apartados${S.pre.length ? ' (' + S.pre.length + ')' : ''}</button><button class="${t == 's' ? 'on' : ''}" onclick="S.et='s';S.anew=false;render(true)">Entre sucursales${(n => (n ? ' (' + n + ')' : ''))((S.rq || []).filter(r => ['pendiente', 'aceptado'].includes(rqSt(r))).length)}</button></div>` +
 (t == 'r'
 ? dvPanel()
 : t == 'a'
