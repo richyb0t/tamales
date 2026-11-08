@@ -103,7 +103,7 @@ function dvForm() {
   const steps = ['Dirección', 'Productos', 'Sucursal', 'Guardar'];
   const head = `<div class="card" id="dvf"><h3>Nuevo reparto</h3><small>Paso ${step} de 4 · ${steps[step - 1]}</small><div style="display:flex;gap:4px;margin:6px 0 10px">${steps.map((s, i) => `<div style="flex:1;height:4px;border-radius:2px;background:${i + 1 <= step ? 'var(--ac)' : 'var(--bd)'}"></div>`).join('')}</div>`;
   const nav = (back, next, nextLabel) =>
-    `<div class="form" style="margin-top:10px;position:sticky;bottom:0;background:var(--bg);padding:8px 0;z-index:5">${back ? `<button class="alt" style="flex:1" onclick="dvStep(${back})">← Atrás</button>` : ''}${next ? `<button class="go" style="flex:1" onclick="dvStep(${next})">${nextLabel || 'Siguiente →'}</button>` : ''}</div>`;
+    `<div class="form" style="margin-top:10px">${back ? `<button class="alt" style="flex:1" onclick="dvStep(${back})">← Atrás</button>` : ''}${next ? `<button class="go" style="flex:1" onclick="dvStep(${next})">${nextLabel || 'Siguiente →'}</button>` : ''}</div>`;
   let body = '';
   if (step === 1) {
     body = `
@@ -127,6 +127,7 @@ function dvForm() {
     `;
   } else if (step === 2) {
     body = `
+     ${nav(1, 3, 'Siguiente: Sucursal →')}
      <small style="display:block;margin-bottom:6px">Tamales</small>
      ${F.map((nombre, f) =>
        price(f)
