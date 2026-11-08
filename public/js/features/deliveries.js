@@ -157,9 +157,10 @@ function dvForm() {
      <small style="display:block;margin-bottom:6px">¿De qué sucursal sale?</small>
      <div class="seg" style="flex-wrap:wrap">${BI().map(i => {
        const ok = items.length ? items.every(([k, v]) => left(i, +k.slice(1)) >= v) : null;
-       const light = ok === null ? '' : (ok ? ' 🟢' : ' 🔴');
        const isNear = i === nearest;
-       return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative">${isNear ? '<span style="position:absolute;top:2px;right:4px;font-size:9px">📍</span>' : ''}${esc(brs()[i])}${light}</button>`;
+       const dot = ok === null ? '' : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${ok ? '#22c55e' : '#ef4444'};box-shadow:0 0 6px ${ok ? 'rgba(34,197,94,.6)' : 'rgba(239,68,68,.6)'};margin-left:6px;vertical-align:middle"></span>`;
+       const badge = isNear ? `<span style="position:absolute;top:-6px;right:-6px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.25);letter-spacing:.3px">MÁS CERCANA</span>` : '';
+       return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative;padding:8px 12px">${badge}${esc(brs()[i])}${dot}</button>`;
      }).join('')}</div>
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !items.every(([k, v]) => left(nearest, +k.slice(1)) >= v) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
      ${nav(2, 4, 'Siguiente: Datos →')}
