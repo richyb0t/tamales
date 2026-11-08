@@ -403,7 +403,7 @@ function dvCard(d, rep) {
     const best = near[0];
     return '<small style="display:block;margin-top:2px">Sucursal mas cercana: <b>' + esc(brs()[best.i]) + '</b> (' + best.dd.toFixed(1) + ' km)' + (near.length > 1 ? ' · ' + near.slice(1).map(x => esc(brs()[x.i]) + ' ' + x.dd.toFixed(1) + 'km').join(' · ') : '') + '</small>';
   })()}
- ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
+ ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
 }
 
 /* Administrador y Pedidos */
@@ -428,7 +428,23 @@ function dvVendCard(d) {
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${list}</div>
  <div><b>Apartar: ${tam} ${tam == 1 ? 'tamal' : 'tamales'}${ch ? ' + ' + ch + ' ' + (ch == 1 ? 'champurrado' : 'champurrados') : ''}</b></div>
- <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}</div>`;
+ <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
+ ${d.out ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}</b></div>` : d.status == 'pendiente' || d.status == 'en_ruta' ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : ''}</div>`;
+}
+
+/* El vendedor confirma que el pedido salió de la sucursal */
+async function dvOut(id) {
+  try {
+    await db.doc('deliveries/' + id).update({
+      out: true,
+      outBy: S.me.user,
+      outName: S.me.name,
+      outAt: Date.now(),
+    });
+    toast('Salida confirmada');
+  } catch (e) {
+    err(e);
+  }
 }
 
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */

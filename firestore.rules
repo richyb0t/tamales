@@ -191,7 +191,12 @@ service cloud.firestore {
                     || (request.resource.data.status == 'pendiente' && request.resource.data.drv == null)))))
         || (enc() && resource.data.by == prof().user && resource.data.status == 'pendiente'
             && request.resource.data.status == 'cancelado'
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+        || (vend(resource.data.branch) && resource.data.status in ['pendiente', 'en_ruta']
+            && request.resource.data.out == true
+            && request.resource.data.outBy == prof().user
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['out', 'outBy', 'outName', 'outAt']));
       allow delete: if adm()
         || (enc() && resource.data.by == prof().user && resource.data.status == 'pendiente');
     }
