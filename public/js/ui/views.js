@@ -53,7 +53,7 @@ nav(
 [
 ['v', '🛒', 'Vender'],
 ['h', '🧾', 'Historial', histN()],
-['r', '📌', 'Apartados', pin() + preN() + dvVendN()],
+['r', '📌', 'Apartados', pin() + preN() + dvOpenN()],
 ['m', '⋯', 'Más'],
 ],
 vt,
@@ -78,7 +78,7 @@ head() +
 nav(
 [
 ['d', '📋', 'Disponibilidad'],
-['r', '🛵', 'Repartos'],
+['r', '🛵', 'Repartos', dvOpenN()],
 ['a', '📌', 'Apartados', S.pre.length || ''],
 ['s', '🔁', 'Entre sucursales', rqN || ''],
 ],

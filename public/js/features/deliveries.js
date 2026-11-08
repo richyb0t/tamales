@@ -491,8 +491,8 @@ async function dvOut(id) {
   }
 }
 
-/* Repartos activos de hoy (para el número en Apartados del vendedor) */
-const dvVendN = () =>
+/* Repartos activos de hoy (por tomar o en camino) */
+const dvOpenN = () =>
   (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
 
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */
