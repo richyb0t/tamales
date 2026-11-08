@@ -80,6 +80,7 @@ function ajView() {
    )
    .join('')}
  <div class="form"><button class="alt" style="width:100%" onclick="addBranch()">＋ Agregar sucursal</button></div></div>
+  <div class="card"><h3>Ubicaciones (lat, lng)</h3><small>Para logistica de repartos: sucursal mas cercana al pedido.</small>${brs().map((n, i) => `<div class="form" style="margin:2px 0 8px"><input id="blat${i}" type="number" step="0.0001" placeholder="Latitud suc. ${i + 1}" aria-label="Latitud sucursal ${i + 1}" value="${esc((S.cfg.branchLocs || [])[i]?.lat ?? '')}" style="flex:1"><input id="blng${i}" type="number" step="0.0001" placeholder="Longitud suc. ${i + 1}" aria-label="Longitud sucursal ${i + 1}" value="${esc((S.cfg.branchLocs || [])[i]?.lng ?? '')}" style="flex:1"></div>`).join('')}</div>
  <div class="card"><h3>🔔 Apartados y alertas</h3>${al('Minutos que se guarda un apartado de otra sucursal', 'Cuenta desde que la otra sucursal lo acepta', ni('holdIn', holdMin(), '', '', 'Minutos de apartado').replace('min="0"', 'min="5"'))}${al('Avisar cuando queden esta cantidad de tamales o menos', 'Por cada sabor', ni('lowIn', lowT(), '', '', 'Aviso de tamales'))}${al('Avisar cuando queden estos litros o menos de champurrado', '', ni('lowlIn', lowL(), '', 'step="0.25"', 'Aviso de champurrado'))}</div>
  <div class="card"><h3>💵 Fondo inicial por vendedor</h3>${al('Efectivo con el que empieza cada vendedor', 'Se usa en el corte de caja', ni('fondoIn', fondo(), '', '', 'Fondo inicial'))}</div>
  ${navCard()}
@@ -110,6 +111,7 @@ async function saveAj() {
     await db.doc('config/main').set(
       {
         branches,
+         branchLocs: brs().map((_, i) => ({ lat: +($("#blat" + i)?.value || 0) || null, lng: +($("#blng" + i)?.value || 0) || null })),
         prices,
         costs,
         fondo: Math.max(0, +$('#fondoIn').value || 0),

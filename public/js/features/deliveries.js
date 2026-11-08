@@ -19,7 +19,7 @@ const dvSum = n => Object.entries(n.items).reduce((a, [f, v]) => a + v * price(+
 
 function dvn() {
   if (!S.dvn)
-    S.dvn = { branch: BI()[0], items: {}, client: '', phone: '', addr: '', note: '', fee: '' };
+    S.dvn = { branch: BI()[0], items: {}, client: '', phone: '', addr: '', note: '', fee: '', lat: '', lng: '' };
   if (!BI().includes(S.dvn.branch)) S.dvn.branch = BI()[0];
   return S.dvn;
 }
@@ -75,6 +75,19 @@ ${(() => {
  ).join('')}
  <div class="form"><input id="dvc" placeholder="Nombre del cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
  <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
+<div class="form"><input type="number" step="0.0001" placeholder="Latitud del pedido" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud del pedido" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div>
+${(() => {
+  const lat = +n.lat, lng = +n.lng;
+  if (!lat || !lng) return '';
+  const near = brs().map((nm, i) => {
+    const l = (S.cfg.branchLocs || [])[i];
+    const d = l ? distKm({ lat, lng }, l) : null;
+    return { i, nm, d, open: BI().includes(i) };
+  }).filter(x => x.d != null).sort((a, b) => a.d - b.d);
+  if (!near.length) return '<small style="display:block;opacity:.7">Sin ubicaciones de sucursales configuradas en Ajustes.</small>';
+  const best = near[0];
+  return '<small style="display:block;margin-top:4px">Sucursal mas cercana: <b>' + esc(brs()[best.i]) + '</b> (' + best.d.toFixed(1) + ' km)' + (near.length > 1 ? ' · ' + near.slice(1).map(x => esc(brs()[x.i]) + ' ' + x.d.toFixed(1) + 'km').join(' · ') : '') + '</small>';
+})()}
  <div class="form"><input placeholder="Nota (referencias, hora)" value="${esc(n.note)}" oninput="dvn().note=this.value" style="flex:1"><input type="number" min="0" inputmode="decimal" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="dvn().fee=this.value"></div>
  <small style="display:block">Productos: <b>${money(tot)}</b>${pcs ? ' · ' + pcs + (pcs == 1 ? ' tamal' : ' tamales') : ''}</small>
  <div class="form"><button class="go" style="flex:1" onclick="saveDv()">Guardar reparto</button></div></div>`;
@@ -112,6 +125,8 @@ async function saveDv() {
       client: n.client.trim(),
       phone: n.phone.trim(),
       addr: n.addr.trim(),
+      lat: +n.lat || null,
+      lng: +n.lng || null,
       note: n.note.trim(),
       total: dvSum(n),
       fee: Math.max(0, +n.fee || 0),
@@ -221,7 +236,17 @@ function dvCard(d, rep) {
     bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b><div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}</div>
- <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>
+ <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${(() => {
+    if (d.lat == null || d.lng == null) return '';
+    const near = brs().map((nm, i) => {
+      const l = (S.cfg.branchLocs || [])[i];
+      const dd = l ? distKm({ lat: d.lat, lng: d.lng }, l) : null;
+      return { i, nm, dd };
+    }).filter(x => x.dd != null).sort((a, b) => a.dd - b.dd);
+    if (!near.length) return '';
+    const best = near[0];
+    return '<small style="display:block;margin-top:2px">Sucursal mas cercana: <b>' + esc(brs()[best.i]) + '</b> (' + best.dd.toFixed(1) + ' km)' + (near.length > 1 ? ' · ' + near.slice(1).map(x => esc(brs()[x.i]) + ' ' + x.dd.toFixed(1) + 'km').join(' · ') : '') + '</small>';
+  })()}
  ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
 }
 
