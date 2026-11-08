@@ -26,8 +26,7 @@ const CH = [
 const nm = f =>
   f >= 100 ? 'Champurrado ' + CH[f - 100][0].toLowerCase() + ' ' + CH[f - 100][1] : F[f];
 
-const ROLE = { admin: 'Administrador', vend: 'Vendedor', enc: 'Pedidos' };
-const SEC = { ..., dv: 'Repartos' };
+const ROLE = { admin: 'Administrador', vend: 'Vendedor', enc: 'Pedidos', rep: 'Repartidor' };
 
 const TL = {
   vendido: 'Vendido',
@@ -41,6 +40,7 @@ const SEC = {
   inv: 'Inventario',
   tr: 'Traspasos',
   ct: 'Cortes',
+  dv: 'Repartos',
   rp: 'Reportes',
   us: 'Usuarios',
   aj: 'Ajustes',

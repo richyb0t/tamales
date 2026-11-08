@@ -6,6 +6,7 @@ service cloud.firestore {
     function ok() { return hasProf() && prof().active != false; }
     function adm() { return ok() && prof().role == 'admin'; }
     function enc() { return ok() && prof().role == 'enc'; }
+    function rep() { return ok() && prof().role == 'rep'; }
     // El vendedor solo opera en la sucursal que eligió: su perfil la nombra Y él es el dueño de claims/<sucursal>.
     // Así, si otro vendedor toma la sucursal en un día nuevo, el anterior pierde el acceso aunque su perfil aún la mencione.
     function vend(b) {
@@ -173,6 +174,25 @@ service cloud.firestore {
       allow read: if adm() || enc() || vend(resource.data.from) || vend(resource.data.to);
       allow create: if adm() || (okId(id) && vend(request.resource.data.from));
       allow delete: if adm() || (vend(resource.data.from) && existsAfter(/databases/$(database)/documents/logs/$('del_tr_' + id)));
+    }
+    // Repartos a domicilio: los crea el administrador o Pedidos; el repartidor los toma y cierra
+    match /deliveries/{id} {
+      allow read: if adm() || enc() || rep();
+      allow create: if adm() || (enc() && request.resource.data.by == prof().user
+        && request.resource.data.status == 'pendiente');
+      allow update: if adm()
+        || (rep() && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'drv', 'drvName', 'tsTake', 'tsDone', 'cobrado', 'reason'])
+            && (
+              (resource.data.status == 'pendiente' && request.resource.data.status == 'en_ruta'
+                && request.resource.data.drv == prof().user)
+           || (resource.data.status == 'en_ruta' && resource.data.drv == prof().user
+                && (request.resource.data.status in ['entregado', 'fallido']
+                    || (request.resource.data.status == 'pendiente' && request.resource.data.drv == null)))))
+        || (enc() && resource.data.by == prof().user && resource.data.status == 'pendiente'
+            && request.resource.data.status == 'cancelado'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+      allow delete: if adm();
     }
   }
 }

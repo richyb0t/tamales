@@ -9,6 +9,7 @@ const NAVALL = {
     ap: ['📌', 'Apartados'],
     rp: ['📈', 'Reportes'],
     us: ['👥', 'Usuarios'],
+    dv: ['🛵', 'Repartos'],
     aj: ['⚙️', 'Ajustes'],
   },
   NAVDEF = ['res', 'inv', 'tr', 'ct'];
@@ -18,7 +19,14 @@ const navSel = () => {
   return a.length >= 2 ? a : NAVDEF;
 };
 
-const navBadge = k => (k == 'res' ? lowList().length : k == 'ap' ? preN() : 0);
+const navBadge = k =>
+  k == 'res'
+    ? lowList().length
+    : k == 'ap'
+      ? preN()
+      : k == 'dv'
+        ? (S.dv || []).filter(d => d.status == 'pendiente').length
+        : 0;
 
 async function setNav(a) {
   try {
