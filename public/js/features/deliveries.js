@@ -386,10 +386,7 @@ function dvCard(d, rep) {
     if (d.status == 'pendiente') bt = `<button class="go p" onclick="dvTake('${d._id}')">Tomar reparto</button>`;
     else if (d.status == 'en_ruta' && d.drv == me.user)
       bt = `<button class="go p" onclick="dvDone('${d._id}')">Entregar y cobrar ${money(dvDue(d))}</button><button class="alt" onclick="dvFail('${d._id}')">No se pudo</button><button class="gh" onclick="dvRelease('${d._id}')">Soltar</button>`;
-  } else if (
-    (A && ['pendiente', 'en_ruta'].includes(d.status)) ||
-    (d.status == 'pendiente' && d.by == me.user)
-  )
+  } else if ((A || me.role == 'enc') && ['pendiente', 'en_ruta'].includes(d.status))
     bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b><div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}</div>
@@ -493,6 +490,10 @@ async function dvOut(id) {
     err(e);
   }
 }
+
+/* Repartos activos de hoy (para el número en Apartados del vendedor) */
+const dvVendN = () =>
+  (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
 
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */
 function dvToday() {

@@ -288,8 +288,9 @@ function apView() {
     ),
     hoy = l.filter(p => p.date <= D),
     otro = l.filter(p => p.date > D);
+  const hN = hoy.length + (V ? dvVendN() : 0);
   const tabs = [
-    ['h', 'Hoy' + (hoy.length ? ' (' + hoy.length + ')' : '')],
+    ['h', 'Hoy' + (hN ? ' (' + hN + ')' : '')],
     ['o', 'Otro día' + (otro.length ? ' (' + otro.length + ')' : '')],
     ...(V ? [['s', 'Entre sucursales' + (pin() ? ' (' + pin() + ')' : '')]] : []),
   ];
@@ -310,7 +311,7 @@ function apView() {
 }
 
 function preBanner() {
-  const n = preN();
+  const n = preN() + dvVendN();
   return n
     ? `<div class="card" style="border:2px solid var(--ac)" onclick="S.apt='h';setVt('r')"><b>📌 ${n} apartado${n > 1 ? 's' : ''} para entregar hoy</b><br><small>Toca para ver</small></div>`
     : '';

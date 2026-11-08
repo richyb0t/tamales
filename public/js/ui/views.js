@@ -53,7 +53,7 @@ nav(
 [
 ['v', '🛒', 'Vender'],
 ['h', '🧾', 'Historial', histN()],
-['r', '📌', 'Apartados', pin() + preN()],
+['r', '📌', 'Apartados', pin() + preN() + dvVendN()],
 ['m', '⋯', 'Más'],
 ],
 vt,

@@ -103,7 +103,7 @@ function menu(o) {
             [
               ['v', '🛒', 'Vender'],
               ['h', '🧾', 'Historial', histN()],
-              ['r', '📌', 'Apartados', pin() + preN()],
+              ['r', '📌', 'Apartados', pin() + preN() + dvVendN()],
               ['m', '💵', 'Corte y traspasos'],
             ],
           ],
