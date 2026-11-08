@@ -44,6 +44,12 @@ async function dvGeocode() {
     }
     n.lat = +data[0].lat;
     n.lng = +data[0].lon;
+    const ranked = BI().map(i => {
+      const l = (S.cfg.branchLocs || [])[i];
+      const d = l ? distKm({ lat: n.lat, lng: n.lng }, l) : null;
+      return { i, d };
+    }).filter(x => x.d != null).sort((a, c) => a.d - c.d);
+    if (ranked.length) n.branch = ranked[0].i;
     toast('Ubicación encontrada: ' + (data[0].display_name || '').slice(0, 60));
     render(true);
   } catch (e) {
@@ -62,6 +68,12 @@ function dvGps() {
       const n = dvn();
       n.lat = pos.coords.latitude;
       n.lng = pos.coords.longitude;
+      const ranked = BI().map(i => {
+        const l = (S.cfg.branchLocs || [])[i];
+        const d = l ? distKm({ lat: n.lat, lng: n.lng }, l) : null;
+        return { i, d };
+      }).filter(x => x.d != null).sort((a, c) => a.d - c.d);
+      if (ranked.length) n.branch = ranked[0].i;
       if (b) { b.disabled = false; b.textContent = '📍 Usar mi ubicación'; }
       toast('Ubicación capturada');
       render(true);
