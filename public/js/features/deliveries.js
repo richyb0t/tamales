@@ -19,7 +19,7 @@ const dvSum = n => Object.entries(n.items).reduce((a, [f, v]) => a + v * price(+
 
 function dvn() {
   if (!S.dvn)
-    S.dvn = { branch: BI()[0], items: {}, client: '', phone: '', addr: '', note: '', fee: '', lat: '', lng: '' };
+    S.dvn = { branch: BI()[0], items: {}, client: '', phone: '', addr: '', note: '', fee: '', lat: '', lng: '', step: 1 };
   if (!BI().includes(S.dvn.branch)) S.dvn.branch = BI()[0];
   return S.dvn;
 }
@@ -98,62 +98,90 @@ function dvForm() {
     sel = n.items,
     tot = dvSum(n),
     pcs = Object.values(sel).reduce((a, v) => a + v, 0);
-  return `<div class="card" id="dvf"><h3>Nuevo reparto</h3><small>Escribe los datos del cliente y elige qué lleva. El repartidor lo verá y lo tomará.</small>
- <small style="display:block;margin-top:8px">¿De qué sucursal sale?</small>
-${(() => {
-  const items = Object.entries(sel).filter(([k, v]) => v > 0);
-  const lat = +n.lat, lng = +n.lng;
-  // nearest branch (if location captured)
-  let nearest = null;
-  if (lat && lng) {
-    const ranked = BI().map(i => {
-      const l = (S.cfg.branchLocs || [])[i];
-      const d = l ? distKm({ lat, lng }, l) : null;
-      return { i, d };
-    }).filter(x => x.d != null).sort((a, b) => a.d - b.d);
-    if (ranked.length) nearest = ranked[0].i;
+  if (!n.step) n.step = 1;
+  const step = n.step;
+  const steps = ['Dirección', 'Sucursal', 'Productos', 'Guardar'];
+  const head = `<div class="card" id="dvf"><h3>Nuevo reparto</h3><small>Paso ${step} de 4 · ${steps[step - 1]}</small><div style="display:flex;gap:4px;margin:6px 0 10px">${steps.map((s, i) => `<div style="flex:1;height:4px;border-radius:2px;background:${i + 1 <= step ? 'var(--ac)' : 'var(--bd)'}"></div>`).join('')}</div>`;
+  const nav = (back, next, nextLabel) =>
+    `<div class="form" style="margin-top:10px">${back ? `<button class="alt" style="flex:1" onclick="dvStep(${back})">← Atrás</button>` : ''}${next ? `<button class="go" style="flex:1" onclick="dvStep(${next})">${nextLabel || 'Siguiente →'}</button>` : ''}</div>`;
+  let body = '';
+  if (step === 1) {
+    body = `
+     <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
+     <div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación</button><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Capturar ubicación</button></div>
+     ${n.lat && n.lng ? `<small style="display:block;opacity:.7;margin:4px 0">Ubicación: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)} (${esc(n.addr || '')})</small><iframe src="https://www.google.com/maps?q=${n.lat},${n.lng}&z=16&output=embed" width="100%" height="140" style="border:0;border-radius:8px;margin:4px 0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : '<small style="display:block;opacity:.7;margin:4px 0">Opcional: busca o captura la ubicación para saber qué sucursal queda más cerca.</small>'}
+     <details style="margin:4px 0"><summary style="cursor:pointer;opacity:.7;font-size:12px">Ingresar coordenadas manualmente</summary><div class="form"><input type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div></details>
+     ${(() => {
+       const lat = +n.lat, lng = +n.lng;
+       if (!lat || !lng) return '';
+       const ranked = BI().map(i => {
+         const l = (S.cfg.branchLocs || [])[i];
+         const d = l ? distKm({ lat, lng }, l) : null;
+         return { i, d };
+       }).filter(x => x.d != null).sort((a, b) => a.d - b.d);
+       if (!ranked.length) return '';
+       const nearest = ranked[0].i;
+       return '<small style="display:block;margin:4px 0;opacity:.75">Sucursal más cercana: <b>' + esc(brs()[nearest]) + '</b> (' + ranked[0].d.toFixed(1) + ' km)</small>';
+     })()}
+     ${nav(false, 2, 'Siguiente: Sucursal →')}
+    `;
+  } else if (step === 2) {
+    const items = Object.entries(sel).filter(([k, v]) => v > 0);
+    const lat = +n.lat, lng = +n.lng;
+    let nearest = null;
+    if (lat && lng) {
+      const ranked = BI().map(i => {
+        const l = (S.cfg.branchLocs || [])[i];
+        const d = l ? distKm({ lat, lng }, l) : null;
+        return { i, d };
+      }).filter(x => x.d != null).sort((a, b) => a.d - b.d);
+      if (ranked.length) nearest = ranked[0].i;
+    }
+    body = `
+     <small style="display:block;margin-bottom:6px">¿De qué sucursal sale?</small>
+     <div class="seg" style="flex-wrap:wrap">${BI().map(i => {
+       const ok = items.length ? items.every(([k, v]) => left(i, +k.slice(1)) >= v) : null;
+       const light = ok === null ? '' : (ok ? ' 🟢' : ' 🔴');
+       const isNear = i === nearest;
+       return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative">${isNear ? '<span style="position:absolute;top:2px;right:4px;font-size:9px">📍</span>' : ''}${esc(brs()[i])}${light}</button>`;
+     }).join('')}</div>
+     ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !items.every(([k, v]) => left(nearest, +k.slice(1)) >= v) ? ' <span style="color:var(--bad)">(sin disponibilidad completa)</span>' : ''}</small>` : ''}
+     ${nav(1, 3, 'Siguiente: Productos →')}
+    `;
+  } else if (step === 3) {
+    body = `
+     <small style="display:block;margin-bottom:6px">Tamales</small>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+     ${F.map((nombre, f) =>
+       price(f)
+         ? `<div class="fl ${sel[f] ? 'sel' : ''}" style="margin:0;min-height:56px;padding:8px 10px"><div class="fn"><b style="font-size:13px">${esc(nombre)}</b><small>${money(price(f))}</small></div><div class="st"><button class="gh" onclick="dvAdd(${f},-1)" aria-label="Quitar uno">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de ${esc(nombre)}" oninput="dvQty(${f},this.value,this)" onchange="this.value=dvn().items[${f}]||0"><button onclick="dvAdd(${f},1)" aria-label="Agregar uno">+</button></div></div>`
+         : ''
+     ).join('')}
+     </div>
+     <small style="display:block;margin:8px 0 6px">Champurrado</small>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+     ${CH.map((c, i) => {
+       const f = 100 + i;
+       return price(f) ? `<div class="fl ${sel[f] ? 'sel' : ''}" style="margin:0;min-height:56px;padding:8px 10px"><div class="fn"><b style="font-size:13px">Champ. ${esc(c[0])}</b><small>${esc(c[1])} · ${money(price(f))}</small></div><div class="st"><button class="gh" onclick="dvAdd(${f},-1)" aria-label="Quitar uno">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de champurrado ${esc(c[0])}" oninput="dvQty(${f},this.value,this)" onchange="this.value=dvn().items[${f}]||0"><button onclick="dvAdd(${f},1)" aria-label="Agregar uno">+</button></div></div>` : '';
+     }).join('')}
+     </div>
+     <small style="display:block;margin-top:8px;opacity:.7">Total: ${money(tot)} · ${pcs} ${pcs == 1 ? 'tamal' : 'tamales'}</small>
+     ${nav(2, 4, 'Siguiente: Datos →')}
+    `;
+  } else {
+    body = `
+     <div class="form"><input id="dvc" placeholder="Nombre del cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
+     <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
+     <div class="form"><input placeholder="Nota (referencias, hora)" value="${esc(n.note)}" oninput="dvn().note=this.value" style="flex:1"><input type="number" min="0" inputmode="decimal" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="dvn().fee=this.value" style="flex:1"></div>
+     <small style="display:block;margin:8px 0;opacity:.7">Productos: <b>${money(tot)}</b>${pcs ? ' · ' + pcs + (pcs == 1 ? ' tamal' : ' tamales') : ''}${n.fee ? ' · Envío ' + money(+n.fee || 0) : ''}</small>
+     <div class="form"><button class="go" style="flex:1" onclick="saveDv()">Guardar reparto</button></div>
+     ${nav(3, false, '')}
+    `;
   }
-  return `<div class="seg" style="flex-wrap:wrap">${BI().map(i => {
-    const ok = items.length ? items.every(([k, v]) => left(i, +k.slice(1)) >= v) : null;
-    const light = ok === null ? '' : (ok ? ' 🟢' : ' 🔴');
-    const isNear = i === nearest;
-    return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative">${isNear ? '<span style="position:absolute;top:2px;right:4px;font-size:9px">📍</span>' : ''}${esc(brs()[i])}${light}</button>`;
-  }).join('')}</div>${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Sucursal más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !items.every(([k, v]) => left(nearest, +k.slice(1)) >= v) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}`;
-})()}
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
- ${F.map((nombre, f) =>
-   price(f)
-     ? `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>${esc(nombre)}</b><small>${money(price(f))}</small></div><div class="st"><button class="gh" onclick="dvAdd(${f},-1)" aria-label="Quitar uno">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de ${esc(nombre)}" oninput="dvQty(${f},this.value,this)" onchange="this.value=dvn().items[${f}]||0"><button onclick="dvAdd(${f},1)" aria-label="Agregar uno">+</button></div></div>`
-     : ''
-  ).join('')}
-  </div>
- <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-${CH.map((c, i) => {
-  const f = 100 + i;
-  return price(f) ? `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>Champurrado ${esc(c[0])}</b><small>${esc(c[1])} · ${money(price(f))}</small></div><div class="st"><button class="gh" onclick="dvAdd(${f},-1)" aria-label="Quitar uno">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de champurrado ${esc(c[0])}" oninput="dvQty(${f},this.value,this)" onchange="this.value=dvn().items[${f}]||0"><button onclick="dvAdd(${f},1)" aria-label="Agregar uno">+</button></div></div>` : '';
-}).join('')}
- </div>
-  <div class="form"><input id="dvc" placeholder="Nombre del cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
- <div class="form"><input id="dva" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
-<div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación de la dirección</button></div>
-<div class="form"><button class="alt" style="flex:1" onclick="dvGps()" id="dvgps">📍 Capturar ubicación del pedido</button>${n.lat && n.lng ? `<small style="flex-basis:100%;opacity:.7">Ubicación del pedido: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)} (${esc(n.addr || '')})</small><iframe src="https://www.google.com/maps?q=${n.lat},${n.lng}&z=16&output=embed" width="100%" height="140" style="border:0;border-radius:8px;margin-top:4px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : '<small style="flex-basis:100%;opacity:.7">Ve al lugar del pedido (o pega las coordenadas del cliente) y captura la ubicación para saber qué sucursal queda más cerca.</small>'}</div>
-<details style="margin:4px 0"><summary style="cursor:pointer;opacity:.7;font-size:12px">Ingresar coordenadas manualmente</summary><div class="form"><input type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div></details>
-${(() => {
-  const lat = +n.lat, lng = +n.lng;
-  if (!lat || !lng) return '';
-  const near = brs().map((nm, i) => {
-    const l = (S.cfg.branchLocs || [])[i];
-    const d = l ? distKm({ lat, lng }, l) : null;
-    return { i, nm, d, open: BI().includes(i) };
-  }).filter(x => x.d != null).sort((a, b) => a.d - b.d);
-  if (!near.length) return '<small style="display:block;opacity:.7">Sin ubicaciones de sucursales configuradas en Ajustes.</small>';
-  const best = near[0];
-  return '<small style="display:block;margin-top:4px">Sucursal mas cercana: <b>' + esc(brs()[best.i]) + '</b> (' + best.d.toFixed(1) + ' km)' + (near.length > 1 ? ' · ' + near.slice(1).map(x => esc(brs()[x.i]) + ' ' + x.d.toFixed(1) + 'km').join(' · ') : '') + '</small>';
-})()}
- <div class="form"><input placeholder="Nota (referencias, hora)" value="${esc(n.note)}" oninput="dvn().note=this.value" style="flex:1"><input type="number" min="0" inputmode="decimal" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="dvn().fee=this.value"></div>
- <small style="display:block">Productos: <b>${money(tot)}</b>${pcs ? ' · ' + pcs + (pcs == 1 ? ' tamal' : ' tamales') : ''}</small>
- <div class="form"><button class="go" style="flex:1" onclick="saveDv()">Guardar reparto</button></div></div>`;
+  return head + body + '</div>';
 }
+
+function dvStep(s) { dvn().step = s; render(true); }
 
 async function saveDv() {
   const n = dvn(),
