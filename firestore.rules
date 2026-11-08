@@ -197,8 +197,7 @@ service cloud.firestore {
             && request.resource.data.outBy == prof().user
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['out', 'outBy', 'outName', 'outAt']));
-      allow delete: if adm()
-        || (enc() && resource.data.status in ['pendiente', 'en_ruta']);
+      allow delete: if (adm() || enc()) && resource.data.status == 'pendiente';
     }
   }
 }
