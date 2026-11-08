@@ -67,7 +67,7 @@ const t = S.et || 'd';
 const rqN = (S.rq || []).filter(r => ['pendiente', 'aceptado'].includes(rqSt(r))).length;
 return (
 head() +
-alertCard() +
+(t == 'd' ? alertCard() : '') +
 (t == 'r'
 ? dvPanel()
 : t == 'a'

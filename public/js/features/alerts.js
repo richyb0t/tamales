@@ -22,8 +22,8 @@ function lowList() {
 function alertCard() {
   const l = lowList();
   if (!l.length) return '';
-  const A = !!S.me && S.me.role == 'admin';
-  if (A && S.alHide) {
+  const H = !!S.me && (S.me.role == 'admin' || S.me.role == 'enc');
+  if (H && S.alHide) {
     const o = l.filter(x => x.o).length,
       w = l.length - o;
     return `<div class="card alb" style="border:2px solid ${o ? 'var(--bad)' : 'var(--low)'}"><span>${[o ? '🚫 ' + o + (o == 1 ? ' agotado' : ' agotados') : '', w ? '⚠️ ' + w + ' por agotarse' : ''].filter(Boolean).join(' · ')}</span><button class="gh" onclick="S.alHide=false;render(true)">Mostrar</button></div>`;
@@ -41,7 +41,7 @@ function alertCard() {
   };
   const out = l.filter(x => x.o),
     low = l.filter(x => !x.o);
-  return `<div class="card" style="border:2px solid ${out.length ? 'var(--bad)' : 'var(--low)'}"><div class="alr"><h3 style="margin:0">Existencias</h3>${A ? '<button class="gh" onclick="S.alHide=true;render(true)">Ocultar</button>' : ''}</div>${sec(out, '🚫 Agotados', 'var(--bad)', x => esc(x.n))}${sec(low, '⚠️ Por agotarse', 'var(--low)', x => esc(x.n) + ' (' + x.l + (x.L ? ' L' : '') + ')')}<small>Se avisa cuando quedan ${lowT()} o menos por sabor (${lowL()} L de champurrado).</small></div>`;
+  return `<div class="card" style="border:2px solid ${out.length ? 'var(--bad)' : 'var(--low)'}"><div class="alr"><h3 style="margin:0">Existencias</h3>${H ? '<button class="gh" onclick="S.alHide=true;render(true)">Ocultar</button>' : ''}</div>${sec(out, '🚫 Agotados', 'var(--bad)', x => esc(x.n))}${sec(low, '⚠️ Por agotarse', 'var(--low)', x => esc(x.n) + ' (' + x.l + (x.L ? ' L' : '') + ')')}<small>Se avisa cuando quedan ${lowT()} o menos por sabor (${lowL()} L de champurrado).</small></div>`;
 }
 
 function chkAlerts() {
