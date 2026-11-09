@@ -61,7 +61,7 @@ async function addUser(first) {
     r = first || $('#ur').value;
   if (!n) return toast('Falta el nombre');
   if (!u) return toast('Falta el usuario (solo letras, números, punto o guion bajo)');
-  if (!/^\\d{6,}$/.test(p)) return toast('El PIN debe tener solo números, mínimo 6');
+  if (!/^\d{6,}$/.test(p)) return toast('El PIN debe tener solo números, mínimo 6');
   if (S.users.some(x => x.user == u)) return toast('Ese usuario ya existe');
   const prof = { user: u, name: n, role: r, active: true };
   try {
@@ -214,7 +214,7 @@ function accountDlg() {
     userWarn.style.display = changeUser ? 'block' : 'none';
 
     if (np.length > 0) {
-      if (!/^\\d{6,}$/.test(np)) {
+      if (!/^\d{6,}$/.test(np)) {
         pinMsg.textContent = 'Mínimo 6 números';
         pinMsg.style.color = 'var(--bad)';
         pinMsg.style.opacity = '1';
@@ -241,7 +241,7 @@ function accountDlg() {
     }
 
     const anyChange = changeUser || changePin;
-    const pinValid = !changePin || (/^\\d{6,}$/.test(np) && np === nr);
+    const pinValid = !changePin || (/^\d{6,}$/.test(np) && np === nr);
     const needsConfirm = anyChange;
     confirmSection.style.display = needsConfirm ? 'block' : 'none';
     saveBtn.disabled = !(anyChange && pinValid && po.length >= 6);
@@ -286,7 +286,7 @@ async function saveAccount() {
   if (changeUser && (!nu || nu.length < 3)) return toast('El usuario debe tener al menos 3 caracteres válidos');
   if (changeUser && S.users.some(x => x.user == nu && x.id !== S.me.id)) return toast('Ese usuario ya existe');
   if (changePin) {
-    if (!/^\\d{6,}$/.test(np)) return toast('El PIN nuevo debe tener solo números, mínimo 6');
+    if (!/^\d{6,}$/.test(np)) return toast('El PIN nuevo debe tener solo números, mínimo 6');
     if (np !== nr) return toast('Los PIN nuevos no coinciden');
     if (np === o) return toast('El PIN nuevo debe ser distinto al actual');
   }
@@ -333,7 +333,7 @@ function pinUser(id) {
 
 async function doPinUser() {
   const p = ($('#npn').value || '').trim();
-  if (!/^\\d{6,}$/.test(p)) return toast('El PIN debe ser solo números, mínimo 6');
+  if (!/^\d{6,}$/.test(p)) return toast('El PIN debe ser solo números, mínimo 6');
   const b = $('#ps');
   b.disabled = true;
   try {
