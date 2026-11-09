@@ -1,7 +1,7 @@
 /* Usuarios: alta, baja, desactivación, perfiles públicos y cambio de PIN. */
 
 function usView() {
-  return `<div class="card"><h3>Nuevo usuario</h3><div class="form"><input id="un" placeholder="Nombre"><input id="uu" placeholder="Usuario" autocapitalize="none"><input id="up" placeholder="PIN (6 dígitos)" inputmode="numeric"><select id="ur" aria-label="Rol"><option value="vend">Vendedor</option><option value="enc">Encargado de pedidos</option><option value="admin">Administrador</option><option value="rep">Repartidor</option></select></div><small>Cada vendedor elige su sucursal al entrar a la app.</small><div class="form"><button onclick="addUser()">Crear usuario</button></div></div>
+  return `<div class="card"><h3>Nuevo usuario</h3><div class="form"><input id="un" placeholder="Nombre"><input id="uu" placeholder="Usuario" autocapitalize="none"><input id="up" placeholder="PIN (6 dígitos)" inputmode="numeric"><select id="ur" aria-label="Rol"><option value="vend">Vendedor</option><option value="enc">Encargado de pedidos</option><option value="admin">Administrador</option><option value="sup">Supervisor</option><option value="rep">Repartidor</option></select></div><small>Cada vendedor elige su sucursal al entrar a la app.</small><div class="form"><button onclick="addUser()">Crear usuario</button></div></div>
  <div class="card"><h3>Usuarios</h3>${S.users.map(u => {
     const acts = [];
     if (u.role == 'vend' && vbr(u) != null) acts.push(`<button class="gh" data-b="${vbr(u)}" onclick="freeBr(this.dataset.b)">Liberar sucursal</button>`);

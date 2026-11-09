@@ -89,23 +89,25 @@ t,
 }
 
 function adminView() {
-const t = S.tab,
-v = {
-res: resView,
-inv: invView,
-tr: trView,
-dv: dvPanel,
-ct: cortesView,
-aj: ajView,
-us: usView,
-ap: apViewAdm,
-rp: rpView,
-};
-const sel = navSel(),
-cu = t || 'res',
-hid = Object.keys(NAVALL)
-.filter(k => !sel.includes(k))
-.reduce((a, k) => a + navBadge(k), 0);
+const t = (S.me && S.me.role === 'sup' && S.tab === 'us') ? 'res' : S.tab,
+  isSup = S.me && S.me.role === 'sup',
+  v = {
+    res: resView,
+    inv: invView,
+    tr: trView,
+    dv: dvPanel,
+    ct: cortesView,
+    aj: ajView,
+    us: usView,
+    ap: apViewAdm,
+    rp: rpView,
+  };
+const sel0 = navSel(),
+  sel = isSup ? sel0.filter(k => k !== 'us') : sel0,
+  cu = t || 'res',
+  hid = Object.keys(NAVALL)
+    .filter(k => !sel.includes(k))
+    .reduce((a, k) => a + navBadge(k), 0);
 return (
 head() +
 (v[t] || resView)() +

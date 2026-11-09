@@ -45,7 +45,7 @@ function renderNow(force) {
     return;
   }
   a.innerHTML = (
-    { admin: adminView, vend: vendView, enc: encView, rep: repView  }[S.me.role] || (() => '<p>Rol no válido</p>')
+    { admin: adminView, sup: adminView, vend: vendView, enc: encView, rep: repView  }[S.me.role] || (() => '<p>Rol no válido</p>')
   )();
   if (!['vend', 'rep'].includes(S.me.role)) chkAlerts();
   if (!['enc', 'rep'].includes(S.me.role)) schedSt();

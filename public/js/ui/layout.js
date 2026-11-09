@@ -51,10 +51,11 @@ function setIb(i) {
 
 function head() {
   const m = S.me,
-    A = m.role == 'admin',
+    A = m.role == 'admin' || m.role == 'sup',
     V = m.role == 'vend',
-    n = V ? pin() : A ? lowList().length : 0;
-  return `<header class="top"><button class="hb" onclick="menu(1)" aria-label="Abrir menú">☰${n ? `<i class="dot">${n}</i>` : ''}</button><div class="ht"><b class="ttl">${esc(V ? brs()[m.branch] : A ? SEC[S.tab] || 'Resumen' : m.role == 'rep' ? (S.rt == 't' ? 'Terminados' : S.rt == 'c' ? 'En camino' : 'Repartos') : 'Pedidos')}</b><small>${A ? 'Administrador · ' : ''}${esc(m.name)} · ${D}</small></div></header>`;
+    n = V ? pin() : A ? lowList().length : 0,
+    roleLabel = m.role == 'admin' ? 'Administrador' : m.role == 'sup' ? 'Supervisor' : '';
+  return `<header class="top"><button class="hb" onclick="menu(1)" aria-label="Abrir menú">☰${n ? `<i class="dot">${n}</i>` : ''}</button><div class="ht"><b class="ttl">${esc(V ? brs()[m.branch] : A ? SEC[S.tab] || 'Resumen' : m.role == 'rep' ? (S.rt == 't' ? 'Terminados' : S.rt == 'c' ? 'En camino' : 'Repartos') : 'Pedidos')}</b><small>${A ? roleLabel + ' · ' : ''}${esc(m.name)} · ${D}</small></div></header>`;
 }
 
 function menu(o) {
@@ -71,7 +72,7 @@ function menu(o) {
     return;
   }
   const m = S.me,
-    A = m.role == 'admin',
+    A = m.role == 'admin' || m.role == 'sup',
     V = m.role == 'vend';
   /* Grupos del menú: el administrador ve «Operación» (el día a día) y «Análisis y gestión» (lo que se usa menos) */
     const G = A
@@ -91,7 +92,7 @@ function menu(o) {
           'Análisis y gestión',
           [
             ['rp', '📈', 'Reportes'],
-            ['us', '👥', 'Usuarios'],
+            ...(m.role === 'admin' ? [['us', '👥', 'Usuarios']] : []),
             ['aj', '⚙️', 'Ajustes'],
           ],
         ],
@@ -145,7 +146,7 @@ function menu(o) {
 function go(k) {
   menu(0);
   const m = S.me;
-  if (m.role == 'admin') setTab(k);
+  if (m.role == 'admin' || m.role == 'sup') setTab(k);
   else if (m.role == 'vend') setVt(k);
   else if (m.role == 'enc') {
     S.et = k;

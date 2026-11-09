@@ -5,6 +5,8 @@ service cloud.firestore {
     function prof() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
     function ok() { return hasProf() && prof().active != false; }
     function adm() { return ok() && prof().role == 'admin'; }
+function sup() { return ok() && prof().role == 'sup'; }
+function admOrSup() { return adm() || sup(); }
     function enc() { return ok() && prof().role == 'enc'; }
     function rep() { return ok() && prof().role == 'rep'; }
     // El vendedor solo opera en la sucursal que eligió: su perfil la nombra Y él es el dueño de claims/<sucursal>.
@@ -92,11 +94,11 @@ service cloud.firestore {
       allow delete: if adm() || (ok() && resource.data.uid == request.auth.uid);
     }
     match /loads/{id} {
-      allow read: if adm() || enc() || vend(resource.data.branch);
+      allow read: if adm() || sup() || enc() || vend(resource.data.branch);
       allow write: if adm();
     }
     match /sales/{id} {
-      allow read: if adm() || enc() || vend(resource.data.branch);
+      allow read: if adm() || sup() || enc() || vend(resource.data.branch);
       allow create: if adm() || (okId(id) && vend(request.resource.data.branch) && validSale(request.resource.data)
         && (request.resource.data.type == 'apartado' || noCut(request.resource.data.day)));
       // El vendedor solo puede entregar un apartado (apartado -> vendido) a su nombre, antes del corte; no cambia precio, cantidad ni ventas ya cobradas
@@ -119,14 +121,14 @@ service cloud.firestore {
     // Solicitudes de apartado entre sucursales
     match /reqs/{id} {
       // Pedidos (enc) puede mandar solicitudes sin sucursal de origen (from == null) y ver solo las suyas
-      allow read: if adm() || vend(resource.data.from) || vend(resource.data.to)
+      allow read: if adm() || sup() || vend(resource.data.from) || vend(resource.data.to)
         || (enc() && resource.data.by == prof().user);
-      allow create: if adm() || (okId(id) && vend(request.resource.data.from) && request.resource.data.status == 'pendiente'
+      allow create: if adm() || sup() || (okId(id) && vend(request.resource.data.from) && request.resource.data.status == 'pendiente'
         && request.resource.data.by == prof().user)
         || (okId(id) && enc() && request.resource.data.from == null && request.resource.data.to is int
             && request.resource.data.status == 'pendiente' && request.resource.data.by == prof().user);
       // Entregar exige que las ventas del apartado (q<id>_<n>, creadas al aceptar) pasen a 'vendido' en el mismo lote
-      allow update: if adm()
+      allow update: if adm() || sup()
         || (vend(resource.data.to)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'exp', 'acceptedBy', 'reason', 'rejectedBy', 'deliveredBy', 'dts'])
             && (
@@ -142,7 +144,7 @@ service cloud.firestore {
     }
     // Cortes de caja: el vendedor crea el suyo (uno por día, no puede cambiarlo); solo el administrador lo anula
     match /cuts/{id} {
-      allow read: if adm() || (ok() && resource.data.by == prof().user);
+      allow read: if adm() || sup() || (ok() && resource.data.by == prof().user);
       allow create: if adm() || (vend(request.resource.data.branch) && request.resource.data.by == prof().user
         && id == request.resource.data.day + '_' + prof().user);
       allow update, delete: if adm();
@@ -154,7 +156,7 @@ service cloud.firestore {
     }
     // Apartados por fecha (hoy y otros días). Vendedor: los de su sucursal. Pedidos: puede crear y cancelar los suyos.
     match /pre/{id} {
-      allow read: if adm() || enc() || vend(resource.data.branch);
+      allow read: if adm() || sup() || enc() || vend(resource.data.branch);
       allow create: if okId(id) && (adm()
         || (enc() && request.resource.data.by == prof().user && request.resource.data.status == 'pendiente')
         || (vend(request.resource.data.branch) && request.resource.data.by == prof().user && request.resource.data.status == 'pendiente'));
@@ -171,16 +173,16 @@ service cloud.firestore {
         || (ok() && request.resource.data.by == prof().user && (prof().role == 'enc' || vend(request.resource.data.branch)));
     }
     match /transfers/{id} {
-      allow read: if adm() || enc() || vend(resource.data.from) || vend(resource.data.to);
-      allow create: if adm() || (okId(id) && vend(request.resource.data.from));
+      allow read: if adm() || sup() || enc() || vend(resource.data.from) || vend(resource.data.to);
+      allow create: if adm() || sup() || (okId(id) && vend(request.resource.data.from));
       allow delete: if adm() || (vend(resource.data.from) && existsAfter(/databases/$(database)/documents/logs/$('del_tr_' + id)));
     }
     // Repartos a domicilio: los crea el administrador o Pedidos; el repartidor los toma y cierra
     match /deliveries/{id} {
-      allow read: if adm() || enc() || rep() || vend(resource.data.branch);
-      allow create: if adm() || (enc() && request.resource.data.by == prof().user
+      allow read: if adm() || sup() || enc() || rep() || vend(resource.data.branch);
+      allow create: if adm() || sup() || (enc() && request.resource.data.by == prof().user
         && request.resource.data.status == 'pendiente');
-      allow update: if adm()
+      allow update: if adm() || sup()
         || (rep() && request.resource.data.diff(resource.data).affectedKeys()
               .hasOnly(['status', 'drv', 'drvName', 'tsTake', 'tsDone', 'cobrado', 'reason'])
             && (
@@ -197,7 +199,7 @@ service cloud.firestore {
             && request.resource.data.outBy == prof().user
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['out', 'outBy', 'outName', 'outAt']));
-      allow delete: if (adm() || enc()) && resource.data.status == 'pendiente';
+      allow delete: if (adm() || sup() || enc()) && resource.data.status == 'pendiente';
     }
   }
 }

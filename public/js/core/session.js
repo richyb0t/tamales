@@ -115,7 +115,7 @@ function startSubs() {
     render();
     return;
   } /* vendedor sin sucursal hoy: solo necesita la lista de sucursales y quién está en cada una */
-  if (m.role == 'admin') {
+  if (m.role == 'admin' || m.role == 'sup') {
     S.pr = null;
     S.psig = '';
     subs.push(
