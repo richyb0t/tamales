@@ -59,8 +59,9 @@ async function addUser(first) {
       .replace(/[^a-z0-9_.]/g, ''),
     p = $('#up').value.trim(),
     r = first || $('#ur').value;
-  if (!n || !u || !/^\\d{6,}$/.test(p))
-    return toast('Completa nombre, usuario y PIN (solo números, mínimo 6)');
+  if (!n) return toast('Falta el nombre');
+  if (!u) return toast('Falta el usuario (solo letras, números, punto o guion bajo)');
+  if (!/^\\d{6,}$/.test(p)) return toast('El PIN debe tener solo números, mínimo 6');
   if (S.users.some(x => x.user == u)) return toast('Ese usuario ya existe');
   const prof = { user: u, name: n, role: r, active: true };
   try {
