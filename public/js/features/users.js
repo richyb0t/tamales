@@ -2,7 +2,7 @@
 
 function usView() {
   return `<div class="card"><h3>Nuevo usuario</h3><div class="form"><input id="un" placeholder="Nombre"><input id="uu" placeholder="Usuario" autocapitalize="none"><input id="up" placeholder="PIN (6 dígitos)" inputmode="numeric"><select id="ur" aria-label="Rol"><option value="vend">Vendedor</option><option value="enc">Encargado de pedidos</option><option value="admin">Administrador</option><option value="rep">Repartidor</option></select></div><small>Cada vendedor elige su sucursal al entrar a la app.</small><div class="form"><button onclick="addUser()">Crear usuario</button></div></div>
- <div class="card"><h3>Usuarios</h3>${S.users.map(u => `<div class="row" style="flex-wrap:wrap"><div><b>${esc(u.name)}${u.active === false ? ' <small class="bad">(desactivado)</small>' : ''}</b><br><small>${esc(u.user || u.id)} · ${ROLE[u.role] || ''}${u.role == 'vend' ? ' · ' + (vbr(u) != null ? 'Hoy: ' + esc(brs()[vbr(u)]) : 'Sin sucursal hoy') : ''}</small></div>${u.role == 'vend' && vbr(u) != null ? `<button class="gh" data-b="${vbr(u)}" onclick="freeBr(this.dataset.b)">Liberar sucursal</button>` : ''}${u.id == S.me.id ? '' : `<button class="gh" data-id="${esc(u.id)}" onclick="pinUser(this.dataset.id)">Cambiar PIN</button><button class="gh" data-id="${esc(u.id)}" onclick="delUser(this.dataset.id,${u.active === false})">${u.active === false ? 'Reactivar' : 'Desactivar'}</button><button class="gh" style="color:var(--bad)" data-id="${esc(u.id)}" onclick="rmUser(this.dataset.id)">Eliminar</button>`}</div>`).join('')}</div>`;
+ <div class="card"><h3>Usuarios</h3>${S.users.map(u => `<div class="row" style="flex-wrap:wrap"><div><b>${esc(u.name)}${u.active === false ? ' <small class="bad">(desactivado)</small>' : ''}</b><br><small>${esc(u.user || u.id)} · ${ROLE[u.role] || ''}${u.role == 'vend' ? ' · ' + (vbr(u) != null ? 'Hoy: ' + esc(brs()[vbr(u)]) : 'Sin sucursal hoy') : ''}</small></div>${u.role == 'vend' && vbr(u) != null ? `<button class="gh" data-b="${vbr(u)}" onclick="freeBr(this.dataset.b)">Liberar sucursal</button>` : ''}${u.id == S.me.id ? '' : `<button class="gh" data-id="${esc(u.id)}" onclick="pinUser(this.dataset.id)">Cambiar PIN</button><button class="gh" data-id="${esc(u.id)}" onclick="delUser(this.dataset.id,${u.active === false})">${u.active === false ? 'Reactivar' : 'Desactivar'}</button><button class="gh" style="color:var(--bad)" data-id="${esc(u.id)}" onclick="rmUser(this.dataset.id)">Eliminar</button>`}<button class="gh" data-id="${esc(u.id)}" onclick="renameUser(this.dataset.id)">Cambiar nombre</button></div>`).join('')}</div>`;
 }
 
 /* El administrador mantiene 'profiles' igual que 'users' (altas, bajas, desactivados, cambios de nombre) */
@@ -167,5 +167,37 @@ async function doPinUser() {
   } catch (e) {
     b.disabled = false;
     toast(e.code == 'functions/not-found' ? 'Falta publicar las Cloud Functions' : fe(e));
+  }
+}
+
+function renameUser(id) {
+  const u = S.users.find(x => x.id == id);
+  if (!u) return;
+  const m = $('#modal');
+  m.innerHTML = `<div class="card mv pd"><h3>Cambiar nombre</h3><small>Nombre actual: ${esc(u.name)}</small><div class="form"><input id="rn" value="${esc(u.name)}" placeholder="Nuevo nombre" aria-label="Nuevo nombre" onkeydown="if(event.key=='Enter')doRenameUser('${esc(id)}')"></div><div class="form"><button class="gh" id="rc">Cancelar</button><button class="go" id="rs" onclick="doRenameUser('${esc(id)}')">Guardar</button></div></div>`;
+  m.style.display = 'flex';
+  $('#rc').onclick = () => (m.style.display = 'none');
+  setTimeout(() => {
+    const e = $('#rn');
+    if (e) {
+      e.focus();
+      e.select();
+    }
+  }, 150);
+}
+
+async function doRenameUser(id) {
+  const n = ($('#rn').value || '').trim();
+  if (!n) return toast('Escribe un nombre');
+  const b = $('#rs');
+  b.disabled = true;
+  try {
+    await db.doc('users/' + id).update({ name: n });
+    if (S.me && S.me.id == id) S.me.name = n;
+    $('#modal').style.display = 'none';
+    toast('Nombre actualizado');
+  } catch (e) {
+    b.disabled = false;
+    err(e);
   }
 }
