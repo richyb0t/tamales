@@ -120,7 +120,13 @@ function dvQty(f, v, el) {
 
 function dvToggle() {
   S.dvf = !S.dvf;
+  if (S.dvf) S.dvn = null;
   render(true);
+  if (S.dvf)
+    requestAnimationFrame(() => {
+      const el = document.getElementById('dvf');
+      if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
 }
 
 function dvForm() {
@@ -212,7 +218,14 @@ function dvForm() {
   return head + body + '</div>';
 }
 
-function dvStep(s) { dvn().step = s; render(true); }
+function dvStep(s) {
+  dvn().step = s;
+  render(true);
+  requestAnimationFrame(() => {
+    const el = document.getElementById('dvf');
+    if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
+}
 
 async function saveDv() {
   const n = dvn(),
