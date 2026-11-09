@@ -121,12 +121,11 @@ function dvQty(f, v, el) {
 function dvToggle() {
   S.dvf = !S.dvf;
   if (S.dvf) S.dvn = null;
-  render(true);
-  if (S.dvf)
-    requestAnimationFrame(() => {
-      const el = document.getElementById('dvf');
-      if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    });
+  renderNow(true);
+  requestAnimationFrame(() => {
+    const el = document.getElementById('dvf');
+    if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
 }
 
 function dvForm() {
@@ -220,7 +219,7 @@ function dvForm() {
 
 function dvStep(s) {
   dvn().step = s;
-  render(true);
+  renderNow(true);
   requestAnimationFrame(() => {
     const el = document.getElementById('dvf');
     if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });

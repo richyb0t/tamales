@@ -6,7 +6,7 @@
  *
  * Al cambiar la lista de archivos o la lógica, sube el número de CACHE_VERSION. */
 
-const CACHE_VERSION = 'tamales-v41';
+const CACHE_VERSION = 'tamales-v42';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const PRECACHE = [
