@@ -185,6 +185,59 @@ async function savePin() {
   }
 }
 
+/* Cambiar mi cuenta (usuario y/o PIN) en una sola opción */
+function accountDlg() {
+  const m = $('#modal');
+  const cur = S.me ? S.me.user : '';
+  m.innerHTML = `<div class="card mv pd"><h3>Mi cuenta</h3><small>Usuario actual: <b>${esc(cur)}</b>. Deja en blanco lo que no quieras cambiar. Si cambias el usuario, la sesión se cerrará.</small><div class="form" style="flex-direction:column"><input id="cuo" type="password" inputmode="numeric" placeholder="PIN actual (obligatorio)" autocomplete="current-password"><input id="cun" type="text" placeholder="Usuario nuevo (opcional)" autocapitalize="none" autocomplete="username"><input id="cpn" type="password" inputmode="numeric" placeholder="PIN nuevo (opcional)" autocomplete="new-password"><input id="cpr" type="password" inputmode="numeric" placeholder="Repite el PIN nuevo" autocomplete="new-password" onkeydown="if(event.key=='Enter')saveAccount()"></div><div class="form"><button class="gh" id="ac">Cancelar</button><button class="go" id="as" onclick="saveAccount()">Guardar</button></div></div>`;
+  m.style.display = 'flex';
+  $('#ac').onclick = () => (m.style.display = 'none');
+  setTimeout(() => {
+    const e = $('#cun');
+    if (e) e.focus();
+  }, 150);
+}
+
+async function saveAccount() {
+  const o = $('#cuo').value.trim(),
+    nuRaw = $('#cun').value.trim(),
+    np = $('#cpn').value.trim(),
+    nr = $('#cpr').value.trim();
+  if (!o) return toast('Escribe tu PIN actual');
+  const nu = nuRaw ? nuRaw.toLowerCase().replace(/[^a-z0-9_.]/g, '') : '';
+  const changeUser = !!nu && nu !== (S.me ? S.me.user : '');
+  const changePin = !!np;
+  if (!changeUser && !changePin) return toast('Cambia al menos el usuario o el PIN');
+  if (changeUser && (!nu || nu.length < 3)) return toast('El usuario debe tener al menos 3 caracteres válidos');
+  if (changeUser && S.users.some(x => x.user == nu && x.id !== S.me.id)) return toast('Ese usuario ya existe');
+  if (changePin) {
+    if (!/^\d{6,}$/.test(np)) return toast('El PIN nuevo debe tener solo números, mínimo 6');
+    if (np !== nr) return toast('Los PIN nuevos no coinciden');
+    if (np === o) return toast('El PIN nuevo debe ser distinto al actual');
+  }
+  const b = $('#as');
+  b.disabled = true;
+  try {
+    if (changeUser) await FB.changeUser(o, nu);
+    if (changePin) await FB.changePin(o, np);
+    $('#modal').style.display = 'none';
+    toast('Cuenta actualizada');
+    try {
+      localStorage.removeItem('tm_v');
+    } catch (e) {}
+    if (changeUser) await FB.logout();
+  } catch (e) {
+    b.disabled = false;
+    toast(
+      ['auth/invalid-credential', 'auth/wrong-password', 'auth/invalid-login-credentials'].includes(e.code)
+        ? 'El PIN actual es incorrecto'
+        : e.code == 'auth/email-already-in-use'
+          ? 'Ese usuario ya existe'
+          : fe(e)
+    );
+  }
+}
+
 function pinUser(id) {
   const u = S.users.find(x => x.id == id);
   if (!u) return;
