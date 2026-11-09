@@ -111,43 +111,58 @@ function accountDlg() {
   const role = S.me ? ROLE[S.me.role] || '' : '';
   const initial = (name || '?').charAt(0).toUpperCase();
   const avBg = typeof avC === 'function' ? avC(S.me ? S.me.user : '') : 'var(--ac)';
-  m.innerHTML = `<div class="card mv pd" style="max-height:90vh;overflow:auto;padding-bottom:8px">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+  const userOpen = false;
+  const pinOpen = false;
+  m.innerHTML = `<div class="card mv pd" style="max-width:400px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
       <span class="av big" style="background:${avBg}">${esc(initial)}</span>
-      <div><h3 style="margin:0">Mi cuenta</h3><small>${esc(name)} · ${esc(role)}</small></div>
-    </div>
-    <div class="form" style="align-items:center;margin:0 0 6px">
-      <div style="flex:1"><small style="display:block">Usuario actual</small><b>${esc(cur)}</b></div>
-      <button class="gh" id="toggleUser" type="button">Cambiar</button>
-    </div>
-    <div id="userSection" style="display:none;margin:0 0 10px">
-      <label style="display:block;font-size:12px;font-weight:600;margin:4px 0 2px">Usuario nuevo</label>
-      <input id="cun" type="text" autocapitalize="none" autocomplete="username" enterkeyhint="next" placeholder="ej. ana2" style="width:100%">
-      <small style="display:block;margin-top:2px;opacity:.7">Solo letras minúsculas, números, punto o guion bajo.</small>
-      <small id="userWarn" style="display:none;color:var(--bad);margin-top:2px">Al guardar tendrás que entrar de nuevo con el nuevo usuario.</small>
-    </div>
-    <div class="form" style="align-items:center;margin:0 0 6px">
-      <div style="flex:1"><small style="display:block">PIN</small><b>••••••</b></div>
-      <button class="gh" id="togglePin" type="button">Cambiar</button>
-    </div>
-    <div id="pinSection" style="display:none;margin:0 0 10px">
-      <label style="display:block;font-size:12px;font-weight:600;margin:4px 0 2px">PIN nuevo</label>
-      <div style="position:relative">
-        <input id="cpn" type="password" inputmode="numeric" autocomplete="new-password" enterkeyhint="next" placeholder="Mínimo 6 números" style="width:100%;padding-right:44px">
-        <button type="button" id="eyeBtn" aria-label="Mostrar u ocultar PIN" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:0;font-size:18px;cursor:pointer;min-height:auto;padding:4px 6px">👁</button>
+      <div>
+        <h3 style="margin:0;font-size:16px">Mi cuenta</h3>
+        <small style="opacity:.7">${esc(name)} · ${esc(role)}</small>
       </div>
-      <small id="pinMsg" style="display:block;margin-top:2px;opacity:.7"></small>
-      <label style="display:block;font-size:12px;font-weight:600;margin:8px 0 2px">Repite el PIN nuevo</label>
-      <input id="cpr" type="password" inputmode="numeric" autocomplete="new-password" enterkeyhint="done" placeholder="Repite el PIN" style="width:100%" onkeydown="if(event.key=='Enter')saveAccount()">
-      <small id="pinMatch" style="display:block;margin-top:2px;opacity:.7"></small>
     </div>
-    <div id="confirmSection" style="display:none;margin-top:8px">
-      <label style="display:block;font-size:12px;font-weight:600;margin:4px 0 2px">Confirma con tu PIN actual</label>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">
+      <div>
+        <small style="display:block;opacity:.6;font-size:11px">Usuario actual</small>
+        <b>${esc(cur)}</b>
+      </div>
+      <button type="button" id="toggleUser" style="background:transparent;border:0;color:var(--ac);font-weight:600;font-size:13px;cursor:pointer;padding:4px 8px;min-height:auto">Cambiar</button>
+    </div>
+    <div id="userSection" style="display:none;padding:6px 0 2px">
+      <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">Usuario nuevo</label>
+      <input id="cun" type="text" autocapitalize="none" autocomplete="username" enterkeyhint="next" placeholder="ej. ana2" style="width:100%">
+      <small style="display:block;margin-top:2px;opacity:.6;font-size:11px">Solo letras minúsculas, números, punto o guion bajo.</small>
+      <small id="userWarn" style="display:none;color:var(--bad);margin-top:2px;font-size:11px">Al guardar tendrás que entrar de nuevo con el nuevo usuario.</small>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid var(--bd);margin-top:4px">
+      <div>
+        <small style="display:block;opacity:.6;font-size:11px">PIN</small>
+        <b>••••••</b>
+      </div>
+      <button type="button" id="togglePin" style="background:transparent;border:0;color:var(--ac);font-weight:600;font-size:13px;cursor:pointer;padding:4px 8px;min-height:auto">Cambiar</button>
+    </div>
+    <div id="pinSection" style="display:none;padding:6px 0 2px">
+      <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">PIN nuevo</label>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input id="cpn" type="password" inputmode="numeric" autocomplete="new-password" enterkeyhint="next" placeholder="Mínimo 6 números" style="flex:1">
+        <button type="button" id="eyeBtn" aria-label="Mostrar u ocultar PIN" style="min-height:32px;padding:4px 8px;font-size:16px;background:var(--fill);border:0;border-radius:var(--r-ctl);cursor:pointer">👁</button>
+      </div>
+      <small id="pinMsg" style="display:block;margin-top:2px;font-size:11px;opacity:.7"></small>
+      <label style="display:block;font-size:12px;font-weight:600;margin:8px 0 3px">Repite el PIN nuevo</label>
+      <input id="cpr" type="password" inputmode="numeric" autocomplete="new-password" enterkeyhint="done" placeholder="Repite el PIN" style="width:100%" onkeydown="if(event.key=='Enter')saveAccount()">
+      <small id="pinMatch" style="display:block;margin-top:2px;font-size:11px;opacity:.7"></small>
+    </div>
+
+    <div id="confirmSection" style="display:none;margin-top:10px;padding-top:8px;border-top:1px solid var(--bd)">
+      <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">Confirma con tu PIN actual</label>
       <input id="cuo" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN actual" style="width:100%">
     </div>
-    <div class="form" style="position:sticky;bottom:0;background:var(--card);padding-top:10px;margin-top:12px">
-      <button class="gh" id="ac" type="button">Cancelar</button>
-      <button class="go" id="as" type="button" disabled>Guardar cambios</button>
+
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="gh" id="ac" type="button" style="flex:1">Cancelar</button>
+      <button class="go" id="as" type="button" style="flex:1" disabled>Guardar cambios</button>
     </div>
   </div>`;
   m.style.display = 'flex';
