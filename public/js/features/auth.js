@@ -77,15 +77,14 @@ function loginView() {
           ['vend', 'Vendedor', 'Vendedores', 'Vendo en una sucursal'],
           ['enc', 'Pedidos', 'Pedidos', 'Pedidos, apartados y disponibilidad'],
           ['rep', 'Repartidor', 'Repartidores', 'Entregas a domicilio'],
-          ['sup', 'Supervisor', 'Supervisores', 'Supervisión, reportes y ajustes'],
           ['admin', 'Administrador', 'Administradores', 'Inventario, ventas y cortes'],
-        ].filter(x => l.some(p => p.role == x[0]))
+        ].filter(x => l.some(p => p.role == x[0] || (x[0] == 'admin' && p.role == 'sup')))
       : [];
   let r = S.lr;
   if (!R.some(x => x[0] == r)) r = R.length == 1 ? R[0][0] : null;
   if (!r && ok)
     return `<div class="who">${LOGO}<h1>¿Quién eres?</h1><small>Elige tu rol</small><div class="rls">${R.map(x => `<button class="rb ${x[0]}" onclick="pickRole('${x[0]}')"><span class="ri">${RI[x[0]]}</span><b>${x[1]}</b><small>${x[3]}</small></button>`).join('')}</div></div>`;
-  const A = ok ? l.filter(p => p.role == r) : l,
+  const A = ok ? l.filter(p => p.role == r || (r == 'admin' && p.role == 'sup')) : l,
     T = ok ? R.find(x => x[0] == r)[2] : 'Elige tu perfil';
   return `<div class="who">${LOGO}<h1>¿Quién entra?</h1><small>${T}</small><div class="pf">${A.map(p => `<button data-u="${esc(p.user)}" onclick="pick(this.dataset.u)" aria-label="${esc(p.name)}, ${ROLE[p.role] || ''}"><span class="av" style="background:${avC(p.user)}">${avI(p.name)}</span><b>${esc(p.name)}</b></button>`).join('')}</div>${R.length > 1 ? '<button class="gh" style="margin-top:24px" onclick="backRole()">← Cambiar de rol</button>' : ''}</div>`;
 }
@@ -99,7 +98,7 @@ const RI = {
 
 function pickRole(r) {
   S.lr = r;
-  const a = prList().filter(p => p.role == r);
+  const a = prList().filter(p => p.role == r || (r == 'admin' && p.role == 'sup'));
   if (a.length == 1) S.lp = a[0];
   ld = 1;
   history.pushState({ lg: 1 }, '');
