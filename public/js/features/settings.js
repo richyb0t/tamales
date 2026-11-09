@@ -42,6 +42,45 @@ async function addBranch() {
   }
 }
 
+/* Eliminar definitivamente una sucursal (solo si está cerrada y sin datos activos). Quita el espacio de la lista; las ventas anteriores se conservan. */
+async function deleteBrForever(i) {
+  if (brs().length <= 1) return toast('Debe quedar al menos una sucursal');
+  if (isOpen(i))
+    return toast('Ciérrala primero con "Cerrar" y luego elimínala definitivamente');
+  if (S.pre.some(p => p.branch == i))
+    return toast('Tiene apartados pendientes: entrégalos o cancélalos primero');
+  if (claimOf(i))
+    return toast('Hay un vendedor en esa sucursal hoy: libérala primero (en Usuarios)');
+  if (F.some((_, f) => left(i, f) > 0) || chLeft(i) > 0)
+    return toast('Aún tiene tamales o champurrado hoy: pásalos a otra sucursal en Traspasos');
+  ask(
+    '¿Eliminar definitivamente "' +
+      brs()[i] +
+      '"? Esta acción no se puede deshacer. Sus ventas anteriores se conservan, pero la sucursal ya no existirá.',
+    async () => {
+      try {
+        const oldBranches = brs();
+        const oldLocs = S.cfg.branchLocs || [];
+        const newBranches = oldBranches.filter((_, idx) => idx !== i);
+        const newLocs = oldBranches
+          .map((_, idx) => (idx === i ? null : oldLocs[idx] ?? null))
+          .filter((_, idx) => idx !== i);
+        const oldClosed = S.cfg.closed || [];
+        const newClosed = oldClosed
+          .filter(x => x !== i)
+          .map(x => (x > i ? x - 1 : x));
+        await db.doc('config/main').set(
+          { branches: newBranches, branchLocs: newLocs, closed: newClosed },
+          { merge: true }
+        );
+        toast('Sucursal eliminada definitivamente');
+      } catch (e) {
+        err(e);
+      }
+    }
+  );
+}
+
 /* Precios y costos: bloqueados por defecto (los campos están desactivados) para que no se cambien por error. Se vuelven a bloquear al guardar o al volver a Ajustes. */
 function plUnlock() {
   ask(
@@ -72,11 +111,11 @@ function ajView() {
       ).join(''),
     al = (t, sm, inp) =>
       `<div class="row"><div>${t}${sm ? `<br><small>${sm}</small>` : ''}</div>${inp}</div>`;
-  return `<div class="card"><div class="ivh"><h3>🏪 Sucursales</h3><span class="chip">${op} ${op == 1 ? 'abierta' : 'abiertas'}</span></div><small>Cambia el nombre y guarda. Al eliminar una sucursal se conservan sus ventas anteriores.</small>
+  return `<div class="card"><div class="ivh"><h3>🏪 Sucursales</h3><span class="chip">${op} ${op == 1 ? 'abierta' : 'abiertas'}</span></div><small>Cambia el nombre y guarda. "Cerrar" oculta la sucursal (se puede reabrir). "Eliminar" la borra definitivamente (solo si está cerrada y sin datos activos). Las ventas anteriores se conservan.</small>
  ${brs()
     .map(
       (n, i) =>
-        `<div class="form ajb"><input id="bn${i}" aria-label="Nombre de la sucursal ${i + 1}" value="${esc(n)}" style="flex:1;min-width:0;${isOpen(i) ? '' : 'opacity:.5'}">${isOpen(i) ? `<button class="gh" style="color:var(--bad)" onclick="closeBr(${i})">Eliminar</button>` : `<button class="gh" onclick="openBr(${i})">Reabrir</button>`}</div>`
+        `<div class="form ajb"><input id="bn${i}" aria-label="Nombre de la sucursal ${i + 1}" value="${esc(n)}" style="flex:1;min-width:0;${isOpen(i) ? '' : 'opacity:.5'}">${isOpen(i) ? `<button class="gh" style="color:var(--bad)" onclick="closeBr(${i})">Cerrar</button>` : `<button class="gh" onclick="openBr(${i})">Reabrir</button><button class="gh" style="color:var(--bad)" onclick="deleteBrForever(${i})">Eliminar</button>`}</div>`
     )
     .join('')}
  <div class="form"><button class="alt" style="width:100%" onclick="addBranch()">＋ Agregar sucursal</button></div></div>
