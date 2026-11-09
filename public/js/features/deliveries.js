@@ -457,7 +457,7 @@ function dvRouteMap(d) {
       encodeURIComponent(dest) +
       (bq ? '&waypoints=' + encodeURIComponent(bq) : '') +
       '&travelmode=driving';
-  return `<div class="dvroute">${bq ? leg(origin, bq, '1. Tu ubicación → ' + esc(bn)) : ''}${leg(bq || origin, dest, (bq ? '2. ' + esc(bn) + ' → ' : 'Tu ubicación → ') + 'domicilio')}<div class="dvacts"><a class="dvnav" href="${dir}" target="_blank" rel="noopener">🧭 Navegar</a><button class="dvnav" onclick="dvRoute('${d._id}')">🔄 Actualizar</button></div></div>`;
+  return `<div class="dvroute">${bq ? leg(origin, bq, '1. Tu ubicación → ' + esc(bn)) : ''}${leg(bq || origin, dest, (bq ? '2. ' + esc(bn) + ' → ' : 'Tu ubicación → ') + 'domicilio')}<div class="dvacts"><button class="dvnav" onclick="dvRoute('${d._id}')">🔄 Actualizar</button><a class="dvnav" href="${dir}" target="_blank" rel="noopener">🧭 Navegar</a></div></div>`;
 }
 
 /* Administrador y Pedidos */
