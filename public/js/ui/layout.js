@@ -17,7 +17,7 @@ function bchips(cur, fn) {
 function setTab(t) {
   if (t == 'aj') S.pl = true;
   S.tab = t;
-  render(true);
+  renderNow(true);
   scrollTo(0, 0);
 }
 
@@ -26,27 +26,27 @@ function setVt(t) {
   if (t == 'r') {
     if (stUn) {
       // ya suscrito: los datos ya están, pintar ya
-      render(true);
+      renderNow(true);
     } else {
       // suscribir; el primer onSnapshot pinta cuando lleguen los datos (evita parpadeo vacío→lleno)
       stockOn();
     }
   } else {
     stockOff();
-    render(true);
+    renderNow(true);
   }
   scrollTo(0, 0);
 }
 
 function setRt(t) {
   S.rt = t;
-  render(true);
+  renderNow(true);
   scrollTo(0, 0);
 }
 
 function setIb(i) {
   S.ib = i;
-  render(true);
+  renderNow(true);
 }
 
 function head() {
@@ -149,7 +149,7 @@ function go(k) {
   else if (m.role == 'vend') setVt(k);
   else if (m.role == 'enc') {
     S.et = k;
-    render(true);
+    renderNow(true);
   } else setRt(k);
 }
 
@@ -160,5 +160,5 @@ const adNav = k => (k == 'more' ? menu(1) : setTab(k)),
     S.anew = false;
     if (k == 'a') S.apt = S.apt == 's' ? 'h' : S.apt;
     S.et = k;
-    render(true);
+    renderNow(true);
   };

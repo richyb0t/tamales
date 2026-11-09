@@ -19,7 +19,7 @@ function admNew() {
     x.date = S.apt == 'o' ? (x.date > D ? x.date : tmr(1)) : D;
     if (S.apb != null && BI().includes(S.apb)) x.branch = S.apb;
   }
-  render(true);
+  renderNow(true);
   if (S.anew)
     setTimeout(() => {
       const e = $('#apf');
@@ -34,7 +34,7 @@ function admTab(k) {
     const x = nd();
     if (x.date <= D) x.date = tmr(1);
   }
-  render(true);
+  renderNow(true);
 }
 
 const admAp = b => {

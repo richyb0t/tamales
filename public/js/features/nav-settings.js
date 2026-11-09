@@ -41,7 +41,7 @@ function navOff(i) {
   if (a.length <= 2) return toast('Deja al menos 2 secciones en el menú');
   a.splice(i, 1);
   S.cfg.anav = a;
-  render(true);
+  renderNow(true);
   setNav(a);
 }
 
@@ -50,7 +50,7 @@ function navOn(k) {
   if (a.length >= 4) return toast('Máximo 4. Quita una primero');
   a.push(k);
   S.cfg.anav = a;
-  render(true);
+  renderNow(true);
   setNav(a);
 }
 
@@ -61,7 +61,7 @@ function navTog(k) {
 
 function navReset() {
   S.cfg.anav = NAVDEF.slice();
-  render(true);
+  renderNow(true);
   setNav(NAVDEF.slice());
 }
 
@@ -102,7 +102,7 @@ function navDrag(e) {
           [k] = a.splice(from, 1);
         a.splice(cur, 0, k);
         S.cfg.anav = a;
-        render(true);
+        renderNow(true);
         setNav(a);
       } else {
         items.forEach(o => (o.style.transform = ''));

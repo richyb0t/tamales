@@ -52,7 +52,7 @@ function pick(u) {
   if (!S.lr) ld = 0;
   ld++;
   history.pushState({ lg: 1 }, '');
-  render(true);
+  renderNow(true);
   const e = $('#lp');
   if (e) e.focus();
 }
@@ -102,7 +102,7 @@ function pickRole(r) {
   if (a.length == 1) S.lp = a[0];
   ld = 1;
   history.pushState({ lg: 1 }, '');
-  render(true);
+  renderNow(true);
   const e = $('#lp');
   if (e) e.focus();
 }
@@ -114,7 +114,7 @@ function backProf() {
   }
   S.lp = null;
   if (prList().filter(p => p.role == S.lr).length < 2) S.lr = null;
-  render(true);
+  renderNow(true);
 }
 
 function backRole() {
@@ -123,7 +123,7 @@ function backRole() {
     return;
   }
   S.lr = null;
-  render(true);
+  renderNow(true);
 }
 
 function pinView(p) {

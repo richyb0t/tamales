@@ -26,7 +26,7 @@ function dvn() {
 
 function dvBr(i) {
   dvn().branch = i;
-  render(true);
+  renderNow(true);
 }
 
 async function dvGeocode() {
@@ -96,7 +96,7 @@ async function dvGeocode() {
     }).filter(x => x.d != null).sort((a, c) => a.d - c.d);
     if (ranked.length) n.branch = ranked[0].i;
     toast('Ubicación encontrada: ' + (label || '').slice(0, 60));
-    render(true);
+    renderNow(true);
   } catch (e) {
     toast('Error al buscar. Pega las coordenadas manualmente.');
   } finally {
@@ -107,7 +107,7 @@ async function dvGeocode() {
 function dvAdd(f, n) {
   const x = dvn();
   x.items = { ...x.items, [f]: Math.max(0, Math.min(499, (x.items[f] || 0) + n)) };
-  render(true);
+  renderNow(true);
 }
 
 /* Cantidad escrita a mano: no vuelve a pintar para no perder el foco */
@@ -271,7 +271,7 @@ async function saveDv() {
     S.dvn = null;
     S.dvf = false;
     toast('Reparto guardado');
-    render(true);
+    renderNow(true);
   } catch (e) {
     delete lock.s.dv;
     err(e);
@@ -434,7 +434,7 @@ async function dvRoute(id) {
   try {
     S.dvLoc = await dvWhere();
     S.dvRoute = id;
-    render(true);
+    renderNow(true);
   } catch (e) {
     toast((e && e.message) || 'No se pudo obtener tu ubicación');
   }

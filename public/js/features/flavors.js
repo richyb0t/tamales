@@ -69,7 +69,7 @@ function fso() {
     S.so = false;
     S.q = '';
   } else S.so = true;
-  render(true);
+  renderNow(true);
   const i = $('#sq');
   if (i) i.focus();
 }

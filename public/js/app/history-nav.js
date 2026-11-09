@@ -54,7 +54,7 @@
     else if (p[0] == 'v' && m.role == 'vend') sV(v);
     else if (p[0] == 'e' && m.role == 'rep') {
       S.rt = v;
-      render(true);
+      renderNow(true);
     }
     else return;
     scrollTo(0, 0);
