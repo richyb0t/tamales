@@ -10,6 +10,7 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
   updatePassword,
+  updateEmail,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
   initializeFirestore,
@@ -128,6 +129,16 @@ window.FB = {
     const u = auth.currentUser;
     await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, o));
     await updatePassword(u, n);
+  },
+  async changeUser(o, n) {
+    const u = auth.currentUser;
+    const nu = n.trim().toLowerCase().replace(/[^a-z0-9_.]/g, '');
+    if (!nu) throw { code: 'invalid-user' };
+    await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, o));
+    await updateEmail(u, mail(nu));
+    await setDoc(doc(fs, 'users/' + u.uid), { user: nu }, { merge: true });
+    await setDoc(doc(fs, 'profiles/' + u.uid), { user: nu }, { merge: true });
+    return nu;
   },
   logout: () => signOut(auth),
   onAuth: f => onAuthStateChanged(auth, f),

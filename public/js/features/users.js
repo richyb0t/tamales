@@ -103,7 +103,51 @@ function delUser(id, off) {
   );
 }
 
-/* Cambiar mi PIN */
+/* Cambiar mi usuario */
+function userDlg() {
+  const m = $('#modal');
+  const cur = S.me ? S.me.user : '';
+  m.innerHTML = `<div class="card mv pd"><h3>Cambiar mi usuario</h3><small>Tu usuario actual: <b>${esc(cur)}</b>. Solo letras, números, punto y guion bajo. Tu sesión actual se cerrará.</small><div class="form" style="flex-direction:column"><input id="cuo" type="password" inputmode="numeric" placeholder="PIN actual" autocomplete="current-password"><input id="cun" type="text" placeholder="Usuario nuevo" autocapitalize="none" autocomplete="username" onkeydown="if(event.key=='Enter')saveUser()"></div><div class="form"><button class="gh" id="uc">Cancelar</button><button class="go" id="us" onclick="saveUser()">Guardar</button></div></div>`;
+  m.style.display = 'flex';
+  $('#uc').onclick = () => (m.style.display = 'none');
+  setTimeout(() => {
+    const e = $('#cun');
+    if (e) {
+      e.focus();
+      e.select();
+    }
+  }, 150);
+}
+
+async function saveUser() {
+  const o = $('#cuo').value.trim(),
+    n = $('#cun').value.trim();
+  if (!o) return toast('Escribe tu PIN actual');
+  const nu = n.toLowerCase().replace(/[^a-z0-9_.]/g, '');
+  if (!nu || nu.length < 3) return toast('El usuario debe tener al menos 3 caracteres válidos');
+  if (nu === (S.me ? S.me.user : '')) return toast('El usuario nuevo debe ser distinto');
+  if (S.users.some(x => x.user == nu && x.id !== S.me.id)) return toast('Ese usuario ya existe');
+  const b = $('#us');
+  b.disabled = true;
+  try {
+    const finalUser = await FB.changeUser(o, nu);
+    $('#modal').style.display = 'none';
+    toast('Usuario cambiado a ' + finalUser);
+    try {
+      localStorage.removeItem('tm_v');
+    } catch (e) {}
+    await FB.logout();
+  } catch (e) {
+    b.disabled = false;
+    toast(
+      ['auth/invalid-credential', 'auth/wrong-password', 'auth/invalid-login-credentials'].includes(e.code)
+        ? 'El PIN actual es incorrecto'
+        : e.code == 'auth/email-already-in-use'
+          ? 'Ese usuario ya existe'
+          : fe(e)
+    );
+  }
+}
 function pinDlg() {
   const m = $('#modal');
   m.innerHTML = `<div class="card mv pd"><h3>Cambiar mi PIN</h3><small>Tu PIN debe tener 6 números o más.</small><div class="form" style="flex-direction:column"><input id="po" type="password" inputmode="numeric" placeholder="PIN actual" autocomplete="current-password"><input id="pn" type="password" inputmode="numeric" placeholder="PIN nuevo" autocomplete="new-password"><input id="pr" type="password" inputmode="numeric" placeholder="Repite el PIN nuevo" autocomplete="new-password" onkeydown="if(event.key=='Enter')savePin()"></div><div class="form"><button class="gh" id="pc">Cancelar</button><button class="go" id="ps" onclick="savePin()">Guardar PIN</button></div></div>`;
