@@ -72,7 +72,7 @@ function admOrSup() { return adm() || sup(); }
       allow write: if adm();
     }
     match /users/{uid} {
-      allow read: if request.auth != null && (request.auth.uid == uid || adm());
+      allow read: if request.auth != null && (request.auth.uid == uid || adm() || sup());
       allow create: if adm() || (request.auth != null && request.auth.uid == uid
         && request.resource.data.role == 'admin'
         && !exists(/databases/$(database)/documents/config/init)
@@ -116,7 +116,7 @@ function admOrSup() { return adm() || sup(); }
     // Resumen de disponibilidad por sucursal (para apartar en otra sucursal). Cada vendedor solo publica el de su sucursal.
     match /stock/{id} {
       allow read: if ok();
-      allow write: if adm() || (vend(request.resource.data.branch) && id == string(request.resource.data.branch));
+      allow write: if adm() || sup() || (vend(request.resource.data.branch) && id == string(request.resource.data.branch));
     }
     // Solicitudes de apartado entre sucursales
     match /reqs/{id} {
@@ -157,25 +157,25 @@ function admOrSup() { return adm() || sup(); }
     // Apartados por fecha (hoy y otros días). Vendedor: los de su sucursal. Pedidos: puede crear y cancelar los suyos.
     match /pre/{id} {
       allow read: if adm() || sup() || enc() || vend(resource.data.branch);
-      allow create: if okId(id) && (adm()
+      allow create: if okId(id) && (adm() || sup()
         || (enc() && request.resource.data.by == prof().user && request.resource.data.status == 'pendiente')
         || (vend(request.resource.data.branch) && request.resource.data.by == prof().user && request.resource.data.status == 'pendiente'));
       // Solo se modifica un apartado que sigue pendiente: así dos dispositivos no pueden entregar el mismo apartado
-      allow update: if resource.data.status == 'pendiente' && (adm()
+      allow update: if resource.data.status == 'pendiente' && (adm() || sup()
         || (vend(resource.data.branch) && vendPreOk(id))
         || (enc() && resource.data.by == prof().user && request.resource.data.status == 'cancelado'));
-      allow delete: if adm();
+      allow delete: if adm() || sup();
     }
     // Bitácora de anulaciones y cancelaciones (solo el administrador la lee; no se puede editar ni borrar)
     match /logs/{id} {
-      allow read: if adm();
-      allow create: if adm()
+      allow read: if adm() || sup();
+      allow create: if adm() || sup()
         || (ok() && request.resource.data.by == prof().user && (prof().role == 'enc' || vend(request.resource.data.branch)));
     }
     match /transfers/{id} {
       allow read: if adm() || sup() || enc() || vend(resource.data.from) || vend(resource.data.to);
       allow create: if adm() || sup() || (okId(id) && vend(request.resource.data.from));
-      allow delete: if adm() || (vend(resource.data.from) && existsAfter(/databases/$(database)/documents/logs/$('del_tr_' + id)));
+      allow delete: if adm() || sup() || (vend(resource.data.from) && existsAfter(/databases/$(database)/documents/logs/$('del_tr_' + id)));
     }
     // Repartos a domicilio: los crea el administrador o Pedidos; el repartidor los toma y cierra
     match /deliveries/{id} {
