@@ -39,7 +39,7 @@ const used = (b, f) =>
 
 const net = (b, f) =>
   S.sales
-    .filter(s => s.branch == b && s.f == f)
+    .filter(s => s.branch == b && s.f == f && !s.dv)
     .reduce((a, s) => a + (s.type == 'vendido' ? s.qty : s.type == 'devolucion' ? -s.qty : 0), 0);
 
 const tx = (b, f, k) =>
@@ -54,7 +54,7 @@ const txc = (b, k) => S.tr.filter(t => t[k] == b).reduce((a, t) => a + (+(t.q ||
 
 const chUsed = b =>
   S.sales
-    .filter(s => s.branch == b && s.f >= 100)
+    .filter(s => s.branch == b && s.f >= 100 && !s.dv)
     .reduce(
       (a, s) => a + (s.type == 'devolucion' ? (s.restock ? -1 : 0) : 1) * s.qty * CL[s.f - 100],
       0
@@ -71,19 +71,22 @@ const pendAc = b => S.pre.filter(p => p.branch == b && p.date == D && !p.ok);
 
 const resv = (b, f) =>
   S.pre
-    .filter(p => p.branch == b && p.date == D)
+    .filter(p => p.branch == b && p.date == D && !(p.exp && p.exp < Date.now()))
     .reduce((a, p) => a + (+(p.items || {})['f' + f] || 0), 0);
 
 /* Tamales comprometidos en repartos del día (pendiente/en camino/entregado): no disponibles para venta en mostrador */
 const dvResv = (b, f) =>
   (S.dv || [])
-    .filter(d => d.branch == b && d.day == D && !['cancelado', 'fallido'].includes(d.status))
+    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado')
     .reduce((a, d) => a + (+(d.items || {})['f' + f] || 0), 0);
 
-const left = (b, f) =>
-  f >= 100
-    ? Math.max(0, Math.floor((chLeft(b) + 1e-9) / CL[f - 100]))
-    : load(b, f) - used(b, f) + tx(b, f, 'to') - tx(b, f, 'from') - resv(b, f) - dvResv(b, f);
+const left = (b, f) => {
+  if (f >= 100) {
+    const dvCh = dvResv(b, f) * CL[f - 100];
+    return Math.max(0, Math.floor((chLeft(b) - dvCh + 1e-9) / CL[f - 100]));
+  }
+  return Math.max(0, load(b, f) - used(b, f) + tx(b, f, 'to') - tx(b, f, 'from') - resv(b, f) - dvResv(b, f));
+};
 
 const holdMin = () => (S.cfg.hold == null ? 60 : +S.cfg.hold),
   lowT = () => (S.cfg.low == null ? 3 : +S.cfg.low),

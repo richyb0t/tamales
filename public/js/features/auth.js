@@ -184,6 +184,12 @@ async function logout() {
     localStorage.removeItem('tm_v');
   } catch (e) {}
   try {
+    vRest = false;
+  } catch (e) {}
+  try {
+    vSig = '';
+  } catch (e) {}
+  try {
     await FB.logout();
   } catch (e) {
     err(e);

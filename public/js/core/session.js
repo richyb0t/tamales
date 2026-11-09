@@ -57,6 +57,9 @@ function onUser(u) {
         S.me.placed = x.brDay === day() && x.branch != null;
         if (!S.me.placed) S.me.branch = null;
       } else S.me.branch = null;
+      try {
+        _lastDay = day();
+      } catch (e) {}
       startSubs();
     }
     render(true);

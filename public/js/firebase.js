@@ -66,7 +66,8 @@ const W = p => {
     e => {
       np--;
       pb();
-      if (d) window.dispatchEvent(new CustomEvent('werr', { detail: e }));
+      d = 1;
+      window.dispatchEvent(new CustomEvent('werr', { detail: e }));
     }
   );
   return r;
