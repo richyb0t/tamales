@@ -401,7 +401,7 @@ function dvCard(d, rep) {
     const best = near[0];
     return '<small style="display:block;margin-top:2px">Sucursal mas cercana: <b>' + esc(brs()[best.i]) + '</b> (' + best.dd.toFixed(1) + ' km)' + (near.length > 1 ? ' · ' + near.slice(1).map(x => esc(brs()[x.i]) + ' ' + x.dd.toFixed(1) + 'km').join(' · ') : '') + '</small>';
   })()}
- ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}${rt ? (S.dvRoute == d._id ? dvRouteMap(d) : `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvRoute('${d._id}')">🧭 Ver recorrido: sucursal → domicilio</button></div>`) : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
+ ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}${rt ? (S.dvRoute == d._id ? dvRouteMap(d) : `<div class="form" style="margin-top:8px"><button class="dvnav" style="flex:1" onclick="dvRoute('${d._id}')">🧭 Ver recorrido</button></div>`) : ''}${bt ? `<div class="apa"${rt ? ' style="margin-top:20px"' : ''}>${bt}</div>` : ''}</div>`;
 }
 
 /* Ubicación actual del repartidor (GPS del celular) */
@@ -447,7 +447,7 @@ function dvRouteMap(d) {
       encodeURIComponent(dest) +
       (bq ? '&waypoints=' + encodeURIComponent(bq) : '') +
       '&travelmode=driving';
-  return `<div style="margin:6px 0">${bq ? leg(origin, bq, '1. Tu ubicación → ' + esc(bn)) : ''}${leg(bq || origin, dest, (bq ? '2. ' + esc(bn) + ' → ' : 'Tu ubicación → ') + 'domicilio')}<div style="display:grid;gap:8px;margin-top:8px"><a href="${dir}" target="_blank" rel="noopener" class="dvnv">🧭 Navegar recorrido completo</a><button class="gh" onclick="dvRoute('${d._id}')">🔄 Actualizar mi ubicación</button></div></div>`;
+  return `<div class="dvroute">${bq ? leg(origin, bq, '1. Tu ubicación → ' + esc(bn)) : ''}${leg(bq || origin, dest, (bq ? '2. ' + esc(bn) + ' → ' : 'Tu ubicación → ') + 'domicilio')}<div class="dvacts"><a class="dvnav" href="${dir}" target="_blank" rel="noopener">🧭 Navegar</a><button class="dvnav" onclick="dvRoute('${d._id}')">🔄 Actualizar</button></div></div>`;
 }
 
 /* Administrador y Pedidos */
