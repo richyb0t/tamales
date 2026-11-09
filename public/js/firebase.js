@@ -130,6 +130,11 @@ window.FB = {
     await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, o));
     await updatePassword(u, n);
   },
+  async verifyPin(pin) {
+    const u = auth.currentUser;
+    await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, pin));
+    return true;
+  },
   async changeUser(o, n) {
     const u = auth.currentUser;
     const nu = n.trim().toLowerCase().replace(/[^a-z0-9_.]/g, '');

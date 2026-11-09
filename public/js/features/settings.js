@@ -85,6 +85,13 @@ async function deleteBrForever(i) {
 async function resetTestData() {
   const code = prompt('Escribe RESET para confirmar el borrado de todos los datos de prueba.');
   if (code !== 'RESET') return toast('Cancelado');
+  const pin = prompt('Escribe tu PIN de administrador para autorizar el borrado.');
+  if (!pin) return toast('Cancelado');
+  try {
+    await FB.verifyPin(pin.trim());
+  } catch (e) {
+    return toast('PIN incorrecto');
+  }
   ask(
     '¿Seguro? Se borrarán ventas, cargas, apartados, traspasos, cortes, solicitudes, repartos y existencias publicadas. Los logs de anulación no se pueden borrar. Usuarios, sucursales, precios y costos se conservan.',
     async () => {
