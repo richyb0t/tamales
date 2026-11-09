@@ -17,7 +17,7 @@ async function saveInv() {
   q.ch = Math.max(0, parseFloat($('#qch').value) || 0);
   q.pa = pa;
   try {
-    await db.doc(`loads/${D}_${b}`).set({ day: D, branch: b, q });
+    await db.doc(`loads/${D}_${b}`).set({ day: D, branch: b, q, by: S.me.user, byName: S.me.name, ts: Date.now() });
     if (S.dr) delete S.dr[b];
     const n = Object.values(pa).reduce((x, v) => x + v, 0);
     toast(
@@ -98,7 +98,7 @@ function invView() {
     pls = (id, s) => `<button onclick="invStp('${id}',1,${s})" aria-label="Más">＋</button>`;
   return (
     preInvCard(b) +
-    `<div class="card"><div class="ivh"><h3>Carga del día</h3>${loadDone(b) ? '<span class="chip ok">✓ Guardada hoy</span>' : '<span class="chip low">Sin guardar</span>'}</div><small>Elige la sucursal y escribe cuántos tamales lleva. Los apartados se suman solos al guardar. ✓ = ya tiene carga hoy.</small>${invChips(b)}
+    `<div class="card"><div class="ivh"><h3>Carga del día</h3>${loadDone(b) ? '<span class="chip ok">✓ Guardada hoy</span>' : '<span class="chip low">Sin guardar</span>'}</div>${loadDone(b) && S.loadBy[b] ? `<small style="display:block;margin:4px 0 6px;opacity:.7">Cargada por <b>${esc(S.loadBy[b])}</b>${S.loadTs[b] ? ' · ' + new Date(S.loadTs[b]).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}</small>` : ''}<small>Elige la sucursal y escribe cuántos tamales lleva. Los apartados se suman solos al guardar. ✓ = ya tiene carga hoy.</small>${invChips(b)}
  <div class="ivt"><button class="alt" onclick="copyDay()"><span>📋</span>Copiar</button><button class="alt" id="mic" onclick="mic()"><span>🎤</span>Dictar</button><button class="alt" onclick="vaciarCarga()"><span>🗑</span>Vaciar</button></div>
  <div class="vz"><div class="form" style="margin:4px 0"><input type="text" id="vt" placeholder="Ej: mole rojo 20, rajas 15, champurrado 10 litros" autocomplete="off" enterkeyhint="done" value="${esc(S.vx || '')}" oninput="S.vx=this.value" onkeydown="if(event.key=='Enter'){event.preventDefault();voiceFill(this.value)}" style="flex:1 1 12rem;min-width:0"><button class="gh" onclick="voiceFill($('#vt').value)">Llenar</button></div>
  <small id="vs">Dicta o escribe los sabores con su cantidad; se llenan solos y tú revisas antes de guardar.</small></div></div>

@@ -76,6 +76,8 @@ function startSubs() {
   stopSubs();
   subKey = k;
   S.loads = {};
+  S.loadBy = {};
+  S.loadTs = {};
   S.sales = [];
   S.tr = [];
   S.cuts = [];
@@ -150,9 +152,13 @@ function startSubs() {
   subs.push(
     L('loads', 'branch', M ? b : null).onSnapshot(q => {
       S.loads = {};
+      S.loadBy = {};
+      S.loadTs = {};
       q.docs.forEach(d => {
         const x = d.data();
         S.loads[x.branch] = x.q || {};
+        S.loadBy[x.branch] = x.byName || x.by || '';
+        S.loadTs[x.branch] = x.ts || 0;
       });
       render();
     }, err)
