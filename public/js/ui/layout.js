@@ -91,7 +91,7 @@ function menu(o) {
         [
           'Análisis y gestión',
           [
-            ['rp', '📈', 'Reportes'],
+            ...(m.role === 'admin' ? [['rp', '📈', 'Reportes']] : []),
             ...(m.role === 'admin' ? [['us', '👥', 'Usuarios']] : []),
             ['aj', '⚙️', 'Ajustes'],
           ],

@@ -89,7 +89,7 @@ t,
 }
 
 function adminView() {
-const t = (S.me && S.me.role === 'sup' && S.tab === 'us') ? 'res' : S.tab,
+const t = (S.me && S.me.role === 'sup' && (S.tab === 'us' || S.tab === 'rp')) ? 'res' : S.tab,
   isSup = S.me && S.me.role === 'sup',
   v = {
     res: resView,
@@ -103,7 +103,7 @@ const t = (S.me && S.me.role === 'sup' && S.tab === 'us') ? 'res' : S.tab,
     rp: rpView,
   };
 const sel0 = navSel(),
-  sel = isSup ? sel0.filter(k => k !== 'us') : sel0,
+  sel = isSup ? sel0.filter(k => k !== 'us' && k !== 'rp') : sel0,
   cu = t || 'res',
   hid = Object.keys(NAVALL)
     .filter(k => !sel.includes(k))
