@@ -308,3 +308,23 @@ El sistema es sólido para una taquería pequeña. Las principales mejoras deben
 ---
 
 *Análisis realizado sobre el estado del repositorio al commit `44196c6` (cache v43).*
+
+---
+
+## Correcciones aplicadas (commit `4e767a3`, cache v44)
+
+1. `left()` para tamales ahora usa `Math.max(0, …)` (evita negativos).
+2. `resv()` excluye apartados vencidos (`exp < Date.now()`), liberando stock.
+3. `dvResv()` ahora reserva champurrado (nueva rama en `left()` para f>=100) y ya no excluye `fallido` (el tamal perdido no se revende).
+4. `chUsed()` y `net()` excluyen ventas de deliveries (`!s.dv`) para evitar doble conteo.
+5. `W()` (firebase.js) ahora despacha `werr` siempre que una escritura falle (antes se ocultaba si fallaba antes de 1.5s).
+6. `vRest` se resetea en `logout()` (evita heredar vista entre usuarios).
+7. `_lastDay` se resetea al iniciar sesión (re-evalúa cambio de día).
+8. `vSig` se resetea en `logout()`.
+
+### Pendientes (funcionalidades sugeridas, no implementadas aún)
+- Historial de repartos por repartidor por fecha.
+- Validación de stock en tiempo real al agregar al carrito (parcialmente existente).
+- Reabrir/cancelar apartados vencidos automáticamente (ahora solo liberan stock).
+- Notificaciones push.
+- Restringir `profiles` read (rompería la pantalla de login; requiere rediseño).
