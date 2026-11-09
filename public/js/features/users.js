@@ -49,7 +49,7 @@ async function addUser(first) {
       .replace(/[^a-z0-9_.]/g, ''),
     p = $('#up').value.trim(),
     r = first || $('#ur').value;
-  if (!n || !u || !/^\d{6,}$/.test(p))
+  if (!n || !u || !/^\\d{6,}$/.test(p))
     return toast('Completa nombre, usuario y PIN (solo números, mínimo 6)');
   if (S.users.some(x => x.user == u)) return toast('Ese usuario ya existe');
   const prof = { user: u, name: n, role: r, active: true };
@@ -103,106 +103,155 @@ function delUser(id, off) {
   );
 }
 
-/* Cambiar mi usuario */
-function userDlg() {
-  const m = $('#modal');
-  const cur = S.me ? S.me.user : '';
-  m.innerHTML = `<div class="card mv pd"><h3>Cambiar mi usuario</h3><small>Tu usuario actual: <b>${esc(cur)}</b>. Solo letras, números, punto y guion bajo. Tu sesión actual se cerrará.</small><div class="form" style="flex-direction:column"><input id="cuo" type="password" inputmode="numeric" placeholder="PIN actual" autocomplete="current-password"><input id="cun" type="text" placeholder="Usuario nuevo" autocapitalize="none" autocomplete="username" onkeydown="if(event.key=='Enter')saveUser()"></div><div class="form"><button class="gh" id="uc">Cancelar</button><button class="go" id="us" onclick="saveUser()">Guardar</button></div></div>`;
-  m.style.display = 'flex';
-  $('#uc').onclick = () => (m.style.display = 'none');
-  setTimeout(() => {
-    const e = $('#cun');
-    if (e) {
-      e.focus();
-      e.select();
-    }
-  }, 150);
-}
-
-async function saveUser() {
-  const o = $('#cuo').value.trim(),
-    n = $('#cun').value.trim();
-  if (!o) return toast('Escribe tu PIN actual');
-  const nu = n.toLowerCase().replace(/[^a-z0-9_.]/g, '');
-  if (!nu || nu.length < 3) return toast('El usuario debe tener al menos 3 caracteres válidos');
-  if (nu === (S.me ? S.me.user : '')) return toast('El usuario nuevo debe ser distinto');
-  if (S.users.some(x => x.user == nu && x.id !== S.me.id)) return toast('Ese usuario ya existe');
-  const b = $('#us');
-  b.disabled = true;
-  try {
-    const finalUser = await FB.changeUser(o, nu);
-    $('#modal').style.display = 'none';
-    toast('Usuario cambiado a ' + finalUser);
-    try {
-      localStorage.removeItem('tm_v');
-    } catch (e) {}
-    await FB.logout();
-  } catch (e) {
-    b.disabled = false;
-    toast(
-      ['auth/invalid-credential', 'auth/wrong-password', 'auth/invalid-login-credentials'].includes(e.code)
-        ? 'El PIN actual es incorrecto'
-        : e.code == 'auth/email-already-in-use'
-          ? 'Ese usuario ya existe'
-          : fe(e)
-    );
-  }
-}
-function pinDlg() {
-  const m = $('#modal');
-  m.innerHTML = `<div class="card mv pd"><h3>Cambiar mi PIN</h3><small>Tu PIN debe tener 6 números o más.</small><div class="form" style="flex-direction:column"><input id="po" type="password" inputmode="numeric" placeholder="PIN actual" autocomplete="current-password"><input id="pn" type="password" inputmode="numeric" placeholder="PIN nuevo" autocomplete="new-password"><input id="pr" type="password" inputmode="numeric" placeholder="Repite el PIN nuevo" autocomplete="new-password" onkeydown="if(event.key=='Enter')savePin()"></div><div class="form"><button class="gh" id="pc">Cancelar</button><button class="go" id="ps" onclick="savePin()">Guardar PIN</button></div></div>`;
-  m.style.display = 'flex';
-  $('#pc').onclick = () => (m.style.display = 'none');
-  setTimeout(() => {
-    const e = $('#po');
-    if (e) e.focus();
-  }, 150);
-}
-
-async function savePin() {
-  const o = $('#po').value.trim(),
-    n = $('#pn').value.trim(),
-    r = $('#pr').value.trim();
-  if (!o) return toast('Escribe tu PIN actual');
-  if (!/^\d{6,}$/.test(n)) return toast('El PIN nuevo debe tener solo números, mínimo 6');
-  if (n !== r) return toast('Los PIN nuevos no coinciden');
-  if (n === o) return toast('El PIN nuevo debe ser distinto al actual');
-  const b = $('#ps');
-  b.disabled = true;
-  try {
-    await FB.changePin(o, n);
-    $('#modal').style.display = 'none';
-    toast('PIN cambiado');
-  } catch (e) {
-    b.disabled = false;
-    toast(
-      ['auth/invalid-credential', 'auth/wrong-password', 'auth/invalid-login-credentials'].includes(
-        e.code
-      )
-        ? 'El PIN actual es incorrecto'
-        : fe(e)
-    );
-  }
-}
-
 /* Cambiar mi cuenta (usuario y/o PIN) en una sola opción */
 function accountDlg() {
   const m = $('#modal');
   const cur = S.me ? S.me.user : '';
-  m.innerHTML = `<div class="card mv pd"><h3>Mi cuenta</h3><small>Usuario actual: <b>${esc(cur)}</b>. Deja en blanco lo que no quieras cambiar. Si cambias el usuario, la sesión se cerrará.</small><div class="form" style="flex-direction:column"><input id="cuo" type="password" inputmode="numeric" placeholder="PIN actual (obligatorio)" autocomplete="current-password"></div><div class="form"><input id="cun" type="text" placeholder="Usuario nuevo (opcional)" autocapitalize="none" autocomplete="username" style="flex:1"><input id="cpn" type="password" inputmode="numeric" placeholder="PIN nuevo (opcional)" autocomplete="new-password" style="flex:1"></div><div class="form" style="flex-direction:column"><input id="cpr" type="password" inputmode="numeric" placeholder="Repite el PIN nuevo" autocomplete="new-password" onkeydown="if(event.key=='Enter')saveAccount()"></div><div class="form"><button class="gh" id="ac">Cancelar</button><button class="go" id="as" onclick="saveAccount()">Guardar</button></div></div>`;
+  const name = S.me ? S.me.name : '';
+  const role = S.me ? ROLE[S.me.role] || '' : '';
+  const initial = (name || '?').charAt(0).toUpperCase();
+  const avBg = typeof avC === 'function' ? avC(S.me ? S.me.user : '') : 'var(--ac)';
+  m.innerHTML = `<div class="card mv pd" style="max-height:90vh;overflow:auto;padding-bottom:8px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <span class="av big" style="background:${avBg}">${esc(initial)}</span>
+      <div><h3 style="margin:0">Mi cuenta</h3><small>${esc(name)} · ${esc(role)}</small></div>
+    </div>
+    <div class="form" style="align-items:center;margin:0 0 6px">
+      <div style="flex:1"><small style="display:block">Usuario actual</small><b>${esc(cur)}</b></div>
+      <button class="gh" id="toggleUser" type="button">Cambiar</button>
+    </div>
+    <div id="userSection" style="display:none;margin:0 0 10px">
+      <label style="display:block;font-size:12px;font-weight:600;margin:4px 0 2px">Usuario nuevo</label>
+      <input id="cun" type="text" autocapitalize="none" autocomplete="username" enterkeyhint="next" placeholder="ej. ana2" style="width:100%">
+      <small style="display:block;margin-top:2px;opacity:.7">Solo letras minúsculas, números, punto o guion bajo.</small>
+      <small id="userWarn" style="display:none;color:var(--bad);margin-top:2px">Al guardar tendrás que entrar de nuevo con el nuevo usuario.</small>
+    </div>
+    <div class="form" style="align-items:center;margin:0 0 6px">
+      <div style="flex:1"><small style="display:block">PIN</small><b>••••••</b></div>
+      <button class="gh" id="togglePin" type="button">Cambiar</button>
+    </div>
+    <div id="pinSection" style="display:none;margin:0 0 10px">
+      <label style="display:block;font-size:12px;font-weight:600;margin:4px 0 2px">PIN nuevo</label>
+      <div style="position:relative">
+        <input id="cpn" type="password" inputmode="numeric" autocomplete="new-password" enterkeyhint="next" placeholder="Mínimo 6 números" style="width:100%;padding-right:44px">
+        <button type="button" id="eyeBtn" aria-label="Mostrar u ocultar PIN" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:0;font-size:18px;cursor:pointer;min-height:auto;padding:4px 6px">👁</button>
+      </div>
+      <small id="pinMsg" style="display:block;margin-top:2px;opacity:.7"></small>
+      <label style="display:block;font-size:12px;font-weight:600;margin:8px 0 2px">Repite el PIN nuevo</label>
+      <input id="cpr" type="password" inputmode="numeric" autocomplete="new-password" enterkeyhint="done" placeholder="Repite el PIN" style="width:100%" onkeydown="if(event.key=='Enter')saveAccount()">
+      <small id="pinMatch" style="display:block;margin-top:2px;opacity:.7"></small>
+    </div>
+    <div id="confirmSection" style="display:none;margin-top:8px">
+      <label style="display:block;font-size:12px;font-weight:600;margin:4px 0 2px">Confirma con tu PIN actual</label>
+      <input id="cuo" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN actual" style="width:100%">
+    </div>
+    <div class="form" style="position:sticky;bottom:0;background:var(--card);padding-top:10px;margin-top:12px">
+      <button class="gh" id="ac" type="button">Cancelar</button>
+      <button class="go" id="as" type="button" disabled>Guardar cambios</button>
+    </div>
+  </div>`;
   m.style.display = 'flex';
   $('#ac').onclick = () => (m.style.display = 'none');
-  setTimeout(() => {
-    const e = $('#cun');
-    if (e) e.focus();
-  }, 150);
+
+  const toggleUser = $('#toggleUser');
+  const togglePin = $('#togglePin');
+  const userSection = $('#userSection');
+  const pinSection = $('#pinSection');
+  const confirmSection = $('#confirmSection');
+  const cun = $('#cun');
+  const cpn = $('#cpn');
+  const cpr = $('#cpr');
+  const cuo = $('#cuo');
+  const eyeBtn = $('#eyeBtn');
+  const pinMsg = $('#pinMsg');
+  const pinMatch = $('#pinMatch');
+  const userWarn = $('#userWarn');
+  const saveBtn = $('#as');
+
+  let showPin = false;
+  eyeBtn.onclick = () => {
+    showPin = !showPin;
+    cpn.type = showPin ? 'text' : 'password';
+    cpr.type = showPin ? 'text' : 'password';
+    cuo.type = showPin ? 'text' : 'password';
+    eyeBtn.textContent = showPin ? '🙈' : '👁';
+  };
+
+  function updateState() {
+    const nu = (cun.value || '').trim().toLowerCase().replace(/[^a-z0-9_.]/g, '');
+    const np = (cpn.value || '').trim();
+    const nr = (cpr.value || '').trim();
+    const po = (cuo.value || '').trim();
+    const changeUser = !!nu && nu !== (S.me ? S.me.user : '');
+    const changePin = !!np;
+
+    userWarn.style.display = changeUser ? 'block' : 'none';
+
+    if (np.length > 0) {
+      if (!/^\\d{6,}$/.test(np)) {
+        pinMsg.textContent = 'Mínimo 6 números';
+        pinMsg.style.color = 'var(--bad)';
+        pinMsg.style.opacity = '1';
+      } else {
+        pinMsg.textContent = '✓ PIN válido';
+        pinMsg.style.color = 'var(--ok)';
+        pinMsg.style.opacity = '1';
+      }
+    } else {
+      pinMsg.textContent = '';
+    }
+    if (nr.length > 0) {
+      if (np && nr === np) {
+        pinMatch.textContent = '✓ Los PIN coinciden';
+        pinMatch.style.color = 'var(--ok)';
+        pinMatch.style.opacity = '1';
+      } else {
+        pinMatch.textContent = 'Los PIN no coinciden';
+        pinMatch.style.color = 'var(--bad)';
+        pinMatch.style.opacity = '1';
+      }
+    } else {
+      pinMatch.textContent = '';
+    }
+
+    const anyChange = changeUser || changePin;
+    const pinValid = !changePin || (/^\\d{6,}$/.test(np) && np === nr);
+    const needsConfirm = anyChange;
+    confirmSection.style.display = needsConfirm ? 'block' : 'none';
+    saveBtn.disabled = !(anyChange && pinValid && po.length >= 6);
+  }
+
+  toggleUser.onclick = () => {
+    const open = userSection.style.display === 'none';
+    userSection.style.display = open ? 'block' : 'none';
+    toggleUser.textContent = open ? 'Cerrar' : 'Cambiar';
+    if (open) setTimeout(() => cun.focus(), 50);
+    updateState();
+  };
+  togglePin.onclick = () => {
+    const open = pinSection.style.display === 'none';
+    pinSection.style.display = open ? 'block' : 'none';
+    togglePin.textContent = open ? 'Cerrar' : 'Cambiar';
+    if (open) setTimeout(() => cpn.focus(), 50);
+    updateState();
+  };
+
+  [cun, cpn, cpr, cuo].forEach(el => el.addEventListener('input', updateState));
+  updateState();
+
+  cun.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cpn.focus(); } });
+  cpn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cpr.focus(); } });
+  cpr.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cuo.focus(); } });
+  cuo.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveAccount(); } });
+
+  saveBtn.onclick = saveAccount;
 }
 
 async function saveAccount() {
-  const o = $('#cuo').value.trim(),
-    nuRaw = $('#cun').value.trim(),
-    np = $('#cpn').value.trim(),
-    nr = $('#cpr').value.trim();
+  const o = ($('#cuo').value || '').trim();
+  const nuRaw = ($('#cun').value || '').trim();
+  const np = ($('#cpn').value || '').trim();
+  const nr = ($('#cpr').value || '').trim();
   if (!o) return toast('Escribe tu PIN actual');
   const nu = nuRaw ? nuRaw.toLowerCase().replace(/[^a-z0-9_.]/g, '') : '';
   const changeUser = !!nu && nu !== (S.me ? S.me.user : '');
@@ -211,9 +260,13 @@ async function saveAccount() {
   if (changeUser && (!nu || nu.length < 3)) return toast('El usuario debe tener al menos 3 caracteres válidos');
   if (changeUser && S.users.some(x => x.user == nu && x.id !== S.me.id)) return toast('Ese usuario ya existe');
   if (changePin) {
-    if (!/^\d{6,}$/.test(np)) return toast('El PIN nuevo debe tener solo números, mínimo 6');
+    if (!/^\\d{6,}$/.test(np)) return toast('El PIN nuevo debe tener solo números, mínimo 6');
     if (np !== nr) return toast('Los PIN nuevos no coinciden');
     if (np === o) return toast('El PIN nuevo debe ser distinto al actual');
+  }
+  if (changeUser) {
+    const ok = confirm('Al guardar tendrás que entrar de nuevo con "' + nu + '". ¿Continuar?');
+    if (!ok) return;
   }
   const b = $('#as');
   b.disabled = true;
@@ -254,7 +307,7 @@ function pinUser(id) {
 
 async function doPinUser() {
   const p = ($('#npn').value || '').trim();
-  if (!/^\d{6,}$/.test(p)) return toast('El PIN debe ser solo números, mínimo 6');
+  if (!/^\\d{6,}$/.test(p)) return toast('El PIN debe ser solo números, mínimo 6');
   const b = $('#ps');
   b.disabled = true;
   try {
