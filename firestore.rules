@@ -69,7 +69,7 @@ function admOrSup() { return adm() || sup(); }
     }
     match /config/{doc} {
       allow read: if ok();
-      allow write: if adm();
+      allow write: if adm() || sup();
     }
     match /users/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || adm() || sup());
@@ -95,7 +95,7 @@ function admOrSup() { return adm() || sup(); }
     }
     match /loads/{id} {
       allow read: if adm() || sup() || enc() || vend(resource.data.branch);
-      allow write: if adm();
+      allow write: if adm() || sup();
     }
     match /sales/{id} {
       allow read: if adm() || sup() || enc() || vend(resource.data.branch);

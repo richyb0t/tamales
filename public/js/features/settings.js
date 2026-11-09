@@ -204,7 +204,12 @@ async function saveAj() {
     await db.doc('config/main').set(
       {
         branches,
-         branchLocs: brs().map((_, i) => ({ lat: +($("#blat" + i)?.value || 0) || null, lng: +($("#blng" + i)?.value || 0) || null })),
+         branchLocs: brs().map((_, i) => {
+           const la = $('#blat' + i),
+             lo = $('#blng' + i);
+           if (!la && !lo) return (S.cfg.branchLocs || [])[i] || null;
+           return { lat: +((la && la.value) || 0) || null, lng: +((lo && lo.value) || 0) || null };
+         }),
         prices,
         costs,
         fondo: Math.max(0, +$('#fondoIn').value || 0),
