@@ -5,7 +5,7 @@ const rpA = a => a.reduce((x, s) => x + s.qty * s.price, 0);
 /* Filtros del reporte: se aplican en el celular sobre lo ya descargado (no gastan lecturas) */
 const rpKeep = () => {
   const r = S.rp || {};
-  return { br: r.br == null ? null : r.br, cat: r.cat || 't', cmp: !!r.cmp, gr: r.gr !== false };
+  return { br: r.br == null ? null : r.br, cat: r.cat || 't', cmp: !!r.cmp, gr: r.gr !== false, dv: r.dv || 't' };
 };
 
 const rpCatOk = (c, f) =>
@@ -14,7 +14,11 @@ const rpCatOk = (c, f) =>
 const rpF = rows => {
   const r = S.rp || {};
   return rows.filter(
-    s => s.type != 'apartado' && (r.br == null || s.branch == r.br) && rpCatOk(r.cat, s.f)
+    s =>
+      s.type != 'apartado' &&
+      (r.br == null || s.branch == r.br) &&
+      rpCatOk(r.cat, s.f) &&
+      (r.dv == 't' || (r.dv == 'dv' ? !!s.dv : !s.dv))
   );
 };
 

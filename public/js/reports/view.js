@@ -153,5 +153,12 @@ function rpView() {
    ['b', 'Bebidas'],
  ]
    .map(([k, l]) => chip((r.cat || 't') == k, `S.rp.cat='${k}';render(true)`, l))
-   .join('')}</div></div>${body}`;
+   .join('')}</div>
+  <div class="pkh" style="margin-top:10px"><span>Tipo de venta</span></div><div class="seg wr" style="margin:0">${[
+    ['t', 'Todo'],
+    ['mostrador', 'Mostrador'],
+    ['dv', 'A domicilio'],
+  ]
+    .map(([k, l]) => chip((r.dv || 't') == k, `S.rp.dv='${k}';render(true)`, l))
+    .join('')}</div></div>${body}`;
 }
