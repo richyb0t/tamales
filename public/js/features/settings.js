@@ -81,6 +81,49 @@ async function deleteBrForever(i) {
   );
 }
 
+/* Zona de peligro: borra todos los datos de prueba (admin). Conserva usuarios, sucursales, precios y costos. */
+async function resetTestData() {
+  const code = prompt('Escribe RESET para confirmar el borrado de todos los datos de prueba.');
+  if (code !== 'RESET') return toast('Cancelado');
+  ask(
+    '¿Seguro? Se borrarán ventas, cargas, apartados, traspasos, cortes, solicitudes, repartos y existencias publicadas. Los logs de anulación no se pueden borrar. Usuarios, sucursales, precios y costos se conservan.',
+    async () => {
+      if (!lock('rst')) return;
+      try {
+        const cols = ['sales', 'loads', 'transfers', 'cuts', 'pre', 'claims', 'deliveries', 'reqs', 'stock'];
+        for (const c of cols) {
+          let snap;
+          try {
+            snap = await db.collection(c).get();
+          } catch (e) {
+            console.warn(c, e);
+            continue;
+          }
+          const docs = snap.docs || [];
+          for (let i = 0; i < docs.length; i += 400) {
+            const bt = db.batch();
+            docs.slice(i, i + 400).forEach(d => bt.delete(c + '/' + d.id));
+            await bt.commit();
+          }
+        }
+        try {
+          await db.doc('config/main').set({ closed: [] }, { merge: true });
+        } catch (e) {
+          console.warn(e);
+        }
+        toast('Datos de prueba borrados');
+        try {
+          localStorage.removeItem('tm_v');
+        } catch (e) {}
+        setTimeout(() => location.reload(), 900);
+      } catch (e) {
+        delete lock.s.rst;
+        err(e);
+      }
+    }
+  );
+}
+
 /* Precios y costos: bloqueados por defecto (los campos están desactivados) para que no se cambien por error. Se vuelven a bloquear al guardar o al volver a Ajustes. */
 function plUnlock() {
   ask(
@@ -122,6 +165,7 @@ function ajView() {
   <div class="card ${lk ? 'plk' : ''}"><div class="ivh"><h3>${lk ? '🔒' : '🔓'} Ubicaciones (lat, lng)</h3><button class="${lk ? 'alt' : 'gh'}" onclick="${lk ? 'plUnlock()' : 'plLock()'}">${lk ? 'Desbloquear' : 'Bloquear'}</button></div><small>Para logística de repartos: sucursal más cercana al pedido. ${lk ? 'Bloqueadas para que no se cambien por error.' : 'Desbloqueadas: edita y toca Guardar ajustes.'}</small>${brs().map((n, i) => `<div class="form" style="margin:2px 0 8px"><input id="blat${i}" type="number" step="0.0001" placeholder="Latitud suc. ${i + 1}" aria-label="Latitud sucursal ${i + 1}" value="${esc((S.cfg.branchLocs || [])[i]?.lat ?? '')}" ${dis} style="flex:1"><input id="blng${i}" type="number" step="0.0001" placeholder="Longitud suc. ${i + 1}" aria-label="Longitud sucursal ${i + 1}" value="${esc((S.cfg.branchLocs || [])[i]?.lng ?? '')}" ${dis} style="flex:1"></div>`).join('')}</div>
   <div class="card"><h3>🔔 Apartados y alertas</h3>${al('Minutos que se guarda un apartado de otra sucursal', 'Cuenta desde que la otra sucursal lo acepta', ni('holdIn', holdMin(), '', '', 'Minutos de apartado').replace('min="0"', 'min="5"'))}${al('Avisar cuando queden esta cantidad de tamales o menos', 'Por cada sabor', ni('lowIn', lowT(), '', '', 'Aviso de tamales'))}${al('Avisar cuando queden estos litros o menos de champurrado', '', ni('lowlIn', lowL(), '', 'step="0.25"', 'Aviso de champurrado'))}</div>
   <div class="card"><h3>💵 Fondo inicial por vendedor</h3>${al('Efectivo con el que empieza cada vendedor', 'Se usa en el corte de caja', ni('fondoIn', fondo(), '', '', 'Fondo inicial'))}</div>
+  <div class="card" style="border:2px solid var(--bad)"><div class="ivh"><h3 style="color:var(--bad)">⚠️ Zona de peligro</h3></div><small>Borra todos los datos de prueba (ventas, cargas, apartados, traspasos, cortes, solicitudes, repartos y existencias publicadas). Conserva usuarios, sucursales, precios y costos. Los logs de anulación no se pueden borrar. Úsalo solo para demos o reinicio.</small><div class="form"><button class="gh bad" style="width:100%" onclick="resetTestData()">🗑️ Resetear datos de prueba</button></div></div>
   ${navCard()}
   <div class="card ${lk ? 'plk' : ''}"><div class="ivh"><h3>${lk ? '🔒' : '🔓'} Precios y costos</h3><button class="${lk ? 'alt' : 'gh'}" onclick="${lk ? 'plUnlock()' : 'plLock()'}">${lk ? 'Desbloquear' : 'Bloquear'}</button></div>
   <small>${lk ? 'Bloqueados para que no se cambien por error. Toca Desbloquear para editarlos.' : 'Desbloqueados: edita y toca Guardar ajustes. Los cambios de precio aplican a ventas nuevas. El costo es opcional y sirve para calcular la utilidad en Reportes.'}</small>
