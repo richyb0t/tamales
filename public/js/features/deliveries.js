@@ -123,8 +123,7 @@ function dvToggle() {
   if (S.dvf) S.dvn = null;
   renderNow(true);
   requestAnimationFrame(() => {
-    const el = document.getElementById('dvf');
-    if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
@@ -221,8 +220,7 @@ function dvStep(s) {
   dvn().step = s;
   renderNow(true);
   requestAnimationFrame(() => {
-    const el = document.getElementById('dvf');
-    if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
