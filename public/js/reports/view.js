@@ -143,10 +143,10 @@ function rpView() {
      : `<div class="rps"><span>📅 <b>${per}</b></span><button class="gh" aria-label="Volver a leer desde Firebase" onclick="rpRun(1)">↻ Actualizar</button></div>${rd}`
  }</div>
  <div class="card"><div class="pkh"><span>Filtrar resultados</span></div><small>Solo filtran lo ya consultado.</small>
- <div class="pkh" style="margin-top:10px"><span>Sucursal</span></div><div class="seg wr" style="margin:0 0 6px">${chip(r.br == null, 'S.rp.br=null;render(true)', 'Todas')}${brs()
+ <small style="display:block;font-weight:600;margin:10px 0 4px;opacity:.7">Sucursal</small><div class="seg wr" style="margin:0 0 4px">${chip(r.br == null, 'S.rp.br=null;render(true)', 'Todas')}${brs()
    .map((n, i) => (!isOpen(i) ? '' : chip(r.br === i, `S.rp.br=${i};render(true)`, esc(n))))
    .join('')}</div>
- <div class="pkh"><span>Categoría</span></div><div class="seg wr" style="margin:0">${[
+ <small style="display:block;font-weight:600;margin:10px 0 4px;opacity:.7">Categoría</small><div class="seg wr" style="margin:0">${[
    ['t', 'Todo'],
    ['s', 'Salados'],
    ['d', 'Dulces'],
@@ -154,7 +154,7 @@ function rpView() {
  ]
    .map(([k, l]) => chip((r.cat || 't') == k, `S.rp.cat='${k}';render(true)`, l))
    .join('')}</div>
-  <div class="pkh" style="margin-top:10px"><span>Tipo de venta</span></div><div class="seg wr" style="margin:0">${[
+  <small style="display:block;font-weight:600;margin:10px 0 4px;opacity:.7">Tipo de venta</small><div class="seg wr" style="margin:0">${[
     ['t', 'Todo'],
     ['mostrador', 'Mostrador'],
     ['dv', 'A domicilio'],
