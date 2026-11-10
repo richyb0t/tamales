@@ -60,7 +60,31 @@ const chUsed = b =>
       0
     );
 
-const chLeft = b => r2(chLoad(b) - chUsed(b) + txc(b, 'to') - txc(b, 'from'));
+const chResv = b =>
+  S.pre
+    .filter(p => p.branch == b && p.date == D && !(p.exp && p.exp < Date.now()))
+    .reduce(
+      (a, p) =>
+        a +
+        Object.entries(p.items || {})
+          .filter(([k]) => +k.slice(1) >= 100)
+          .reduce((x, [k, v]) => x + (+v || 0) * CL[+k.slice(1) - 100], 0),
+      0
+    );
+
+const chDvResv = b =>
+  (S.dv || [])
+    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado')
+    .reduce(
+      (a, d) =>
+        a +
+        Object.entries(d.items || {})
+          .filter(([k]) => +k.slice(1) >= 100)
+          .reduce((x, [k, v]) => x + (+v || 0) * CL[+k.slice(1) - 100], 0),
+      0
+    );
+
+const chLeft = b => r2(chLoad(b) - chUsed(b) - chResv(b) - chDvResv(b) + txc(b, 'to') - txc(b, 'from'));
 
 const cartLit = x =>
   Object.entries(S.cart).reduce((a, [f, q]) => a + (f >= 100 && f != x ? q * CL[f - 100] : 0), 0);
