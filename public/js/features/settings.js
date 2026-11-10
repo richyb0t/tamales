@@ -33,7 +33,12 @@ async function openBr(i) {
 }
 
 async function addBranch() {
-  const b = [...brs(), 'Sucursal ' + (brs().length + 1)];
+  const nums = brs().map(n => {
+    const m = String(n).match(/(\d+)/);
+    return m ? +m[1] : 0;
+  });
+  const next = (nums.length ? Math.max(...nums) : 0) + 1;
+  const b = [...brs(), 'Sucursal ' + next];
   try {
     await db.doc('config/main').set({ branches: b }, { merge: true });
     toast('Sucursal agregada. Ponle nombre y guarda.');

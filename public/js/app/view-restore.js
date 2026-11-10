@@ -15,6 +15,8 @@
           apt: S.apt,
           apb: S.apb,
           ib: S.ib,
+          cart: S.cart,
+          alHide: S.alHide,
         });
         if (j !== vSig) {
           vSig = j;

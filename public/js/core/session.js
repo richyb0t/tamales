@@ -27,6 +27,7 @@ function onUser(u) {
   S.rt = 'e';
   S.q = '';
   S.alHide = false;
+  if (u) vRest = false;
   restoreView(u);
   if (!u) {
     S.lp = null;
@@ -249,6 +250,8 @@ function restoreView(u) {
     if (['h', 'o', 's'].includes(x.apt)) S.apt = x.apt;
     if (Number.isInteger(x.apb)) S.apb = x.apb;
     if (Number.isInteger(x.ib)) S.ib = x.ib;
+  if (x.cart && typeof x.cart === 'object') S.cart = x.cart;
+  if (typeof x.alHide === 'boolean') S.alHide = x.alHide;
     if (S.vt == 'r') stockOn();
   } catch (e) {}
 }

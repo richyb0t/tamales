@@ -20,9 +20,9 @@ function renderNow(force) {
     return;
   }
   if (force) S.dt = 0;
-  else if (S.dt && Date.now() - S.dt < 15000) {
+  else if (S.dt && Date.now() - S.dt < 3000) {
     clearTimeout(rT);
-    rT = setTimeout(() => renderNow(false), 15200 - (Date.now() - S.dt));
+    rT = setTimeout(() => renderNow(false), 3200 - (Date.now() - S.dt));
     return;
   }
   pend = false;

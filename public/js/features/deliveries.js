@@ -467,6 +467,7 @@ function dvPanel() {
     cash = L.filter(d => d.status == 'entregado').reduce((a, d) => a + nz(d.cobrado), 0);
   return `<div class="kp" style="margin-bottom:8px"><div><small>Por tomar</small><b>${n('pendiente')}</b></div><div><small>En camino</small><b>${n('en_ruta')}</b></div><div><small>Entregados</small><b>${n('entregado')}</b></div></div>
  ${S.me.role == 'admin' ? `<div class="card"><div class="row" style="border:0;padding:0"><div>Efectivo cobrado por repartidores<br><small>Lo que deben entregar hoy</small></div><b>${money(cash)}</b></div></div>` : ''}
+ ${S.me.role == 'admin' && n('fallido') ? `<div class="card" style="border:2px solid var(--bad)"><div class="row" style="border:0;padding:0"><div>⚠️ Merma (no entregados)<br><small>Repartos fallidos de hoy</small></div><b>${n('fallido')}</b></div></div>` : ''}
  <div class="form" style="margin:0 0 10px"><button class="alt" style="flex:1" onclick="dvToggle()">${S.dvf ? '✕ Cerrar formulario' : '＋ Nuevo reparto'}</button></div>
  ${S.dvf ? dvForm() : ''}
  ${L.map(d => dvCard(d, false)).join('') || '<div class="card"><small>Todavía no hay repartos hoy.</small></div>'}`;
