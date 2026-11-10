@@ -104,6 +104,7 @@ function startSubs() {
   subs.push(
     db.doc('config/main').onSnapshot(d => {
       S.cfg = d.data() || {};
+      if (Array.isArray(S.cfg.flavors) && S.cfg.flavors.length) F = S.cfg.flavors.slice();
       S.cfgOk = true;
       render();
     }, err)

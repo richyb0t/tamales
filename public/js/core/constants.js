@@ -1,6 +1,6 @@
 /* Catálogo y constantes del negocio: sabores, champurrado, roles y secciones. */
 
-const F = [
+let F = [
   'Mole rojo',
   'Mole verde',
   'Rajas con queso',
@@ -16,6 +16,7 @@ const F = [
   'Chocorrol',
   'Gansito',
 ];
+const DEFAULT_FLAVORS = F.slice();
 
 const CH = [
   ['Chico', '250 ml', 20],

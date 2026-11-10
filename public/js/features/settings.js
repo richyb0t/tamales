@@ -136,7 +136,25 @@ async function resetTestData() {
   );
 }
 
-/* Precios y costos: bloqueados por defecto (los campos están desactivados) para que no se cambien por error. Se vuelven a bloquear al guardar o al volver a Ajustes. */
+function removeFlavor(i) {
+  if (!S.ajFlavors) S.ajFlavors = F.slice();
+  if (S.ajFlavors.length <= 1) return toast('Debe quedar al menos un sabor');
+  ask('¿Quitar "' + S.ajFlavors[i] + '"? Sus ventas anteriores se conservan, pero el sabor ya no aparecerá.', () => {
+    S.ajFlavors.splice(i, 1);
+    render(true);
+  });
+}
+
+function addFlavor() {
+  const inp = $('#flNew');
+  const n = (inp ? inp.value : '').trim();
+  if (!n) return toast('Escribe el nombre del sabor');
+  if (!S.ajFlavors) S.ajFlavors = F.slice();
+  if (S.ajFlavors.includes(n)) return toast('Ese sabor ya existe');
+  S.ajFlavors.push(n);
+  if (inp) inp.value = '';
+  render(true);
+}
 function plUnlock() {
   ask(
     '¿Desbloquear precios y costos para editarlos? Los cambios de precio aplican a ventas nuevas.',
@@ -153,6 +171,8 @@ function plLock() {
 }
 
 function ajView() {
+  S.ajFlavors = F.slice();
+  F = S.ajFlavors;
   const op = BI().length,
     lk = S.pl !== false,
     isSup = S.me && S.me.role === 'sup',
@@ -176,6 +196,9 @@ function ajView() {
     )
     .join('')}
  <div class="form"><button class="alt" style="width:100%" onclick="addBranch()">＋ Agregar sucursal</button></div></div>` : ''}
+  ${isAdmin ? `<div class="card"><div class="ivh"><h3>Sabores (tamales)</h3><span class="chip">${F.length} sabores</span></div><small>Agrega o quita sabores. Al quitar, los precios se reajustan. Las ventas anteriores se conservan (por índice).</small>
+ ${S.ajFlavors.map((n, i) => `<div class="form ajb"><input id="fl${i}" aria-label="Sabor ${i + 1}" value="${esc(n)}" style="flex:1;min-width:0"><button class="gh" style="color:var(--bad)" onclick="removeFlavor(${i})">Quitar</button></div>`).join('')}
+ <div class="form"><input id="flNew" placeholder="Nuevo sabor" aria-label="Nuevo sabor" style="flex:1"><button class="alt" onclick="addFlavor()">＋ Agregar</button></div></div>` : ''}
   ${isAdmin ? `<div class="card ${lk ? 'plk' : ''}"><div class="ivh"><h3>${lk ? '🔒' : '🔓'} Ubicaciones (lat, lng)</h3><button class="${lk ? 'alt' : 'gh'}" onclick="${lk ? 'plUnlock()' : 'plLock()'}">${lk ? 'Desbloquear' : 'Bloquear'}</button></div><small>Para logística de repartos: sucursal más cercana al pedido. ${lk ? 'Bloqueadas para que no se cambien por error.' : 'Desbloqueadas: edita y toca Guardar ajustes.'}</small>${brs().map((n, i) => `<div class="form" style="margin:2px 0 8px"><input id="blat${i}" type="number" step="0.0001" placeholder="Latitud suc. ${i + 1}" aria-label="Latitud sucursal ${i + 1}" value="${esc((S.cfg.branchLocs || [])[i]?.lat ?? '')}" ${dis} style="flex:1"><input id="blng${i}" type="number" step="0.0001" placeholder="Longitud suc. ${i + 1}" aria-label="Longitud sucursal ${i + 1}" value="${esc((S.cfg.branchLocs || [])[i]?.lng ?? '')}" ${dis} style="flex:1"></div>`).join('')}</div>` : ''}
   <div class="card"><h3>🔔 Apartados y alertas</h3>${al('Minutos que se guarda un apartado de otra sucursal', 'Cuenta desde que la otra sucursal lo acepta', ni('holdIn', holdMin(), '', '', 'Minutos de apartado').replace('min="0"', 'min="5"'))}${al('Avisar cuando queden esta cantidad de tamales o menos', 'Por cada sabor', ni('lowIn', lowT(), '', '', 'Aviso de tamales'))}${al('Avisar cuando queden estos litros o menos de champurrado', '', ni('lowlIn', lowL(), '', 'step="0.25"', 'Aviso de champurrado'))}</div>
   <div class="card"><h3>💵 Fondo inicial por vendedor</h3>${al('Efectivo con el que empieza cada vendedor', 'Se usa en el corte de caja', ni('fondoIn', fondo(), '', '', 'Fondo inicial'))}</div>
@@ -191,15 +214,21 @@ function ajView() {
 }
 
 async function saveAj() {
-  const branches = brs().map((n, i) => {
+  const flavors = (S.ajFlavors && S.ajFlavors.length ? S.ajFlavors : F).map((n, i) => {
+      const e = $('#fl' + i);
+      return e ? e.value.trim() || n : n;
+    }),
+    branches = brs().map((n, i) => {
       const e = $('#bn' + i);
       return e ? e.value.trim() || n : n;
     }),
-    prices = {};
-  const costs = {};
-  F.forEach((_, f) => {
-    prices['f' + f] = Math.max(0, +$('#pr' + f).value || 0);
-    costs['f' + f] = Math.max(0, +$('#co' + f).value || 0);
+    prices = {},
+    costs = {};
+  flavors.forEach((_, f) => {
+    const e = $('#pr' + f);
+    prices['f' + f] = e ? Math.max(0, +e.value || 0) : (S.cfg.prices || {})['f' + f] || 0;
+    const c = $('#co' + f);
+    costs['f' + f] = c ? Math.max(0, +c.value || 0) : (S.cfg.costs || {})['f' + f] || 0;
   });
   CH.forEach((c, i) => {
     prices['f' + (100 + i)] = Math.max(1, +$('#pr' + (100 + i)).value || c[2]);
@@ -209,6 +238,7 @@ async function saveAj() {
     await db.doc('config/main').set(
       {
         branches,
+        flavors,
          branchLocs: brs().map((_, i) => {
            const la = $('#blat' + i),
              lo = $('#blng' + i);
@@ -225,6 +255,8 @@ async function saveAj() {
       { merge: true }
     );
     toast('Ajustes guardados');
+    F = flavors.slice();
+    if (S.ajFlavors) S.ajFlavors = flavors.slice();
     S.pl = true;
     render(true);
   } catch (e) {
