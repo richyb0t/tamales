@@ -7,8 +7,13 @@ const preTxt = p =>
     .map(([k, v]) => v + '× ' + nm(+k.slice(1)))
     .join(', ');
 
-const preTot = p =>
-  Object.entries(p.items || {}).reduce((a, [k, v]) => a + v * price(+k.slice(1)), 0);
+const preTot = p => {
+  const base = Object.entries(p.items || {}).reduce((a, [k, v]) => a + v * price(+k.slice(1)), 0);
+  const tamQty = Object.entries(p.items || {}).filter(([k]) => +k.slice(1) < 100).reduce((a, [, v]) => a + (+v || 0), 0);
+  const chQty = Object.entries(p.items || {}).filter(([k]) => +k.slice(1) >= 100).reduce((a, [, v]) => a + (+v || 0), 0);
+  const disc = (tamQty * (+(p.descTamal) || 0)) + (chQty * (+(p.descChamp) || 0));
+  return Math.max(0, base - disc);
+};
 
 const preQty = p => Object.values(p.items || {}).reduce((a, v) => a + (+v || 0), 0);
 
@@ -27,7 +32,7 @@ const preSum = l => {
 };
 
 function nd() {
-  if (!S.nd) S.nd = { date: tmr(1), items: {}, name: '', phone: '', note: '', branch: BI()[0], large: false, addr: '', fee: '' };
+  if (!S.nd) S.nd = { date: tmr(1), items: {}, name: '', phone: '', note: '', branch: BI()[0], large: false, addr: '', fee: '', descTamal: '', descChamp: '' };
   if (S.nd.date < D) S.nd.date = tmr(1);
   if (!BI().includes(S.nd.branch)) S.nd.branch = BI()[0];
   if (S.nd.date < D || (S.nd.date == D && (S.me.role == 'vend' || encBlk(S.nd.branch))))
@@ -129,8 +134,8 @@ function apForm(hoy) {
     tot = Object.values(sel).reduce((a, v) => a + v, 0);
   return `<div class="card" id="apf"><h3>Nuevo apartado</h3><small>Elige para qué día. El administrador lo ve antes de preparar el inventario de ese día.</small>
  ${V ? '' : fb ? `<small style="display:block;margin-top:8px">Sucursal: <b>${esc(brs()[n.branch])}</b></small>` : `<small style="display:block;margin-top:8px">¿Para qué sucursal?</small>` + bchips(n.branch, 'pdBr')}
-  ${!V && (S.me.role == 'admin' || S.me.role == 'enc' || S.me.role == 'sup') ? `<div class="form" style="margin:8px 0"><button class="${n.large ? 'go' : 'alt'}" style="flex:1" onclick="nd().large=!nd().large;render(true)">${n.large ? '📦 Pedido grande a domicilio: SÍ' : '📦 Convertir en pedido grande a domicilio'}</button></div>` : ''}
-  ${n.large ? `<div class="form"><input id="pdaddr" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="nd().addr=this.value" style="flex:1 1 100%"></div><div class="form"><input type="number" step="0.5" min="0" placeholder="Costo de envío (opcional)" value="${esc(n.fee)}" oninput="nd().fee=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1"></div>` : ''}
+  ${!V && (S.me.role == 'admin' || S.me.role == 'enc' || S.me.role == 'sup') ? `<div class="form" style="margin:8px 0"><button class="${n.large ? 'go' : 'alt'}" style="flex:1" onclick="nd().large=!nd().large;render(true)">${n.large ? '📦 Pedido grande: SÍ' : '📦 Convertir en pedido grande'}</button></div>` : ''}
+  ${n.large ? `<div class="form"><input id="pdaddr" placeholder="Dirección de entrega (opcional, si van a recoger déjalo vacío)" value="${esc(n.addr)}" oninput="nd().addr=this.value" style="flex:1 1 100%"></div><div class="form"><input type="number" step="0.5" min="0" placeholder="Descuento por tamal $" value="${esc(n.descTamal)}" oninput="nd().descTamal=this.value" style="flex:1"><input type="number" step="0.5" min="0" placeholder="Descuento por champurrado $" value="${esc(n.descChamp)}" oninput="nd().descChamp=this.value" style="flex:1"></div><div class="form"><input type="number" step="0.5" min="0" placeholder="Costo de envío (opcional)" value="${esc(n.fee)}" oninput="nd().fee=this.value" style="flex:1"></div>` : ''}
  ${
    hoy
      ? `<small style="display:block;margin-top:8px">Fecha</small><small style="display:block"><b>Hoy · ${esc(fdate(D))}</b></small>${!V && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : ''}`
@@ -217,9 +222,15 @@ async function savePre() {
       ts: Date.now(),
       large: !!n.large,
       delivery: !!n.large,
+      descTamal: +(n.descTamal || 0) || 0,
+      descChamp: +(n.descChamp || 0) || 0,
     });
-    if (n.large) {
+    if (n.large && n.addr.trim()) {
       const dvId = 'dv' + Date.now();
+      const tamQty = Object.entries(items).filter(([k]) => +k.slice(1) < 100).reduce((a, [, v]) => a + v, 0);
+      const chQty = Object.entries(items).filter(([k]) => +k.slice(1) >= 100).reduce((a, [, v]) => a + v, 0);
+      const desc = (tamQty * (+(n.descTamal) || 0)) + (chQty * (+(n.descChamp) || 0));
+      const totalList = Object.entries(items).reduce((a, [k, v]) => a + v * price(+k.slice(1)), 0);
       await db.doc('deliveries/' + dvId).set({
         day: D,
         branch: b,
@@ -229,7 +240,10 @@ async function savePre() {
         note: n.note.trim(),
         fee: +(n.fee || 0) || 0,
         items,
-        total: Object.entries(items).reduce((a, [k, v]) => a + v * price(+k.slice(1)), 0),
+        total: Math.max(0, totalList - desc),
+        descTamal: +(n.descTamal || 0) || 0,
+        descChamp: +(n.descChamp || 0) || 0,
+        descuento: desc,
         status: 'pendiente',
         by: S.me.user,
         byName: S.me.name,
@@ -237,7 +251,7 @@ async function savePre() {
         large: true,
         preId: preId,
       });
-      await db.doc('pre/' + preId).update({ dvId: dvId });
+      await db.doc('pre/' + preId).update({ dvId: dvId, descTamal: +(n.descTamal || 0) || 0, descChamp: +(n.descChamp || 0) || 0 });
     }
     S.nd = null;
     S.anew = false;
@@ -281,61 +295,45 @@ function deliverPre(id) {
   if (corteBlk()) return;
   const z0 = noPrice(Object.keys(p.items || {}).map(k => +k.slice(1)));
   if (z0) return toast('Falta el precio de ' + z0 + '. Avísale al administrador');
-  const tot = preTot(p);
-  const m = $('#modal');
-  m.innerHTML = '<div class="card"><small>Entregar · ' + esc(p.client) + '</small><p>' + esc(preTxt(p)) + '</p><small>Total de lista: ' + money(tot) + '</small><div class="form"><input type="number" min="0" step="0.5" inputmode="decimal" id="dpd" class="wide" aria-label="Descuento" placeholder="Descuento $ (opcional)" oninput="dpChg(' + tot + ')"></div><div id="dpq" class="big" style="font-size:26px"></div><div class="form"><button id="mk">Entregar y cobrar</button><button class="alt" id="mn">Cancelar</button></div></div>';
-  m.style.display = 'flex';
-  $('#mn').onclick = () => (m.style.display = 'none');
-  $('#mk').onclick = async () => {
-    const disc = Math.max(0, +($('#dpd').value || 0));
-    if (disc > tot) return toast('El descuento no puede ser mayor al total');
-    const due = Math.max(0, tot - disc);
-    m.style.display = 'none';
-    payAsk(due, 'Entregar y cobrar · ' + p.client, preTxt(p) + (disc ? ' · descuento ' + money(disc) : ''), async pg => {
-      const q = S.pre.find(x => x._id == id);
-      if (!q) return toast('Este apartado ya no está pendiente');
-      const ts = Date.now();
-      if (!lock('pre' + id)) return;
-      try {
-        const tot0 = preTot(q);
-        const ratio = tot0 > 0 ? (tot0 - disc) / tot0 : 1;
-        const bt = db.batch();
-        bt.update('pre/' + id, { status: 'entregado', doneAt: ts, doneBy: S.me.user, descuento: disc });
-        Object.entries(q.items || {}).filter(([_, v]) => v > 0).forEach(([k, v], i) => {
-          const listPrice = price(+k.slice(1));
-          const discPrice = Math.round(listPrice * ratio * 100) / 100;
-          bt.set('sales/p' + id + '_' + (ts + i), {
-            day: D,
-            branch: q.branch,
-            f: +k.slice(1),
-            qty: v,
-            type: 'vendido',
-            price: discPrice,
-            pre: id,
-            client: q.client,
-            by: S.me.user,
-            ts: ts + i,
-            descuento: Math.round((listPrice - discPrice) * v * 100) / 100,
-          });
+  payAsk(preTot(p), 'Entregar y cobrar · ' + p.client, preTxt(p), async pg => {
+    const q = S.pre.find(x => x._id == id);
+    if (!q) return toast('Este apartado ya no está pendiente');
+    const ts = Date.now(),
+      it = Object.entries(q.items || {}).filter(([_, v]) => v > 0);
+    if (!lock('pre' + id)) return;
+    try {
+      const bt = db.batch();
+      bt.update('pre/' + id, { status: 'entregado', doneAt: ts, doneBy: S.me.user });
+      it.forEach(([k, v], i) => {
+        const f = +k.slice(1);
+        const disc = f >= 100 ? (+(q.descChamp) || 0) : (+(q.descTamal) || 0);
+        const discPrice = Math.max(0, price(f) - disc);
+        bt.set('sales/p' + id + '_' + i, {
+          day: D,
+          branch: q.branch,
+          f: f,
+          qty: v,
+          type: 'vendido',
+          price: discPrice,
+          pre: id,
+          client: q.client,
+          by: S.me.user,
+          ts: ts + i,
+          descuento: disc * v,
         });
-        await bt.commit();
-        try { navigator.vibrate && navigator.vibrate(40); } catch (_) {}
-        toast('Entregado' + (disc ? ' · descuento ' + money(disc) : '') + (pg > due ? ' · cambio ' + money(pg - due) : ''));
-      } catch (e) {
-        delete lock.s['pre' + id];
-        err(e);
-      }
-    });
-  };
+      });
+      await bt.commit();
+      try {
+        navigator.vibrate && navigator.vibrate(40);
+      } catch (_) {}
+      toast('Entregado' + (pg > preTot(q) ? ' · cambio ' + money(pg - preTot(q)) : ''));
+    } catch (e) {
+      delete lock.s['pre' + id];
+      err(e);
+    }
+  });
 }
 
-function dpChg(tot) {
-  const v = $('#dpd').value,
-    d = v === '' ? 0 : +v,
-    due = Math.max(0, tot - (d < 0 ? 0 : d)),
-    e = $('#dpq');
-  if (e) e.textContent = due > 0 ? 'Cobrar ' + money(due) : '';
-}
 
 function apView() {
   const m = S.me,
