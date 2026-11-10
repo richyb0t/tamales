@@ -254,67 +254,60 @@ function deliverPre(id) {
   if (corteBlk()) return;
   const z0 = noPrice(Object.keys(p.items || {}).map(k => +k.slice(1)));
   if (z0) return toast('Falta el precio de ' + z0 + '. Avísale al administrador');
-  const it = Object.entries(p.items || {}).filter(([_, v]) => v > 0);
-  if (!it.length) return toast('Este apartado no tiene productos');
+  const tot = preTot(p);
   const m = $('#modal');
-  m.innerHTML = `<div class="card"><small>Entregar · ${esc(p.client)}</small><p>${esc(preTxt(p))}</p><small>Indica cuánto se entrega (puede ser menos del apartado). Lo que no se entregue queda pendiente.</small>
-    ${it.map(([k, v]) => `<div class="row"><div>${esc(nm(+k.slice(1)))}<br><small>apartado: ${v}</small></div><input type="number" min="0" max="${v}" inputmode="numeric" id="dp_${k.replace('f', '')}" value="${v}" style="width:5rem"></div>`).join('')}
-    <div class="form"><button id="mk">Entregar y cobrar</button><button class="alt" id="mn">Cancelar</button></div></div>`;
+  m.innerHTML = '<div class="card"><small>Entregar · ' + esc(p.client) + '</small><p>' + esc(preTxt(p)) + '</p><small>Total de lista: ' + money(tot) + '</small><div class="form"><input type="number" min="0" step="0.5" inputmode="decimal" id="dpd" class="wide" aria-label="Descuento" placeholder="Descuento $ (opcional)" oninput="dpChg(' + tot + ')"></div><div id="dpq" class="big" style="font-size:26px"></div><div class="form"><button id="mk">Entregar y cobrar</button><button class="alt" id="mn">Cancelar</button></div></div>';
   m.style.display = 'flex';
   $('#mn').onclick = () => (m.style.display = 'none');
   $('#mk').onclick = async () => {
-    const delivered = {};
-    let allFull = true;
-    it.forEach(([k, v]) => {
-      const inp = $('#dp_' + k.replace('f', ''));
-      const q = Math.max(0, Math.min(v, parseInt((inp && inp.value) || 0) || 0));
-      if (q > 0) delivered[k] = q;
-      if (q < v) allFull = false;
-    });
-    const totDelivered = Object.values(delivered).reduce((a, v) => a + v, 0);
-    if (totDelivered <= 0) return toast('Indica al menos 1');
-    const due = Object.entries(delivered).reduce((a, [k, v]) => a + v * price(+k.slice(1)), 0);
+    const disc = Math.max(0, +($('#dpd').value || 0));
+    if (disc > tot) return toast('El descuento no puede ser mayor al total');
+    const due = Math.max(0, tot - disc);
     m.style.display = 'none';
-    payAsk(due, 'Entregar y cobrar · ' + p.client, Object.entries(delivered).map(([k, v]) => v + '× ' + nm(+k.slice(1))).join(', '), async pg => {
+    payAsk(due, 'Entregar y cobrar · ' + p.client, preTxt(p) + (disc ? ' · descuento ' + money(disc) : ''), async pg => {
       const q = S.pre.find(x => x._id == id);
       if (!q) return toast('Este apartado ya no está pendiente');
       const ts = Date.now();
       if (!lock('pre' + id)) return;
       try {
+        const tot0 = preTot(q);
+        const ratio = tot0 > 0 ? (tot0 - disc) / tot0 : 1;
         const bt = db.batch();
-        if (allFull) {
-          bt.update('pre/' + id, { status: 'entregado', doneAt: ts, doneBy: S.me.user });
-        } else {
-          const newItems = { ...q.items };
-          Object.entries(delivered).forEach(([k, v]) => {
-            newItems[k] = (newItems[k] || 0) - v;
-            if (newItems[k] <= 0) delete newItems[k];
-          });
-          bt.update('pre/' + id, { items: newItems, rebajado: (q.rebajado || 0) + (Object.values(q.items).reduce((a, v) => a + v, 0) - Object.values(newItems).reduce((a, v) => a + v, 0)) });
-        }
-        Object.entries(delivered).forEach(([k, v], i) =>
+        bt.update('pre/' + id, { status: 'entregado', doneAt: ts, doneBy: S.me.user, descuento: disc });
+        Object.entries(q.items || {}).filter(([_, v]) => v > 0).forEach(([k, v], i) => {
+          const listPrice = price(+k.slice(1));
+          const discPrice = Math.round(listPrice * ratio * 100) / 100;
           bt.set('sales/p' + id + '_' + (ts + i), {
             day: D,
             branch: q.branch,
             f: +k.slice(1),
             qty: v,
             type: 'vendido',
-            price: price(+k.slice(1)),
+            price: discPrice,
             pre: id,
             client: q.client,
             by: S.me.user,
             ts: ts + i,
-          })
-        );
+            descuento: Math.round((listPrice - discPrice) * v * 100) / 100,
+          });
+        });
         await bt.commit();
         try { navigator.vibrate && navigator.vibrate(40); } catch (_) {}
-        toast('Entregado' + (allFull ? '' : ' (parcial)') + (pg > due ? ' · cambio ' + money(pg - due) : ''));
+        toast('Entregado' + (disc ? ' · descuento ' + money(disc) : '') + (pg > due ? ' · cambio ' + money(pg - due) : ''));
       } catch (e) {
         delete lock.s['pre' + id];
         err(e);
       }
     });
   };
+}
+
+function dpChg(tot) {
+  const v = $('#dpd').value,
+    d = v === '' ? 0 : +v,
+    due = Math.max(0, tot - (d < 0 ? 0 : d)),
+    e = $('#dpq');
+  if (e) e.textContent = due > 0 ? 'Cobrar ' + money(due) : '';
 }
 
 function apView() {
