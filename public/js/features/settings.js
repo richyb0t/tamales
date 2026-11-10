@@ -47,7 +47,6 @@ async function addBranch() {
   }
 }
 
-/* Eliminar definitivamente una sucursal (solo si está cerrada y sin datos activos). Quita el espacio de la lista; las ventas anteriores se conservan. */
 async function deleteBrForever(i) {
   if (brs().length <= 1) return toast('Debe quedar al menos una sucursal');
   if (isOpen(i))
@@ -136,6 +135,22 @@ async function resetTestData() {
   );
 }
 
+/* Precios y costos: bloqueados por defecto (los campos están desactivados) para que no se cambien por error. Se vuelven a bloquear al guardar o al volver a Ajustes. */
+function plUnlock() {
+  ask(
+    '¿Desbloquear precios y costos para editarlos? Los cambios de precio aplican a ventas nuevas.',
+    () => {
+      S.pl = false;
+      render(true);
+    }
+  );
+}
+
+function plLock() {
+  S.pl = true;
+  render(true);
+}
+
 function removeFlavor(i) {
   if (!S.ajFlavors) S.ajFlavors = F.slice();
   if (!S.ajDisabled) S.ajDisabled = [];
@@ -169,29 +184,15 @@ function addFlavor() {
   if (inp) inp.value = '';
   render(true);
 }
-function plUnlock() {
-  ask(
-    '¿Desbloquear precios y costos para editarlos? Los cambios de precio aplican a ventas nuevas.',
-    () => {
-      S.pl = false;
-      render(true);
-    }
-  );
-}
-
-function plLock() {
-  S.pl = true;
-  render(true);
-}
 
 function ajView() {
-  S.ajFlavors = (S.cfg.flavors && S.cfg.flavors.length ? S.cfg.flavors : F).slice();
-  S.ajDisabled = (S.cfg.disabledFlavors || []).slice();
+  S.ajFlavors = F.slice();
   F = S.ajFlavors;
+  S.ajDisabled = (S.cfg.disabledFlavors || []).slice();
   const op = BI().length,
     lk = S.pl !== false,
-    isSup = S.me && S.me.role === 'sup',
     isAdmin = S.me && S.me.role === 'admin',
+    isSup = S.me && S.me.role === 'sup',
     dis = lk ? ' disabled' : '',
     ni = (id, v, ph, st, lb) =>
       `<input type="number" min="0" ${st || ''} inputmode="decimal" id="${id}" value="${v}" ${ph ? `placeholder="${ph}"` : ''} aria-label="${lb}">`,
@@ -203,14 +204,14 @@ function ajView() {
       ).join(''),
     al = (t, sm, inp) =>
       `<div class="row"><div>${t}${sm ? `<br><small>${sm}</small>` : ''}</div>${inp}</div>`;
-  return `${isAdmin ? `<div class="card"><div class="ivh"><h3>🏪 Sucursales</h3><span class="chip">${op} ${op == 1 ? 'abierta' : 'abiertas'}</span></div><small>Cambia el nombre y guarda. "Cerrar" oculta la sucursal (se puede reabrir). "Eliminar" la borra definitivamente (solo si está cerrada y sin datos activos). Las ventas anteriores se conservan.</small>
+  return `<div class="card"><div class="ivh"><h3>🏪 Sucursales</h3><span class="chip">${op} ${op == 1 ? 'abierta' : 'abiertas'}</span></div><small>Cambia el nombre y guarda. "Cerrar" oculta la sucursal (se puede reabrir). "Eliminar" la borra definitivamente (solo si está cerrada y sin datos activos). Las ventas anteriores se conservan.</small>
  ${brs()
     .map(
       (n, i) =>
         `<div class="form ajb"><input id="bn${i}" aria-label="Nombre de la sucursal ${i + 1}" value="${esc(n)}" style="flex:1;min-width:0;${isOpen(i) ? '' : 'opacity:.5'}">${isOpen(i) ? `<button class="gh" style="color:var(--bad)" onclick="closeBr(${i})">Cerrar</button>` : `<button class="gh" onclick="openBr(${i})">Reabrir</button><button class="gh" style="color:var(--bad)" onclick="deleteBrForever(${i})">Eliminar</button>`}</div>`
     )
     .join('')}
- <div class="form"><button class="alt" style="width:100%" onclick="addBranch()">＋ Agregar sucursal</button></div></div>` : ''}
+ <div class="form"><button class="alt" style="width:100%" onclick="addBranch()">＋ Agregar sucursal</button></div></div>
   ${isAdmin ? `<div class="card ${lk ? 'plk' : ''}"><div class="ivh"><h3>${lk ? '🔒' : '🔓'} Ubicaciones (lat, lng)</h3><button class="${lk ? 'alt' : 'gh'}" onclick="${lk ? 'plUnlock()' : 'plLock()'}">${lk ? 'Desbloquear' : 'Bloquear'}</button></div><small>Para logística de repartos: sucursal más cercana al pedido. ${lk ? 'Bloqueadas para que no se cambien por error.' : 'Desbloqueadas: edita y toca Guardar ajustes.'}</small>${brs().map((n, i) => `<div class="form" style="margin:2px 0 8px"><input id="blat${i}" type="number" step="0.0001" placeholder="Latitud suc. ${i + 1}" aria-label="Latitud sucursal ${i + 1}" value="${esc((S.cfg.branchLocs || [])[i]?.lat ?? '')}" ${dis} style="flex:1"><input id="blng${i}" type="number" step="0.0001" placeholder="Longitud suc. ${i + 1}" aria-label="Longitud sucursal ${i + 1}" value="${esc((S.cfg.branchLocs || [])[i]?.lng ?? '')}" ${dis} style="flex:1"></div>`).join('')}</div>` : ''}
   <div class="card"><h3>🔔 Apartados y alertas</h3>${al('Minutos que se guarda un apartado de otra sucursal', 'Cuenta desde que la otra sucursal lo acepta', ni('holdIn', holdMin(), '', '', 'Minutos de apartado').replace('min="0"', 'min="5"'))}${al('Avisar cuando queden esta cantidad de tamales o menos', 'Por cada sabor', ni('lowIn', lowT(), '', '', 'Aviso de tamales'))}${al('Avisar cuando queden estos litros o menos de champurrado', '', ni('lowlIn', lowL(), '', 'step="0.25"', 'Aviso de champurrado'))}</div>
   <div class="card"><h3>💵 Fondo inicial por vendedor</h3>${al('Efectivo con el que empieza cada vendedor', 'Se usa en el corte de caja', ni('fondoIn', fondo(), '', '', 'Fondo inicial'))}</div>
@@ -219,8 +220,9 @@ function ajView() {
   <small>${lk ? 'Bloqueados para que no se cambien por error. Toca Desbloquear para editarlos.' : 'Desbloqueados: edita y toca Guardar ajustes. Los cambios de precio aplican a ventas nuevas. El costo es opcional y sirve para calcular la utilidad en Reportes.'}</small>
   <div class="row pch"><div></div><small>Precio $</small><small>Costo $</small></div>
   <div class="pkh" style="margin-top:6px"><span>Salados</span></div>${pr(0, 8)}<div class="pkh" style="margin-top:10px"><span>Dulces</span></div>${pr(8, F.length)}
-  <div class="pkh" style="margin-top:10px"><span>Bebidas · precio y costo por vaso</span></div>${CH.map((c, i) => `<div class="row"><div>Champurrado ${c[0].toLowerCase()}<br><small>${c[1]}</small></div>${ni('pr' + (100 + i), price(100 + i), '', dis, 'Precio de champurrado ' + c[0].toLowerCase())}${ni('co' + (100 + i), cst(100 + i) || '', '—', 'step="0.5"' + dis, 'Costo de champurrado ' + c[0].toLowerCase())}</div>`).join('')}</div>${!lk ? `<div style="margin-top:8px">${(S.ajDisabled || []).length ? `<small style="display:block;font-weight:600;margin:4px 0 2px;opacity:.7">Desactivados</small>${(S.ajDisabled || []).map((n, i) => `<div class="row" style="opacity:.6"><div>${esc(n)}</div><button class="gh" style="min-height:28px;padding:2px 8px;font-size:11px" onclick="reopenFlavor(${i})">Reabrir</button></div>`).join('')}` : ''}<div class="form" style="margin-top:6px"><input id="flNew" placeholder="Nuevo sabor" aria-label="Nuevo sabor" style="flex:1"><button class="alt" onclick="addFlavor()">＋ Agregar</button></div>` : ''}</div>
-}` : ''}
+  <div class="pkh" style="margin-top:10px"><span>Bebidas · precio y costo por vaso</span></div>${CH.map((c, i) => `<div class="row"><div>Champurrado ${c[0].toLowerCase()}<br><small>${c[1]}</small></div>${ni('pr' + (100 + i), price(100 + i), '', dis, 'Precio de champurrado ' + c[0].toLowerCase())}${ni('co' + (100 + i), cst(100 + i) || '', '—', 'step="0.5"' + dis, 'Costo de champurrado ' + c[0].toLowerCase())}</div>`).join('')}</div>
+  ${!lk ? `<div style="margin-top:8px">${(S.ajDisabled || []).length ? `<small style="display:block;font-weight:600;margin:4px 0 2px;opacity:.7">Desactivados</small>${(S.ajDisabled || []).map((n, i) => `<div class="row" style="opacity:.6"><div>${esc(n)}</div><button class="gh" style="min-height:28px;padding:2px 8px;font-size:11px" onclick="reopenFlavor(${i})">Reabrir</button></div>`).join('')}` : ''}<div class="form" style="margin-top:6px"><input id="flNew" placeholder="Nuevo sabor" aria-label="Nuevo sabor" style="flex:1"><button class="alt" onclick="addFlavor()">＋ Agregar</button></div>` : ''}
+</div>` : ''}
   <div class="cartsp"></div><div class="cart"><div class="ct one"><button class="go" style="flex:1" onclick="saveAj()">Guardar ajustes</button></div></div>
   ${isAdmin ? `<div class="card" style="border:2px solid var(--bad);margin-top:12px"><div class="ivh"><h3 style="color:var(--bad)">⚠️ Zona de peligro</h3></div><small>Borra todos los datos de prueba (ventas, cargas, apartados, traspasos, cortes, solicitudes, repartos y existencias publicadas). Conserva usuarios, sucursales, precios y costos. Los logs de anulación no se pueden borrar. Úsalo solo para demos o reinicio.</small><div class="form"><button class="gh bad" style="width:100%" onclick="resetTestData()">🗑️ Resetear datos de prueba</button></div></div>` : ''}`;
 }
@@ -252,12 +254,12 @@ async function saveAj() {
         branches,
         flavors,
         disabledFlavors: S.ajDisabled || [],
-         branchLocs: brs().map((_, i) => {
-           const la = $('#blat' + i),
-             lo = $('#blng' + i);
-           if (!la && !lo) return (S.cfg.branchLocs || [])[i] || null;
-           return { lat: +((la && la.value) || 0) || null, lng: +((lo && lo.value) || 0) || null };
-         }),
+        branchLocs: brs().map((_, i) => {
+          const la = $('#blat' + i),
+            lo = $('#blng' + i);
+          if (!la && !lo) return (S.cfg.branchLocs || [])[i] || null;
+          return { lat: +((la && la.value) || 0) || null, lng: +((lo && lo.value) || 0) || null };
+        }),
         prices,
         costs,
         fondo: Math.max(0, +$('#fondoIn').value || 0),
@@ -267,10 +269,10 @@ async function saveAj() {
       },
       { merge: true }
     );
-    toast('Ajustes guardados');
     F = flavors.slice();
     if (S.ajFlavors) S.ajFlavors = flavors.slice();
     if (S.ajDisabled) S.ajDisabled = (S.ajDisabled || []).slice();
+    toast('Ajustes guardados');
     S.pl = true;
     render(true);
   } catch (e) {
