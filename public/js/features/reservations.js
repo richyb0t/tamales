@@ -304,6 +304,7 @@ function deliverPre(id) {
     try {
       const bt = db.batch();
       bt.update('pre/' + id, { status: 'entregado', doneAt: ts, doneBy: S.me.user });
+      if (q.dvId) bt.update('deliveries/' + q.dvId, { status: 'entregado', cobrado: preTot(q), tsDone: ts });
       it.forEach(([k, v], i) => {
         const f = +k.slice(1);
         const disc = f >= 100 ? (+(q.descChamp) || 0) : (+(q.descTamal) || 0);
@@ -343,8 +344,8 @@ function apView() {
   const l = S.pre.filter(p =>
       V ? p.branch == m.branch : A && S.apb != null ? p.branch == S.apb : true
     ),
-    hoy = l.filter(p => p.date <= D),
-    otro = l.filter(p => p.date > D);
+    hoy = l.filter(p => p.date <= D && !(V && p.large)),
+    otro = l.filter(p => p.date > D && !(V && p.large));
   const hN = hoy.length + (V ? dvOpenN() : 0);
   const tabs = [
     ['h', 'Hoy' + (hN ? ' (' + hN + ')' : '')],

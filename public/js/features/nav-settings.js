@@ -10,7 +10,6 @@ const NAVALL = {
     rp: ['📈', 'Reportes'],
     us: ['👥', 'Usuarios'],
     dv: ['🛵', 'Repartos'],
-    lg: ['📦', 'Pedidos grandes'],
     aj: ['⚙️', 'Ajustes'],
   },
   NAVDEF = ['res', 'inv', 'tr', 'ct'];

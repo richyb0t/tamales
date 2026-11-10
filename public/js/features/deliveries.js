@@ -305,7 +305,15 @@ const dvRelease = id =>
 const dvCancel = id =>
   ask('¿Cancelar y eliminar este reparto?', async () => {
     try {
-      await db.doc('deliveries/' + id).delete();
+      const d = (S.dv || []).find(x => x._id == id);
+      if (d && d.large && d.preId) {
+        const bt = db.batch();
+        bt.delete('deliveries/' + id);
+        bt.delete('pre/' + d.preId);
+        await bt.commit();
+      } else {
+        await db.doc('deliveries/' + id).delete();
+      }
       toast('Reparto eliminado');
     } catch (e) {
       err(e);
@@ -376,10 +384,21 @@ function dvFail(id) {
   m.innerHTML = `<div class="card"><h3>No se pudo entregar</h3><small>${esc(d.client)} · ${esc(d.addr)}</small><div class="form"><select id="dvr" aria-label="Motivo"><option>Cliente no contestó</option><option>Cliente no estaba</option><option>Dirección incorrecta</option><option>Cliente canceló</option><option>Otro</option></select></div><div class="form"><button id="mk">Confirmar</button><button class="alt" id="mn">Volver</button></div></div>`;
   m.style.display = 'flex';
   $('#mn').onclick = () => (m.style.display = 'none');
-  $('#mk').onclick = () => {
+  $('#mk').onclick = async () => {
     const r = $('#dvr').value;
     m.style.display = 'none';
-    dvSet(id, { status: 'fallido', reason: r, tsDone: Date.now() }, 'Marcado como no entregado');
+    const d0 = (S.dv || []).find(x => x._id == id);
+    if (d0 && d0.large && d0.preId) {
+      try {
+        const bt = db.batch();
+        bt.update('deliveries/' + id, { status: 'fallido', reason: r, tsDone: Date.now() });
+        bt.update('pre/' + d0.preId, { status: 'fallido', reason: r, tsDone: Date.now() });
+        await bt.commit();
+        toast('Marcado como no entregado');
+      } catch (e) { err(e); }
+    } else {
+      dvSet(id, { status: 'fallido', reason: r, tsDone: Date.now() }, 'Marcado como no entregado');
+    }
   };
 }
 
@@ -460,13 +479,6 @@ function dvRouteMap(d) {
   return `<div class="dvroute">${bq ? leg(origin, bq, '1. Tu ubicación → ' + esc(bn)) : ''}${leg(bq || origin, dest, (bq ? '2. ' + esc(bn) + ' → ' : 'Tu ubicación → ') + 'domicilio')}<div class="dvacts"><button class="dvnav" onclick="dvRoute('${d._id}')">🔄 Actualizar</button><a class="dvnav" href="${dir}" target="_blank" rel="noopener">🧭 Navegar</a></div></div>`;
 }
 
-/* Pedidos grandes a domicilio (admin, pedidos, supervisor): vista filtrada */
-function lgView() {
-  const L = (S.dv || []).filter(d => d.large).slice().sort((a, b) => b.ts - a.ts),
-    n = s => L.filter(d => d.status == s).length;
-  return `<div class="kp" style="margin-bottom:8px"><div><small>Por tomar</small><b>${n('pendiente')}</b></div><div><small>En camino</small><b>${n('en_ruta')}</b></div><div><small>Entregados</small><b>${n('entregado')}</b></div></div>
-  ${L.length ? L.map(d => dvCard(d, false)).join('') : '<div class="card"><small>No hay pedidos grandes a domicilio.</small></div>'}`;
-}
 
 /* Administrador y Pedidos */
 function dvPanel() {
