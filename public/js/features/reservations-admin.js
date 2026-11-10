@@ -79,7 +79,7 @@ function admToday(l) {
       admFrm()
     );
   const pend = l.filter(p => !p.ok).length,
-    sum = `<div class="kp" style="margin-bottom:8px"><div><small>Apartados</small><b>${l.length}</b></div><div><small>Piezas</small><b>${q}</b></div><div><small>Total</small><b>${money(tot)}</b></div></div>${S.me.role == 'admin' ? `<div class="form" style="margin:0 0 10px"><span class="chip ${pend ? 'low' : 'ok'}">${pend ? pend + (pend == 1 ? ' por aceptar' : ' por aceptar') : '✓ Todos aceptados'}</span></div>` : ''}`;
+    sum = `<div class="kp" style="margin-bottom:8px"><div><small>Apartados</small><b>${l.length}</b></div><div><small>Piezas</small><b>${q}</b></div><div><small>Total</small><b>${money(tot)}</b></div></div>${S.me.role == 'admin' || S.me.role == 'sup' ? `<div class="form" style="margin:0 0 10px"><span class="chip ${pend ? 'low' : 'ok'}">${pend ? pend + (pend == 1 ? ' por aceptar' : ' por aceptar') : '✓ Todos aceptados'}</span></div>` : ''}`;
   return (
     sum +
     admBtn() +

@@ -142,7 +142,7 @@ function rpView() {
  <div class="form"><button class="go" style="flex:1" onclick="rpRun()">Consultar</button>${r.rows ? '<button class="gh" aria-label="Volver a leer desde Firebase" onclick="rpRun(1)">↻</button>' : ''}</div>${rd}`
      : `<div class="rps"><span>📅 <b>${per}</b></span><button class="gh" aria-label="Volver a leer desde Firebase" onclick="rpRun(1)">↻ Actualizar</button></div>${rd}`
  }</div>
- <div class="card"><div class="pkh"><span>Filtrar resultados</span></div><small>Solo filtran lo ya consultado.</small>
+ <div class="card" style="padding:10px 12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><small style="font-weight:700;opacity:.8">Filtrar resultados</small><small style="opacity:.5;font-size:11px">Solo lo ya consultado</small></div>
  <small style="display:block;font-weight:600;margin:10px 0 4px;opacity:.7">Sucursal</small><div class="seg wr" style="margin:0 0 4px">${chip(r.br == null, 'S.rp.br=null;render(true)', 'Todas')}${brs()
    .map((n, i) => (!isOpen(i) ? '' : chip(r.br === i, `S.rp.br=${i};render(true)`, esc(n))))
    .join('')}</div>
