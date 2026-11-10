@@ -2,17 +2,7 @@
 
 function usView() {
   return `<div class="card"><h3>Nuevo usuario</h3><div class="form"><input id="un" placeholder="Nombre"><input id="uu" placeholder="Usuario" autocapitalize="none"><input id="up" placeholder="PIN (6 dígitos)" inputmode="numeric"><select id="ur" aria-label="Rol"><option value="vend">Vendedor</option><option value="enc">Encargado de pedidos</option><option value="rep">Repartidor</option><option value="sup">Supervisor</option><option value="admin">Administrador</option></select></div><small>Cada vendedor elige su sucursal al entrar a la app.</small><div class="form"><button onclick="addUser()">Crear usuario</button></div></div>
- <div class="card"><h3>Usuarios</h3>${S.users.map(u => {
-    const acts = [];
-    if (u.role == 'vend' && vbr(u) != null) acts.push(`<button class="gh" data-b="${vbr(u)}" onclick="freeBr(this.dataset.b)">Liberar sucursal</button>`);
-    acts.push(`<button class="gh" data-id="${esc(u.id)}" onclick="renameUser(this.dataset.id)">Cambiar nombre</button>`);
-    if (u.id != S.me.id) {
-      acts.push(`<button class="gh" data-id="${esc(u.id)}" onclick="pinUser(this.dataset.id)">Cambiar PIN</button>`);
-      acts.push(`<button class="gh" data-id="${esc(u.id)}" onclick="delUser(this.dataset.id,${u.active === false})">${u.active === false ? 'Reactivar' : 'Desactivar'}</button>`);
-      acts.push(`<button class="gh" style="color:var(--bad)" data-id="${esc(u.id)}" onclick="rmUser(this.dataset.id)">Eliminar</button>`);
-    }
-    return `<div class="ucard"><div class="uinfo"><div class="uav" style="background:${avC(u.user || u.id)}">${avI(u.name)}</div><div style="min-width:0;flex:1"><b>${esc(u.name)}${u.active === false ? ' <small class="bad">(desactivado)</small>' : ''}</b><br><small>${esc(u.user || u.id)} · ${ROLE[u.role] || ''}${u.role == 'vend' ? ' · ' + (vbr(u) != null ? esc(brs()[vbr(u)]) : 'Sin sucursal hoy') : ''}</small></div></div><div class="uacts">${acts.join('')}</div></div>`;
-  }).join('')}</div>`;
+ <div class="card"><h3>Usuarios</h3>${S.users.map(u => `<div class="ucard"><div class="uinfo"><div class="uav" style="background:${avC(u.user || u.id)}">${avI(u.name)}</div><div style="min-width:0;flex:1"><b>${esc(u.name)}${u.active === false ? ' <small class="bad">(desactivado)</small>' : ''}</b><br><small>${esc(u.user || u.id)} · ${ROLE[u.role] || ''}${u.role == 'vend' ? ' · ' + (vbr(u) != null ? esc(brs()[vbr(u)]) : 'Sin sucursal hoy') : ''}</small></div></div><div class="uacts">${u.role == 'vend' && vbr(u) != null ? `<button class="gh" data-b="${vbr(u)}" onclick="freeBr(this.dataset.b)">Liberar sucursal</button>` : ''}<button class="gh" data-id="${esc(u.id)}" onclick="renameUser(this.dataset.id)">Cambiar nombre</button>${u.id == S.me.id ? '' : `<button class="gh" data-id="${esc(u.id)}" onclick="pinUser(this.dataset.id)">Cambiar PIN</button><button class="gh" data-id="${esc(u.id)}" onclick="delUser(this.dataset.id,${u.active === false})">${u.active === false ? 'Reactivar' : 'Desactivar'}</button><button class="gh" style="color:var(--bad)" data-id="${esc(u.id)}" onclick="rmUser(this.dataset.id)">Eliminar</button>`}</div></div>`).join('')}</div>`;
 }
 
 /* El administrador mantiene 'profiles' igual que 'users' (altas, bajas, desactivados, cambios de nombre) */
@@ -114,7 +104,7 @@ function delUser(id, off) {
   );
 }
 
-/* Cambiar mi cuenta (usuario y/o PIN) en una sola opción */
+/* Cambiar mi cuenta: admin/sup cambian nombre; otros cambian usuario y/o PIN */
 function accountDlg() {
   const m = $('#modal');
   const cur = S.me ? S.me.user : '';
@@ -122,8 +112,21 @@ function accountDlg() {
   const role = S.me ? ROLE[S.me.role] || '' : '';
   const initial = (name || '?').charAt(0).toUpperCase();
   const avBg = typeof avC === 'function' ? avC(S.me ? S.me.user : '') : 'var(--ac)';
-  const userOpen = false;
-  const pinOpen = false;
+  const isAdminOrSup = S.me && (S.me.role === 'admin' || S.me.role === 'sup');
+
+  const identityField = isAdminOrSup
+    ? `<div>
+        <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">Nombre para mostrar</label>
+        <input id="cnn" type="text" autocomplete="name" enterkeyhint="next" value="${esc(name)}" placeholder="Tu nombre" style="width:100%">
+        <small style="display:block;margin-top:2px;opacity:.6;font-size:11px">Se actualiza en tu perfil y en la pantalla de login.</small>
+      </div>`
+    : `<div>
+        <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">Usuario nuevo</label>
+        <input id="cun" type="text" autocapitalize="none" autocomplete="username" enterkeyhint="next" placeholder="ej. ana2" style="width:100%">
+        <small style="display:block;margin-top:2px;opacity:.6;font-size:11px">Solo letras minúsculas, números, punto o guion bajo.</small>
+        <small id="userWarn" style="display:none;color:var(--bad);margin-top:2px;font-size:11px">Al guardar tendrás que entrar de nuevo con el nuevo usuario.</small>
+      </div>`;
+
   m.innerHTML = `<div class="card mv pd" style="max-width:400px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
       <span class="av big" style="background:${avBg}">${esc(initial)}</span>
@@ -132,45 +135,29 @@ function accountDlg() {
         <small style="opacity:.7">${esc(name)} · ${esc(role)}</small>
       </div>
     </div>
-
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">
-      <div>
-        <small style="display:block;opacity:.6;font-size:11px">Usuario actual</small>
-        <b>${esc(cur)}</b>
-      </div>
-      <button type="button" id="toggleUser" style="background:transparent;border:0;color:var(--ac);font-weight:600;font-size:13px;cursor:pointer;padding:4px 8px;min-height:auto">Cambiar</button>
-    </div>
-    <div id="userSection" style="display:none;padding:6px 0 2px">
-      <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">Usuario nuevo</label>
-      <input id="cun" type="text" autocapitalize="none" autocomplete="username" enterkeyhint="next" placeholder="ej. ana2" style="width:100%">
-      <small style="display:block;margin-top:2px;opacity:.6;font-size:11px">Solo letras minúsculas, números, punto o guion bajo.</small>
-      <small id="userWarn" style="display:none;color:var(--bad);margin-top:2px;font-size:11px">Al guardar tendrás que entrar de nuevo con el nuevo usuario.</small>
-    </div>
-
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid var(--bd);margin-top:4px">
-      <div>
-        <small style="display:block;opacity:.6;font-size:11px">PIN</small>
-        <b>••••••</b>
-      </div>
-      <button type="button" id="togglePin" style="background:transparent;border:0;color:var(--ac);font-weight:600;font-size:13px;cursor:pointer;padding:4px 8px;min-height:auto">Cambiar</button>
-    </div>
-    <div id="pinSection" style="display:none;padding:6px 0 2px">
-      <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">PIN nuevo</label>
+    ${identityField}
+    <div style="margin-top:10px">
+      <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">PIN</label>
       <div style="display:flex;gap:6px;align-items:center">
-        <input id="cpn" type="password" inputmode="numeric" autocomplete="new-password" enterkeyhint="next" placeholder="Mínimo 6 números" style="flex:1">
-        <button type="button" id="eyeBtn" aria-label="Mostrar u ocultar PIN" style="min-height:32px;padding:4px 8px;font-size:16px;background:var(--fill);border:0;border-radius:var(--r-ctl);cursor:pointer">👁</button>
+        <b style="flex:1">••••••</b>
+        <button type="button" id="togglePin" style="background:transparent;border:0;color:var(--ac);font-weight:600;font-size:13px;cursor:pointer;padding:4px 8px;min-height:auto">Cambiar PIN</button>
       </div>
-      <small id="pinMsg" style="display:block;margin-top:2px;font-size:11px;opacity:.7"></small>
+    </div>
+    <div id="pinSection" style="display:none;margin-top:6px">
+      <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">PIN nuevo</label>
+      <div style="position:relative">
+        <input id="cpn" type="password" inputmode="numeric" autocomplete="new-password" enterkeyhint="next" placeholder="Mínimo 6 números" style="width:100%;padding-right:44px">
+        <button type="button" id="eyeBtn" aria-label="Mostrar u ocultar PIN" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:0;font-size:18px;cursor:pointer;min-height:auto;padding:4px 6px">👁</button>
+      </div>
+      <small id="pinMsg" style="display:block;margin-top:3px;font-size:11px;opacity:.7"></small>
       <label style="display:block;font-size:12px;font-weight:600;margin:8px 0 3px">Repite el PIN nuevo</label>
       <input id="cpr" type="password" inputmode="numeric" autocomplete="new-password" enterkeyhint="done" placeholder="Repite el PIN" style="width:100%" onkeydown="if(event.key=='Enter')saveAccount()">
-      <small id="pinMatch" style="display:block;margin-top:2px;font-size:11px;opacity:.7"></small>
+      <small id="pinMatch" style="display:block;margin-top:3px;font-size:11px;opacity:.7"></small>
     </div>
-
     <div id="confirmSection" style="display:none;margin-top:10px;padding-top:8px;border-top:1px solid var(--bd)">
       <label style="display:block;font-size:12px;font-weight:600;margin:0 0 3px">Confirma con tu PIN actual</label>
       <input id="cuo" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN actual" style="width:100%">
     </div>
-
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="gh" id="ac" type="button" style="flex:1">Cancelar</button>
       <button class="go" id="as" type="button" style="flex:1" disabled>Guardar cambios</button>
@@ -179,20 +166,20 @@ function accountDlg() {
   m.style.display = 'flex';
   $('#ac').onclick = () => (m.style.display = 'none');
 
-  const toggleUser = $('#toggleUser');
   const togglePin = $('#togglePin');
-  const userSection = $('#userSection');
   const pinSection = $('#pinSection');
   const confirmSection = $('#confirmSection');
-  const cun = $('#cun');
   const cpn = $('#cpn');
   const cpr = $('#cpr');
   const cuo = $('#cuo');
   const eyeBtn = $('#eyeBtn');
   const pinMsg = $('#pinMsg');
   const pinMatch = $('#pinMatch');
-  const userWarn = $('#userWarn');
   const saveBtn = $('#as');
+
+  const nameInput = isAdminOrSup ? $('#cnn') : null;
+  const userInput = isAdminOrSup ? null : $('#cun');
+  const userWarn = isAdminOrSup ? null : $('#userWarn');
 
   let showPin = false;
   eyeBtn.onclick = () => {
@@ -204,14 +191,20 @@ function accountDlg() {
   };
 
   function updateState() {
-    const nu = (cun.value || '').trim().toLowerCase().replace(/[^a-z0-9_.]/g, '');
-    const np = (cpn.value || '').trim();
-    const nr = (cpr.value || '').trim();
-    const po = (cuo.value || '').trim();
-    const changeUser = !!nu && nu !== (S.me ? S.me.user : '');
+    const np = (cpn ? cpn.value : '').trim();
+    const nr = (cpr ? cpr.value : '').trim();
+    const po = (cuo ? cuo.value : '').trim();
+    let changeName = false;
+    let changeUser = false;
+    if (isAdminOrSup) {
+      const nn = (nameInput ? nameInput.value : '').trim();
+      changeName = !!nn && nn !== (S.me ? S.me.name : '');
+    } else {
+      const nu = (userInput ? userInput.value : '').trim().toLowerCase().replace(/[^a-z0-9_.]/g, '');
+      changeUser = !!nu && nu !== (S.me ? S.me.user : '');
+      if (userWarn) userWarn.style.display = changeUser ? 'block' : 'none';
+    }
     const changePin = !!np;
-
-    userWarn.style.display = changeUser ? 'block' : 'none';
 
     if (np.length > 0) {
       if (!/^\d{6,}$/.test(np)) {
@@ -240,32 +233,27 @@ function accountDlg() {
       pinMatch.textContent = '';
     }
 
-    const anyChange = changeUser || changePin;
+    const anyChange = changeName || changeUser || changePin;
     const pinValid = !changePin || (/^\d{6,}$/.test(np) && np === nr);
-    const needsConfirm = anyChange;
+    const needsConfirm = changeUser;
     confirmSection.style.display = needsConfirm ? 'block' : 'none';
     saveBtn.disabled = !(anyChange && pinValid && po.length >= 6);
   }
 
-  toggleUser.onclick = () => {
-    const open = userSection.style.display === 'none';
-    userSection.style.display = open ? 'block' : 'none';
-    toggleUser.textContent = open ? 'Cerrar' : 'Cambiar';
-    if (open) setTimeout(() => cun.focus(), 50);
-    updateState();
-  };
   togglePin.onclick = () => {
     const open = pinSection.style.display === 'none';
     pinSection.style.display = open ? 'block' : 'none';
-    togglePin.textContent = open ? 'Cerrar' : 'Cambiar';
+    togglePin.textContent = open ? 'Cerrar' : 'Cambiar PIN';
     if (open) setTimeout(() => cpn.focus(), 50);
     updateState();
   };
 
-  [cun, cpn, cpr, cuo].forEach(el => el.addEventListener('input', updateState));
+  const inputs = [nameInput, userInput, cpn, cpr, cuo].filter(Boolean);
+  inputs.forEach(el => el.addEventListener('input', updateState));
   updateState();
 
-  cun.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cpn.focus(); } });
+  if (nameInput) nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cpn.focus(); } });
+  if (userInput) userInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cpn.focus(); } });
   cpn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cpr.focus(); } });
   cpr.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cuo.focus(); } });
   cuo.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveAccount(); } });
@@ -275,16 +263,26 @@ function accountDlg() {
 
 async function saveAccount() {
   const o = ($('#cuo').value || '').trim();
-  const nuRaw = ($('#cun').value || '').trim();
   const np = ($('#cpn').value || '').trim();
   const nr = ($('#cpr').value || '').trim();
   if (!o) return toast('Escribe tu PIN actual');
-  const nu = nuRaw ? nuRaw.toLowerCase().replace(/[^a-z0-9_.]/g, '') : '';
-  const changeUser = !!nu && nu !== (S.me ? S.me.user : '');
+  const isAdminOrSup = S.me && (S.me.role === 'admin' || S.me.role === 'sup');
+  let changeName = false;
+  let newName = '';
+  let changeUser = false;
+  let nu = '';
+  if (isAdminOrSup) {
+    newName = ($('#cnn').value || '').trim();
+    changeName = !!newName && newName !== (S.me ? S.me.name : '');
+  } else {
+    const nuRaw = ($('#cun').value || '').trim();
+    nu = nuRaw ? nuRaw.toLowerCase().replace(/[^a-z0-9_.]/g, '') : '';
+    changeUser = !!nu && nu !== (S.me ? S.me.user : '');
+    if (changeUser && (!nu || nu.length < 3)) return toast('El usuario debe tener al menos 3 caracteres válidos');
+    if (changeUser && S.users.some(x => x.user == nu && x.id !== S.me.id)) return toast('Ese usuario ya existe');
+  }
   const changePin = !!np;
-  if (!changeUser && !changePin) return toast('Cambia al menos el usuario o el PIN');
-  if (changeUser && (!nu || nu.length < 3)) return toast('El usuario debe tener al menos 3 caracteres válidos');
-  if (changeUser && S.users.some(x => x.user == nu && x.id !== S.me.id)) return toast('Ese usuario ya existe');
+  if (!changeName && !changeUser && !changePin) return toast('Cambia al menos el nombre, usuario o PIN');
   if (changePin) {
     if (!/^\d{6,}$/.test(np)) return toast('El PIN nuevo debe tener solo números, mínimo 6');
     if (np !== nr) return toast('Los PIN nuevos no coinciden');
@@ -297,6 +295,10 @@ async function saveAccount() {
   const b = $('#as');
   b.disabled = true;
   try {
+    if (changeName) {
+      await db.doc('users/' + S.me.id).update({ name: newName });
+      if (S.me) S.me.name = newName;
+    }
     if (changeUser) await FB.changeUser(o, nu);
     if (changePin) await FB.changePin(o, np);
     $('#modal').style.display = 'none';
