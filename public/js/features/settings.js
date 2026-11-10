@@ -199,7 +199,7 @@ function ajView() {
     pr = (a, z) =>
       F.map((n, f) =>
         f >= a && f < z
-          ? `<div class="row"><div>${n}</div>${ni('pr' + f, price(f), '', dis, 'Precio de ' + n)}${ni('co' + f, cst(f) || '', '—', 'step="0.5"' + dis, 'Costo de ' + n)}${!lk && F.length > 1 ? ` <button class="gh" style="color:var(--bad);min-height:28px;padding:2px 8px;font-size:11px" onclick="removeFlavor(${f})">✕</button>` : ''}</div>`
+          ? `<div class="row"><div>${n}</div><div style="display:flex;gap:6px;align-items:center;flex:1 1 auto;min-width:0">${ni('pr' + f, price(f), '', dis, 'Precio de ' + n)}${ni('co' + f, cst(f) || '', '—', 'step="0.5"' + dis, 'Costo de ' + n)}${!lk && F.length > 1 ? `<button class="gh" style="color:var(--bad);min-height:34px;padding:2px 8px;font-size:11px;flex:0 0 auto" onclick="removeFlavor(${f})">✕</button>` : ''}</div></div>`
           : ''
       ).join(''),
     al = (t, sm, inp) =>
