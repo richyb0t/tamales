@@ -199,7 +199,7 @@ function ajView() {
     pr = (a, z) =>
       F.map((n, f) =>
         f >= a && f < z
-          ? `<div class="row" style="position:relative;padding-right:30px"><div>${n}</div><div style="display:flex;gap:6px;align-items:center;flex:1 1 auto;min-width:0">${ni('pr' + f, price(f), '', dis, 'Precio de ' + n)}${ni('co' + f, cst(f) || '', '—', 'step="0.5"' + dis, 'Costo de ' + n)}</div>${!lk && F.length > 1 ? `<button class="gh" style="color:var(--bad);position:absolute;right:4px;top:50%;transform:translateY(-50%);min-height:24px;padding:2px 6px;font-size:11px" onclick="removeFlavor(${f})">✕</button>` : ''}</div>`
+          ? `<div class="row" style="position:relative;padding-right:30px"><div>${n}</div><div style="display:flex;gap:6px;align-items:center;flex:1 1 auto;min-width:0">${ni('pr' + f, price(f), '', 'style="flex:1;min-width:0" ' + dis, 'Precio de ' + n)}${ni('co' + f, cst(f) || '', '—', 'step="0.5" style="flex:1;min-width:0" ' + dis, 'Costo de ' + n)}</div>${!lk && F.length > 1 ? `<button class="gh" style="color:var(--bad);position:absolute;right:4px;top:50%;transform:translateY(-50%);min-height:24px;padding:2px 6px;font-size:11px" onclick="removeFlavor(${f})">✕</button>` : ''}</div>`
           : ''
       ).join(''),
     al = (t, sm, inp) =>
@@ -218,7 +218,7 @@ function ajView() {
   ${isAdmin ? navCard() : ''}
   ${isAdmin ? `<div class="card ${lk ? 'plk' : ''}"><div class="ivh"><h3>${lk ? '🔒' : '🔓'} Precios y costos</h3><button class="${lk ? 'alt' : 'gh'}" onclick="${lk ? 'plUnlock()' : 'plLock()'}">${lk ? 'Desbloquear' : 'Bloquear'}</button></div>
   <small>${lk ? 'Bloqueados para que no se cambien por error. Toca Desbloquear para editarlos.' : 'Desbloqueados: edita y toca Guardar ajustes. Los cambios de precio aplican a ventas nuevas. El costo es opcional y sirve para calcular la utilidad en Reportes.'}</small>
-  <div class="row pch"><div></div><small>Precio $</small><small>Costo $</small></div>
+  <div class="row pch" style="padding-right:30px"><div></div><div style="display:flex;gap:6px;align-items:center;flex:1 1 auto;min-width:0"><small style="flex:1;text-align:center">Precio $</small><small style="flex:1;text-align:center">Costo $</small></div></div>
   <div class="pkh" style="margin-top:6px"><span>Salados</span></div>${pr(0, 8)}<div class="pkh" style="margin-top:10px"><span>Dulces</span></div>${pr(8, F.length)}
   <div class="pkh" style="margin-top:10px"><span>Bebidas · precio y costo por vaso</span></div>${CH.map((c, i) => `<div class="row"><div>Champurrado ${c[0].toLowerCase()}<br><small>${c[1]}</small></div>${ni('pr' + (100 + i), price(100 + i), '', dis, 'Precio de champurrado ' + c[0].toLowerCase())}${ni('co' + (100 + i), cst(100 + i) || '', '—', 'step="0.5"' + dis, 'Costo de champurrado ' + c[0].toLowerCase())}</div>`).join('')}</div>
   ${!lk ? `<div style="margin-top:8px">${(S.ajDisabled || []).length ? `<small style="display:block;font-weight:600;margin:4px 0 2px;opacity:.7">Desactivados</small>${(S.ajDisabled || []).map((n, i) => `<div class="row" style="opacity:.6"><div>${esc(n)}</div><button class="gh" style="min-height:28px;padding:2px 8px;font-size:11px" onclick="reopenFlavor(${i})">Reabrir</button></div>`).join('')}` : ''}<div class="form" style="margin-top:6px"><input id="flNew" placeholder="Nuevo sabor" aria-label="Nuevo sabor" style="flex:1"><button class="alt" onclick="addFlavor()">＋ Agregar</button></div>` : ''}
