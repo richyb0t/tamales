@@ -70,6 +70,8 @@ head() +
 (t == 'd' ? alertCard() : '') +
 (t == 'r'
 ? dvPanel()
+: t == 'g'
+  ? lgView()
 : t == 'a'
 ? apViewAdm()
 : t == 's'
@@ -79,6 +81,7 @@ nav(
 [
 ['d', '📋', 'Disponibilidad'],
 ['r', '🛵', 'Repartos', dvOpenN()],
+        ['g', '📦', 'Pedidos grandes', (S.dv || []).filter(d => d.large && (d.status == 'pendiente' || d.status == 'en_ruta')).length || ''],
 ['a', '📌', 'Apartados', S.pre.length || ''],
 ['s', '🔁', 'Entre sucursales', rqN || ''],
 ],
@@ -96,6 +99,7 @@ const t = (S.me && S.me.role === 'sup' && (S.tab === 'us' || S.tab === 'rp')) ? 
     inv: invView,
     tr: trView,
     dv: dvPanel,
+    lg: lgView,
     ct: cortesView,
     aj: ajView,
     us: usView,

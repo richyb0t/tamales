@@ -74,7 +74,7 @@ const chResv = b =>
 
 const chDvResv = b =>
   (S.dv || [])
-    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado')
+    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado' && !d.large)
     .reduce(
       (a, d) =>
         a +
@@ -101,7 +101,7 @@ const resv = (b, f) =>
 /* Tamales comprometidos en repartos del día (pendiente/en camino/entregado): no disponibles para venta en mostrador */
 const dvResv = (b, f) =>
   (S.dv || [])
-    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado')
+    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado' && !d.large)
     .reduce((a, d) => a + (+(d.items || {})['f' + f] || 0), 0);
 
 const left = (b, f) => {

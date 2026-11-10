@@ -10,6 +10,7 @@ const NAVALL = {
     rp: ['📈', 'Reportes'],
     us: ['👥', 'Usuarios'],
     dv: ['🛵', 'Repartos'],
+    lg: ['📦', 'Pedidos grandes'],
     aj: ['⚙️', 'Ajustes'],
   },
   NAVDEF = ['res', 'inv', 'tr', 'ct'];
@@ -26,7 +27,9 @@ const navBadge = k =>
       ? preN()
       : k == 'dv'
         ? (S.dv || []).filter(d => d.status == 'pendiente').length
-        : 0;
+        : k == 'lg'
+          ? (S.dv || []).filter(d => d.large && d.status == 'pendiente').length
+          : 0;
 
 async function setNav(a) {
   try {

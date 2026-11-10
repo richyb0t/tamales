@@ -27,7 +27,7 @@ const preSum = l => {
 };
 
 function nd() {
-  if (!S.nd) S.nd = { date: tmr(1), items: {}, name: '', phone: '', note: '', branch: BI()[0] };
+  if (!S.nd) S.nd = { date: tmr(1), items: {}, name: '', phone: '', note: '', branch: BI()[0], large: false, addr: '', fee: '' };
   if (S.nd.date < D) S.nd.date = tmr(1);
   if (!BI().includes(S.nd.branch)) S.nd.branch = BI()[0];
   if (S.nd.date < D || (S.nd.date == D && (S.me.role == 'vend' || encBlk(S.nd.branch))))
@@ -129,6 +129,8 @@ function apForm(hoy) {
     tot = Object.values(sel).reduce((a, v) => a + v, 0);
   return `<div class="card" id="apf"><h3>Nuevo apartado</h3><small>Elige para qué día. El administrador lo ve antes de preparar el inventario de ese día.</small>
  ${V ? '' : fb ? `<small style="display:block;margin-top:8px">Sucursal: <b>${esc(brs()[n.branch])}</b></small>` : `<small style="display:block;margin-top:8px">¿Para qué sucursal?</small>` + bchips(n.branch, 'pdBr')}
+  ${!V && (S.me.role == 'admin' || S.me.role == 'enc' || S.me.role == 'sup') ? `<div class="form" style="margin:8px 0"><button class="${n.large ? 'go' : 'alt'}" style="flex:1" onclick="nd().large=!nd().large;render(true)">${n.large ? '📦 Pedido grande a domicilio: SÍ' : '📦 Convertir en pedido grande a domicilio'}</button></div>` : ''}
+  ${n.large ? `<div class="form"><input id="pdaddr" placeholder="Dirección de entrega" value="${esc(n.addr)}" oninput="nd().addr=this.value" style="flex:1 1 100%"></div><div class="form"><input type="number" step="0.5" min="0" placeholder="Costo de envío (opcional)" value="${esc(n.fee)}" oninput="nd().fee=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1"></div>` : ''}
  ${
    hoy
      ? `<small style="display:block;margin-top:8px">Fecha</small><small style="display:block"><b>Hoy · ${esc(fdate(D))}</b></small>${!V && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : ''}`
@@ -197,9 +199,11 @@ async function savePre() {
           '. Sube la carga o aparta menos'
       );
   }
+  if (n.large && !n.addr.trim()) return toast('Escribe la dirección de entrega');
   if (!lock('sp')) return;
   try {
-    await db.collection('pre').add({
+    const preId = 'lg' + Date.now();
+    await db.doc('pre/' + preId).set({
       branch: b,
       date: n.date,
       items,
@@ -211,11 +215,34 @@ async function savePre() {
       byName: S.me.name,
       role: S.me.role,
       ts: Date.now(),
+      large: !!n.large,
+      delivery: !!n.large,
     });
+    if (n.large) {
+      const dvId = 'dv' + Date.now();
+      await db.doc('deliveries/' + dvId).set({
+        day: D,
+        branch: b,
+        client: n.name.trim(),
+        phone: n.phone.trim(),
+        addr: n.addr.trim(),
+        note: n.note.trim(),
+        fee: +(n.fee || 0) || 0,
+        items,
+        total: Object.entries(items).reduce((a, [k, v]) => a + v * price(+k.slice(1)), 0),
+        status: 'pendiente',
+        by: S.me.user,
+        byName: S.me.name,
+        ts: Date.now(),
+        large: true,
+        preId: preId,
+      });
+      await db.doc('pre/' + preId).update({ dvId: dvId });
+    }
     S.nd = null;
     S.anew = false;
     S.apt = n.date == D ? 'h' : 'o';
-    toast(n.date == D ? 'Apartado guardado para hoy' : 'Apartado guardado para ' + fdate(n.date));
+    toast(n.large ? 'Pedido grande a domicilio guardado' : (n.date == D ? 'Apartado guardado para hoy' : 'Apartado guardado para ' + fdate(n.date)));
     render(true);
   } catch (e) {
     delete lock.s.sp;

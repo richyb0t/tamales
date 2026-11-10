@@ -86,6 +86,7 @@ function menu(o) {
             ['ct', '🧾', 'Cortes'],
             ['ap', '📌', 'Apartados', preN()],
             ['dv', '🛵', 'Repartos'],
+            ...(m.role === 'admin' || m.role === 'sup' ? [['lg', '📦', 'Pedidos grandes']] : []),
           ],
         ],
         [
