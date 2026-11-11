@@ -28,7 +28,11 @@
     const st = history.state || {};
     /* si encima hay un menú/diálogo que ya se cerró, su entrada se reemplaza en vez de apilar otra */
     if (st.o && !isOpen(st.o)) history.replaceState({ k, s: nid }, '');
-    else history.pushState({ k, s: nid }, '');
+    else {
+      /* guarda dónde estaba la pantalla actual para regresar ahí con el botón Atrás */
+      history.replaceState({ ...st, y: scrollY }, '');
+      history.pushState({ k, s: nid }, '');
+    }
   };
   const sT = setTab,
     sV = setVt,
@@ -57,7 +61,6 @@
       renderNow(true);
     }
     else return;
-    scrollTo(0, 0);
   };
   /* al iniciar sesión se arma el historial: [tope] + [pantalla inicial] */
   const rn = renderNow;
@@ -80,7 +83,10 @@
       const v = isOpen(o);
       if (v && !was) {
         was = true;
-        if (nid) history.pushState({ o, s: nid }, '');
+        if (nid) {
+          history.replaceState({ ...(history.state || {}), y: scrollY }, '');
+          history.pushState({ o, s: nid }, '');
+        }
       } else if (!v && was) {
         was = false;
         if ((history.state || {}).o == o) {
@@ -122,5 +128,7 @@
       return;
     }
     if (st.k && st.k !== curKey()) applyView(st.k);
+    /* al regresar, vuelve a la posición donde estaba esa pantalla */
+    if (typeof st.y == 'number') requestAnimationFrame(() => scrollTo(0, st.y));
   });
 })();
