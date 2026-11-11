@@ -26,7 +26,7 @@ function onUser(u) {
   S.vt = 'v';
   S.rt = 'e';
   S.q = '';
-  S.alHide = false;
+  S.alHide = true;
   if (u) vRest = false;
   restoreView(u);
   if (!u) {

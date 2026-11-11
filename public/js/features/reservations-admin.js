@@ -205,22 +205,25 @@ function admRejectPre(id) {
 }
 
 function largeSoonCard() {
+  if (S.lgHide == null) S.lgHide = true;
   const soon = (S.pre || [])
     .filter(p => p.large && p.status != 'cancelado' && p.status != 'entregado' && p.status != 'fallido' && dayDiff(D, p.date) >= 0 && dayDiff(D, p.date) <= 4)
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   if (!soon.length) return '';
   const minD = Math.min(...soon.map(p => dayDiff(D, p.date)));
   const col = minD <= 1 ? 'var(--bad)' : minD <= 2 ? 'var(--low)' : 'var(--ac)';
+  const next = soon[0];
+  const when = minD == 0 ? 'Hoy' : minD == 1 ? 'Mañana' : 'En ' + minD + ' días';
   if (S.lgHide) {
-    return `<div class="card alb" style="border:2px solid ${col}"><span>📦 ${soon.length} pedido${soon.length > 1 ? 's' : ''} grande${soon.length > 1 ? 's' : ''} próximo${soon.length > 1 ? 's' : ''}</span><button class="gh" onclick="S.lgHide=false;render(true)">Mostrar</button></div>`;
+    return `<div class="card alb" style="border:2px solid ${col}"><span>📦 ${soon.length} pedido${soon.length > 1 ? 's' : ''} grande${soon.length > 1 ? 's' : ''} próximo${soon.length > 1 ? 's' : ''} · ${esc(fdate(next.date))} (${when})</span><button class="gh" onclick="S.lgHide=false;render(true)">Mostrar</button></div>`;
   }
   return (
     `<div class="card" style="border:2px solid ${col}"><div class="alr"><h3 style="margin:0">📦 Pedidos grandes próximos</h3><button class="gh" onclick="S.lgHide=true;render(true)">Ocultar</button></div><small>En los próximos 4 días</small>` +
     soon
       .map(p => {
         const d = dayDiff(D, p.date);
-        const when = d == 0 ? 'Hoy' : d == 1 ? 'Mañana' : 'En ' + d + ' días';
-        return `<div class="row"><div><b>${esc(p.client)}</b><br><small>${when} · ${esc(fdate(p.date))}${p.time ? ' · 🕒 ' + ftime(p.time) : ''} · ${esc(preTxt(p))}</small>${p.addr ? `<br><small>📍 ${esc(p.addr)}</small>` : ''}</div><b>${money(preTot(p))}</b></div>`;
+        const w = d == 0 ? 'Hoy' : d == 1 ? 'Mañana' : 'En ' + d + ' días';
+        return `<div class="row"><div><b>${esc(p.client)}</b><br><small>${w} · ${esc(fdate(p.date))}${p.time ? ' · 🕒 ' + ftime(p.time) : ''} · ${esc(preTxt(p))}</small>${p.addr ? `<br><small>📍 ${esc(p.addr)}</small>` : ''}</div><b>${money(preTot(p))}</b></div>`;
       })
       .join('') +
     `</div>`
