@@ -209,8 +209,13 @@ function largeSoonCard() {
     .filter(p => p.large && p.status != 'cancelado' && p.status != 'entregado' && p.status != 'fallido' && dayDiff(D, p.date) >= 0 && dayDiff(D, p.date) <= 4)
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   if (!soon.length) return '';
+  const minD = Math.min(...soon.map(p => dayDiff(D, p.date)));
+  const col = minD <= 1 ? 'var(--bad)' : minD <= 2 ? 'var(--low)' : 'var(--ac)';
+  if (S.lgHide) {
+    return `<div class="card alb" style="border:2px solid ${col}"><span>📦 ${soon.length} pedido${soon.length > 1 ? 's' : ''} grande${soon.length > 1 ? 's' : ''} próximo${soon.length > 1 ? 's' : ''}</span><button class="gh" onclick="S.lgHide=false;render(true)">Mostrar</button></div>`;
+  }
   return (
-    `<div class="card" style="border:2px solid var(--ac)"><h3 style="margin:0">📦 Pedidos grandes próximos</h3><small>En los próximos 4 días</small>` +
+    `<div class="card" style="border:2px solid ${col}"><div class="alr"><h3 style="margin:0">📦 Pedidos grandes próximos</h3><button class="gh" onclick="S.lgHide=true;render(true)">Ocultar</button></div><small>En los próximos 4 días</small>` +
     soon
       .map(p => {
         const d = dayDiff(D, p.date);
