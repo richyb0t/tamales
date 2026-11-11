@@ -194,7 +194,7 @@ function preCard(p) {
     V = m.role == 'vend',
     A = m.role == 'admin',
     can = A || V || p.by == m.user;
-  return `<div class="card"><div class="row"><div><b>${esc(p.client)}</b>${p.phone ? ' · ' + esc(p.phone) : ''}<br><small>${V ? '' : p.large ? '📦 Pedido grande · ' : esc(brs()[p.branch]) + ' · '}${p.date < D ? '<b class="bad">Pendiente desde ' + esc(fdate(p.date)) + '</b> · ' : p.date > D ? esc(fdate(p.date)) + ' · ' : ''}${p.exp && p.exp < Date.now() ? '<b class="bad">Vencido</b> · ' : ''}${p.large && p.time ? '🕒 ' + ftime(p.time) + ' · ' : ''}lo apartó ${esc(p.byName || p.by)}${p.ok ? ' · <b class="ok">✅ Aceptado</b>' : ''}</small></div><b>${money(preTot(p))}</b></div><div>${esc(preTxt(p))}</div>${p.large && p.addr ? `<div>📍 ${esc(p.addr)}</div>` : ''}${p.note ? `<small>📝 ${esc(p.note)}</small>` : ''}<div class="form">${(V || A) && p.date <= D && !(p.exp && p.exp < Date.now()) ? `<button class="go" onclick="deliverPre('${p._id}')">Entregar y cobrar</button>` : ''}${can ? `<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>` : ''}</div></div>`;
+  return `<div class="card"><div class="row"><div><b>${esc(p.client)}</b>${p.phone ? ' · ' + esc(p.phone) : ''}<br><small>${V ? '' : p.large ? '📦 Pedido grande · ' : esc(brs()[p.branch]) + ' · '}${p.date < D ? '<b class="bad">Pendiente desde ' + esc(fdate(p.date)) + '</b> · ' : p.date > D ? esc(fdate(p.date)) + ' · ' : ''}${p.exp && p.exp < Date.now() ? '<b class="bad">Vencido</b> · ' : ''}${p.large && p.time ? '🕒 ' + ftime(p.time) + ' · ' : ''}lo apartó ${esc(p.byName || p.by)}${p.ok ? ' · <b class="ok">✅ Aceptado</b>' : ''}</small></div><b>${money(preTot(p))}</b></div><div>${esc(preTxt(p))}</div>${p.large && p.addr ? `<div>📍 ${esc(p.addr)}</div>` : ''}${p.note ? `<small>📝 ${esc(p.note)}</small>` : ''}<div class="form">${(V || A) && p.date <= D && !(p.exp && p.exp < Date.now()) ? `<button class="go" onclick="deliverPre('${p._id}')">Entregar y cobrar</button>` : ''}${p.large && p.addr && !(p.dvId && (S.dv || []).some(x => x._id == p.dvId)) && (A || m.role == 'enc' || m.role == 'sup') ? `<button class="alt" onclick="dvAddFromPre('${p._id}')">Agregar reparto</button>` : ''}${can ? `<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>` : ''}</div></div>`;
 }
 
 const newBtn =
@@ -439,6 +439,28 @@ async function savePre() {
       return;
     }
   } else n.descChamp = 0;
+  if (n.large && !S.skipDupWarn) {
+    const sameDay = (S.pre || []).filter(p => p.large && p.date == n.date && p.status != 'cancelado' && p.status != 'entregado' && p.status != 'fallido');
+    if (sameDay.length) {
+      ask(
+        'Ya hay ' +
+          sameDay.length +
+          ' pedido' +
+          (sameDay.length > 1 ? 's' : '') +
+          ' grande' +
+          (sameDay.length > 1 ? 's' : '') +
+          ' para ' +
+          fdate(n.date) +
+          '. ¿Aun así quieres hacer el pedido?',
+        () => {
+          S.skipDupWarn = true;
+          savePre();
+          S.skipDupWarn = false;
+        }
+      );
+      return;
+    }
+  }
   if (!lock('sp')) return;
   try {
     const preId = 'lg' + Date.now();

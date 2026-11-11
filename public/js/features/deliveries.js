@@ -312,7 +312,7 @@ const dvCancel = id =>
       if (d && d.large && d.preId) {
         const bt = db.batch();
         bt.delete('deliveries/' + id);
-        bt.delete('pre/' + d.preId);
+        bt.update('pre/' + d.preId, { dvId: null });
         await bt.commit();
       } else {
         await db.doc('deliveries/' + id).delete();
@@ -322,6 +322,45 @@ const dvCancel = id =>
       err(e);
     }
   });
+
+async function dvAddFromPre(preId) {
+  const p = (S.pre || []).find(x => x._id == preId);
+  if (!p || !p.large || !(p.addr || '').trim()) return toast('Este apartado no tiene entrega a domicilio');
+  if (p.dvId && (S.dv || []).some(x => x._id == p.dvId)) return toast('Ya tiene reparto');
+  try {
+    const dvId = 'dv' + Date.now();
+    const items = p.items || {};
+    const tamQty = Object.entries(items).filter(([k]) => +k.slice(1) < 100).reduce((a, [, v]) => a + (+v || 0), 0);
+    const chQty = Object.entries(items).filter(([k]) => +k.slice(1) >= 100).reduce((a, [, v]) => a + (+v || 0), 0);
+    const desc = (tamQty * (+(p.descTamal) || 0)) + (chQty * (+(p.descChamp) || 0));
+    const totalList = Object.entries(items).reduce((a, [k, v]) => a + (+v || 0) * price(+k.slice(1)), 0);
+    await db.doc('deliveries/' + dvId).set({
+      day: p.date,
+      branch: p.branch,
+      client: p.client,
+      phone: p.phone || '',
+      addr: p.addr,
+      note: p.note || '',
+      time: p.time || '',
+      fee: +(p.fee || 0) || 0,
+      items,
+      total: Math.max(0, totalList - desc),
+      descTamal: +(p.descTamal || 0) || 0,
+      descChamp: +(p.descChamp || 0) || 0,
+      descuento: desc,
+      status: 'pendiente',
+      by: p.by,
+      byName: p.byName,
+      ts: Date.now(),
+      large: true,
+      preId: preId,
+    });
+    await db.doc('pre/' + preId).update({ dvId: dvId });
+    toast('Reparto agregado');
+  } catch (e) {
+    err(e);
+  }
+}
 
 function dvChg(due) {
   const v = $('#dvp').value,
