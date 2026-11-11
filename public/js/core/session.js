@@ -244,6 +244,20 @@ function subDv() {
       err
     )
   );
+  /* Repartos sin cumplir de días anteriores: siguen pendientes o en ruta y su día ya pasó.
+     Se muestran en Repartos para que el administrador o el supervisor los vean. */
+  if (m && (m.role == 'admin' || m.role == 'sup' || m.role == 'enc')) {
+    S.dvOld = [];
+    subs.push(
+      db.collection('deliveries').where('status', 'in', ['pendiente', 'en_ruta']).onSnapshot(
+        qq => {
+          S.dvOld = qq.docs.map(d => ({ _id: d.id, ...d.data() })).filter(d => d.day < D);
+          render();
+        },
+        err
+      )
+    );
+  }
 }
 
 let vRest = false,

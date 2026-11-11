@@ -579,11 +579,13 @@ function dvRouteMap(d) {
 /* Administrador y Pedidos */
 function dvPanel() {
   const L = (S.dv || []).slice().sort((a, b) => b.ts - a.ts),
+    old = (S.dvOld || []).slice().sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : a.ts - b.ts)),
     n = s => L.filter(d => d.status == s).length,
     cash = L.filter(d => d.status == 'entregado').reduce((a, d) => a + nz(d.cobrado), 0);
   return `<div class="kp" style="margin-bottom:8px"><div><small>Por tomar</small><b>${n('pendiente')}</b></div><div><small>En camino</small><b>${n('en_ruta')}</b></div><div><small>Entregados</small><b>${n('entregado')}</b></div></div>
  ${S.me.role == 'admin' ? `<div class="card"><div class="row" style="border:0;padding:0"><div>Efectivo cobrado por repartidores<br><small>Lo que deben entregar hoy</small></div><b>${money(cash)}</b></div></div>` : ''}
  ${S.me.role == 'admin' && n('fallido') ? `<div class="card" style="border:2px solid var(--bad)"><div class="row" style="border:0;padding:0"><div>⚠️ Merma (no entregados)<br><small>Repartos fallidos de hoy</small></div><b>${n('fallido')}</b></div></div>` : ''}
+ ${old.length ? `<div class="card" style="border:2px solid var(--bad);margin-bottom:10px"><div class="alr"><h3 style="margin:0">⚠️ Repartos sin cumplir de días anteriores</h3></div><small>${old.length} reparto${old.length > 1 ? 's' : ''} que no se entregó${old.length > 1 ? 'n' : ''} en su día</small>${old.map(d => `<div class="row"><div><b>${esc(d.client || 'Pedido a domicilio')}</b><br><small>${esc(fdate(d.day))} · ${esc(d.addr || '')}${d.byName ? ' · ' + esc(d.byName) : ''}</small></div><b>${money(dvDue(d))}</b></div>`).join('')}</div>` : ''}
  <div class="form" style="margin:0 0 10px"><button class="alt" style="flex:1" onclick="dvToggle()">${S.dvf ? '✕ Cerrar formulario' : '＋ Nuevo reparto'}</button></div>
  ${S.dvf ? dvForm() : ''}
  ${L.map(d => dvCard(d, false)).join('') || '<div class="card"><small>Todavía no hay repartos hoy.</small></div>'}`;
