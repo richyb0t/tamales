@@ -17,6 +17,7 @@ function admNew() {
   if (S.anew) {
     const x = nd();
     x.date = S.apt == 'o' ? (x.date > D ? x.date : tmr(1)) : D;
+    x.step = 1;
     if (S.apb != null && BI().includes(S.apb)) x.branch = S.apb;
   }
   renderNow(true);

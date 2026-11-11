@@ -17,6 +17,9 @@ const preTot = p => {
 
 const preQty = p => Object.values(p.items || {}).reduce((a, v) => a + (+v || 0), 0);
 
+/* Las cantidades se guardan con dos formas de llave: 102 en el formulario y f102 en Firestore. */
+const fNum = k => +String(k).replace(/^f/, '');
+
 /* Litros que representa cada presentación de champurrado: 250 ml, 500 ml y 1 l. */
 const CH_L = [0.25, 0.5, 1];
 
@@ -27,7 +30,7 @@ const preChamp = items => {
     base = 0,
     qty = 0;
   Object.entries(items || {}).forEach(([k, v]) => {
-    const f = +k.slice(1),
+    const f = fNum(k),
       i = f - 100,
       q = +v || 0;
     if (f < 100 || q <= 0 || !CH[i]) return;
@@ -62,7 +65,7 @@ const preSum = l => {
 };
 
 function nd() {
-  if (!S.nd) S.nd = { date: tmr(1), items: {}, name: '', phone: '', note: '', branch: BI()[0], large: false, addr: '', time: '', fee: '', descTamal: '', descChamp: '' };
+  if (!S.nd) S.nd = { date: tmr(1), items: {}, name: '', phone: '', note: '', branch: BI()[0], large: false, addr: '', time: '', fee: '', descTamal: '', descChamp: '', step: 1 };
   if (S.nd.date < D) S.nd.date = tmr(1);
   if (!BI().includes(S.nd.branch)) S.nd.branch = BI()[0];
   if (S.nd.date < D || (S.nd.date == D && !S.nd.large && (S.me.role == 'vend' || encBlk(S.nd.branch))))
@@ -82,14 +85,65 @@ function pdSet(f, v, el) {
   nd().items = { ...nd().items, [f]: q };
   const r = el.closest('.fl');
   if (r) r.classList.toggle('sel', q > 0);
-  const b = document.querySelector('.cart .ct .go'),
-    t = Object.values(nd().items).reduce((a, x) => a + x, 0);
-  if (b)
-    b.textContent = 'Guardar apartado' + (t ? ' · ' + t + (t == 1 ? ' tamal' : ' tamales') : '');
-  if (nd().large) {
-    const e = document.getElementById('pdc');
-    if (e) e.textContent = champNote(preChamp(nd().items));
+  if (!nd().large) {
+    const b = document.querySelector('.cart .ct .go'),
+      t = Object.values(nd().items).reduce((a, x) => a + x, 0);
+    if (b)
+      b.textContent = 'Guardar apartado' + (t ? ' · ' + t + (t == 1 ? ' tamal' : ' tamales') : '');
   }
+  const tEl = document.getElementById('pdt');
+  if (tEl) {
+    const t = Object.entries(nd().items).reduce((a, [k, x]) => a + (+x || 0) * price(+k), 0),
+      qty = Object.values(nd().items).reduce((a, x) => a + (+x || 0), 0);
+    tEl.textContent = qty
+      ? 'Productos: ' + money(t) + ' · ' + qty + (qty == 1 ? ' pieza' : ' piezas')
+      : 'Elige los productos del pedido';
+  }
+  const e = document.getElementById('pdc');
+  if (e) e.textContent = champNote(preChamp(nd().items));
+}
+
+/* Pedido grande: alterna el modo y reinicia el asistente. Al apagarlo borra los datos que solo aplican al mayoreo. */
+function pdLarge() {
+  const n = nd();
+  n.large = !n.large;
+  n.step = 1;
+  if (!n.large) {
+    n.addr = '';
+    n.time = '';
+    n.fee = '';
+    n.descTamal = '';
+    n.descChamp = '';
+  }
+  render(true);
+}
+
+function pdStep(s) {
+  nd().step = Math.min(4, Math.max(1, +s || 1));
+  renderNow(true);
+  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+}
+
+/* Recalcula el resumen del paso de precios sin volver a pintar toda la pantalla. */
+function pdCalc() {
+  const n = nd();
+  if (!n.large) return;
+  const base = Object.entries(n.items).reduce((a, [k, v]) => a + (+v || 0) * price(+k), 0),
+    tamQty = Object.entries(n.items).filter(([k]) => +k < 100).reduce((a, [, v]) => a + (+v || 0), 0),
+    ch = preChamp(n.items),
+    desc = tamQty * (+n.descTamal || 0) + ch.disc,
+    fee = +(n.fee || 0) || 0,
+    total = Math.max(0, base - desc),
+    set = (id, text) => {
+      const e = document.getElementById(id);
+      if (e) e.textContent = text;
+    };
+  set('pds', money(base));
+  set('pdd2', '−' + money(desc));
+  set('pdt2', money(total));
+  set('pdf', money(fee));
+  set('pdtot', money(total + fee));
+  set('pdc', champNote(ch));
 }
 
 function pdBr(i) {
@@ -166,34 +220,94 @@ function apForm(hoy) {
     cl = V || (!n.large && encBlk(n.branch)),
     sel = n.items,
     ch = preChamp(sel),
-    tot = Object.values(sel).reduce((a, v) => a + v, 0);
-  return `<div class="card" id="apf"><h3>Nuevo apartado</h3><small>Elige para qué día. El administrador lo ve antes de preparar el inventario de ese día.</small>
- ${V ? '' : n.large ? `<small style="display:block;margin-top:8px">📦 Pedido grande · <b>sin sucursal</b></small>` : fb ? `<small style="display:block;margin-top:8px">Sucursal: <b>${esc(brs()[n.branch])}</b></small>` : `<small style="display:block;margin-top:8px">¿Para qué sucursal?</small>` + bchips(n.branch, 'pdBr')}
-  ${!V && (S.me.role == 'admin' || S.me.role == 'enc' || S.me.role == 'sup') ? `<div class="form" style="margin:8px 0"><button class="${n.large ? 'go' : 'alt'}" style="flex:1" onclick="nd().large=!nd().large;render(true)">${n.large ? '📦 Pedido grande: SÍ' : '📦 Convertir en pedido grande'}</button></div>` : ''}
-  ${n.large ? `<div class="form"><input id="pdaddr" placeholder="Dirección (opcional)" value="${esc(n.addr)}" oninput="nd().addr=this.value" style="flex:1 1 100%"></div><small style="display:block;margin-top:4px;opacity:.75">Si van a recoger, deja la dirección vacía.</small><small style="display:block;margin-top:8px">Hora de entrega (opcional)</small><div class="form"><input type="time" id="pdtime" aria-label="Hora de entrega (opcional)" value="${esc(n.time)}" oninput="nd().time=this.value" style="flex:1"></div><div class="form"><input type="number" step="0.5" min="0" placeholder="Desc. tamal $" value="${esc(n.descTamal)}" oninput="nd().descTamal=this.value" style="flex:1"><input type="number" step="0.5" min="0" placeholder="Envío $" value="${esc(n.fee)}" oninput="nd().fee=this.value" style="flex:1"></div><small id="pdc" style="display:block;margin-top:6px;opacity:.8">${champNote(ch)}</small>` : ''}
- ${
-   hoy
-     ? `<small style="display:block;margin-top:8px">Fecha</small><small style="display:block"><b>Hoy · ${esc(fdate(D))}</b></small>${!V && !n.large && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : ''}`
-     : `<small style="display:block;margin-top:8px">Fecha</small>${cl ? (encBlk(n.branch) ? `<small class="low" style="display:block">La carga de hoy ya está guardada: ya no se puede apartar para hoy en ${esc(brs()[n.branch])}.</small>` : '') : !V && !n.large && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado de hoy se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : `<small style="display:block">Para hoy solo se puede antes de hacer el inventario.</small>`}<div class="seg" style="margin:4px 0">${[
-         0, 1, 2,
-       ]
-         .filter(k => !(k == 0 && cl))
-         .map(
-           k =>
-             `<button class="${n.date == tmr(k) ? 'on' : ''}" onclick="pdDate('${tmr(k)}')">${k == 0 ? 'Hoy' : k == 1 ? 'Mañana' : 'Pasado mañana'}</button>`
-         )
-         .join('')}</div>
- <div class="form"><input type="date" id="pdd" aria-label="Fecha del apartado" min="${cl ? tmr(1) : D}" value="${n.date}" onchange="pdDate(this.value)" style="flex:1"></div>`
- }
- ${F.map((nm, f) => `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>${esc(nm)}</b><small>${money(price(f))}</small></div><div class="st"><button class="gh" onclick="pdAdd(${f},-1)">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de ${esc(nm)}" oninput="pdSet(${f},this.value,this)" onchange="this.value=nd().items[${f}]||0"><button onclick="pdAdd(${f},1)" aria-label="Más">+</button></div></div>`).join('')}
-  <small style="display:block;margin:8px 0 6px">Champurrado</small>
-  ${n.large ? '<small style="display:block;margin:0 0 6px;opacity:.8">Mayoreo: captura los litros en “Grande 1 l”.</small>' : ''}
-  ${CH.map((cc, i) => { const f = 100 + i; return price(f) ? `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>Champurrado ${esc(cc[0])}</b><small>${esc(cc[1])} · ${money(price(f))}</small></div><div class="st"><button class="gh" onclick="pdAdd(${f},-1)">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de champurrado ${esc(cc[0])}" oninput="pdSet(${f},this.value,this)" onchange="this.value=nd().items[${f}]||0"><button onclick="pdAdd(${f},1)" aria-label="Más">+</button></div></div>` : ''; }).join('')}
- <div class="form"><input id="pdn" placeholder="Cliente" value="${esc(n.name)}" oninput="nd().name=this.value" style="flex:1"><input placeholder="Teléfono" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1"></div>
- <div class="form"><input placeholder="Nota" value="${esc(n.note)}" oninput="nd().note=this.value" style="flex:1"></div>
- </div><div class="cart"><div class="ct"><button class="go" style="flex:1" onclick="savePre()"${hoy && encBlk(n.branch) ? ' disabled' : ''}>Guardar apartado${tot ? ' · ' + tot + (tot == 1 ? ' tamal' : ' tamales') : ''}</button></div></div>`;
-}
+    tot = Object.values(sel).reduce((a, v) => a + v, 0),
+    large = !!n.large,
+    step = large ? Math.min(4, Math.max(1, +n.step || 1)) : 0,
+    steps = ['Cliente', 'Productos', 'Precios', 'Fecha'],
+    base = Object.entries(sel).reduce((a, [k, v]) => a + (+v || 0) * price(+k), 0),
+    tamQty = Object.entries(sel).filter(([k]) => +k < 100).reduce((a, [, v]) => a + (+v || 0), 0),
+    fee = +(n.fee || 0) || 0,
+    descT = tamQty * (+n.descTamal || 0),
+    totalP = Math.max(0, base - descT - ch.disc);
+  if (large) n.step = step;
 
+  const canLarge = !V && (m.role == 'admin' || m.role == 'enc' || m.role == 'sup');
+  const head = `<div class="card" id="apf"><h3>${large ? 'Nuevo pedido grande' : 'Nuevo apartado'}</h3>${
+    large
+      ? `<small>Paso ${step} de 4 · ${steps[step - 1]}</small><div style="display:flex;gap:4px;margin:6px 0 10px">${steps.map((s, i) => `<div style="flex:1;height:4px;border-radius:2px;background:${i + 1 <= step ? 'var(--ac)' : 'var(--bd)'}"></div>`).join('')}</div>`
+      : '<small>Elige para qué día. El administrador lo ve antes de preparar el inventario de ese día.</small>'
+  }
+ ${V ? '' : large ? `<small style="display:block;margin-top:8px">📦 Pedido grande · <b>sin sucursal</b></small>` : fb ? `<small style="display:block;margin-top:8px">Sucursal: <b>${esc(brs()[n.branch])}</b></small>` : `<small style="display:block;margin-top:8px">¿Para qué sucursal?</small>` + bchips(n.branch, 'pdBr')}
+  ${canLarge ? `<div class="form" style="margin:8px 0"><button class="${large ? 'go' : 'alt'}" style="flex:1" onclick="pdLarge()">${large ? '📦 Pedido grande: SÍ' : '📦 Convertir en pedido grande'}</button></div>` : ''}`;
+
+  const dateBox =
+    hoy && !large
+      ? `<small style="display:block;margin-top:8px">Fecha</small><small style="display:block"><b>Hoy · ${esc(fdate(D))}</b></small>${!V && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : ''}`
+      : `<small style="display:block;margin-top:8px">Fecha</small>${cl ? (encBlk(n.branch) ? `<small class="low" style="display:block">La carga de hoy ya está guardada: ya no se puede apartar para hoy en ${esc(brs()[n.branch])}.</small>` : '') : !V && !large && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado de hoy se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : large ? `<small style="display:block">Elige la fecha de entrega.</small>` : `<small style="display:block">Para hoy solo se puede antes de hacer el inventario.</small>`}<div class="seg" style="margin:4px 0">${[0, 1, 2]
+          .filter(k => !(k == 0 && cl))
+          .map(k => `<button class="${n.date == tmr(k) ? 'on' : ''}" onclick="pdDate('${tmr(k)}')">${k == 0 ? 'Hoy' : k == 1 ? 'Mañana' : 'Pasado mañana'}</button>`)
+          .join('')}</div>
+ <div class="form"><input type="date" id="pdd" aria-label="Fecha del apartado" min="${cl ? tmr(1) : D}" value="${n.date}" onchange="pdDate(this.value)" style="flex:1"></div>`;
+
+  const prodBox = `${F.map((nm, f) => `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>${esc(nm)}</b><small>${money(price(f))}</small></div><div class="st"><button class="gh" onclick="pdAdd(${f},-1)">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de ${esc(nm)}" oninput="pdSet(${f},this.value,this)" onchange="this.value=nd().items[${f}]||0"><button onclick="pdAdd(${f},1)" aria-label="Más">+</button></div></div>`).join('')}
+  <small style="display:block;margin:8px 0 6px">Champurrado</small>
+  ${large ? '<small style="display:block;margin:0 0 6px;opacity:.8">Mayoreo: captura los litros en “Grande 1 l”.</small>' : ''}
+  ${CH.map((cc, i) => { const f = 100 + i; return price(f) ? `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>Champurrado ${esc(cc[0])}</b><small>${esc(cc[1])} · ${money(price(f))}</small></div><div class="st"><button class="gh" onclick="pdAdd(${f},-1)">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de champurrado ${esc(cc[0])}" oninput="pdSet(${f},this.value,this)" onchange="this.value=nd().items[${f}]||0"><button onclick="pdAdd(${f},1)" aria-label="Más">+</button></div></div>` : ''; }).join('')}`;
+
+  let body = '';
+  if (!large) {
+    body = `
+  ${dateBox}
+  ${prodBox}
+  <div class="form"><input id="pdn" placeholder="Cliente" value="${esc(n.name)}" oninput="nd().name=this.value" style="flex:1"><input placeholder="Teléfono" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1"></div>
+  <div class="form"><input placeholder="Nota" value="${esc(n.note)}" oninput="nd().note=this.value" style="flex:1"></div>`;
+  } else if (step === 1) {
+    body = `
+  <div class="form"><input id="pdn" placeholder="Cliente" value="${esc(n.name)}" oninput="nd().name=this.value" style="flex:1"><input placeholder="Teléfono" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1"></div>
+  <div class="form"><input id="pdaddr" placeholder="Dirección (opcional)" value="${esc(n.addr)}" oninput="nd().addr=this.value" style="flex:1 1 100%"></div>
+  <small style="display:block;margin-top:4px;opacity:.75">Si van a recoger, deja la dirección vacía.</small>
+  <small style="display:block;margin-top:8px">Hora de entrega (opcional)</small>
+  <div class="form"><input type="time" id="pdtime" aria-label="Hora de entrega (opcional)" value="${esc(n.time)}" oninput="nd().time=this.value" style="flex:1"></div>
+  <div class="form"><input placeholder="Nota" value="${esc(n.note)}" oninput="nd().note=this.value" style="flex:1"></div>`;
+  } else if (step === 2) {
+    body = `
+  ${prodBox}
+  <small id="pdt" style="display:block;margin-top:8px;opacity:.75">${tot ? 'Productos: ' + money(base) + ' · ' + tot + (tot == 1 ? ' pieza' : ' piezas') : 'Elige los productos del pedido'}</small>`;
+  } else if (step === 3) {
+    body = `
+  <div class="form"><input type="number" step="0.5" min="0" placeholder="Desc. tamal $" aria-label="Descuento por tamal" value="${esc(n.descTamal)}" oninput="nd().descTamal=this.value;pdCalc()" style="flex:1"><input type="number" step="0.5" min="0" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="nd().fee=this.value;pdCalc()" style="flex:1"></div>
+  <small style="display:block;margin-top:6px;opacity:.75">El champurrado al mayoreo se aplica solo: 5 L = $45 por litro · 10 L = $35 por litro.</small>
+  <small id="pdc" style="display:block;margin-top:6px;opacity:.85">${champNote(ch)}</small>
+  <div style="margin-top:10px;padding:10px;border-radius:12px;background:var(--fill)">
+   <div style="display:flex;justify-content:space-between"><small>Productos</small><small id="pds">${money(base)}</small></div>
+   <div style="display:flex;justify-content:space-between"><small>Descuento</small><small id="pdd2">−${money(descT + ch.disc)}</small></div>
+   <div style="display:flex;justify-content:space-between;margin-top:4px"><b>Total productos</b><b id="pdt2">${money(totalP)}</b></div>
+   <div style="display:flex;justify-content:space-between"><small>Envío</small><small id="pdf">${money(fee)}</small></div>
+   <div style="display:flex;justify-content:space-between"><b>Total con envío</b><b id="pdtot">${money(totalP + fee)}</b></div>
+  </div>`;
+  } else {
+    const txt = Object.entries(sel)
+      .filter(([, v]) => +v > 0)
+      .map(([k, v]) => v + '× ' + nm(+k))
+      .join(', ');
+    body = `
+  ${dateBox}
+  <div style="margin-top:10px;padding:10px;border-radius:12px;background:var(--fill)">
+   <small style="display:block"><b>${esc(n.name || 'Sin cliente')}</b>${n.phone ? ' · ' + esc(n.phone) : ''}</small>
+   <small style="display:block;margin-top:2px">${n.addr.trim() ? '📍 ' + esc(n.addr) : '🏪 Recoge en el local'}${n.time ? ' · 🕒 ' + ftime(n.time) : ''}</small>
+   <small style="display:block;margin-top:6px">${esc(txt || 'Sin productos')}</small>
+   ${ch.qty ? `<small style="display:block;margin-top:4px;opacity:.85">${esc(champNote(ch))}</small>` : ''}
+   <div style="display:flex;justify-content:space-between;margin-top:8px"><b>Productos</b><b>${money(totalP)}</b></div>
+   ${fee ? `<div style="display:flex;justify-content:space-between"><small>Envío</small><small>${money(fee)}</small></div><div style="display:flex;justify-content:space-between"><b>Total</b><b>${money(totalP + fee)}</b></div>` : ''}
+  </div>`;
+  }
+
+  const cart = large
+    ? `<div class="cart"><div class="ct">${step > 1 ? `<button class="alt" style="flex:1" onclick="pdStep(${step - 1})">← Atrás</button>` : ''}${step < 4 ? `<button class="go" style="flex:1" onclick="pdStep(${step + 1})">${step == 1 ? 'Siguiente: Productos →' : step == 2 ? 'Siguiente: Precios →' : 'Siguiente: Fecha →'}</button>` : `<button class="go" style="flex:1" onclick="savePre()">Guardar pedido grande</button>`}</div></div>`
+    : `<div class="cart"><div class="ct"><button class="go" style="flex:1" onclick="savePre()"${hoy && encBlk(n.branch) ? ' disabled' : ''}>Guardar apartado${tot ? ' · ' + tot + (tot == 1 ? ' tamal' : ' tamales') : ''}</button></div></div>`;
+
+  return head + body + '</div>' + cart;
+}
 async function savePre() {
   const n = nd(),
     V = S.me.role == 'vend',
@@ -202,9 +316,20 @@ async function savePre() {
   Object.entries(n.items).forEach(([f, v]) => {
     if (v > 0) items['f' + f] = v;
   });
-  if (!Object.keys(items).length) return toast('Elige los tamales que apartan');
+  if (!Object.keys(items).length) {
+    toast('Elige los tamales que apartan');
+    if (n.large) {
+      n.step = 2;
+      renderNow(true);
+    }
+    return;
+  }
   if (!n.name.trim()) {
     toast('Escribe el nombre del cliente');
+    if (n.large) {
+      n.step = 1;
+      renderNow(true);
+    }
     const e = $('#pdn');
     if (e) {
       e.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -220,7 +345,14 @@ async function savePre() {
     }
     return;
   }
-  if (!n.date || n.date < D) return toast('Elige hoy o una fecha futura');
+  if (!n.date || n.date < D) {
+    toast('Elige hoy o una fecha futura');
+    if (n.large) {
+      n.step = 4;
+      renderNow(true);
+    }
+    return;
+  }
   if (n.date == D && S.me.role == 'vend')
     return toast('Para hoy no se puede: lo hace el administrador');
   if (!n.large && n.date == D && encBlk(b))
@@ -247,7 +379,14 @@ async function savePre() {
       const f = +k.slice(1);
       return f < 100 && price(f) > 0 && n.descTamal >= price(f);
     });
-    if (bad) return toast('El descuento es mayor o igual al precio de ' + nm(+bad[0].slice(1)));
+    if (bad) {
+      toast('El descuento es mayor o igual al precio de ' + nm(+bad[0].slice(1)));
+      if (n.large) {
+        n.step = 3;
+        renderNow(true);
+      }
+      return;
+    }
   } else n.descChamp = 0;
   if (!lock('sp')) return;
   try {
