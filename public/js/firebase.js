@@ -36,6 +36,7 @@ import {
   onMessage,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js';
 window.VAPID_PUBLIC_KEY = 'REEMPLAZA_CON_TU_VAPID_PUBLIC_KEY_DE_FIREBASE';
+const cfg = {
   apiKey: 'AIzaSyCipjbj_Sy2t5hZYR6a-ctGzP8tUodmpz0',
   authDomain: 'tamalescastro-ca1bf.firebaseapp.com',
   projectId: 'tamalescastro-ca1bf',
