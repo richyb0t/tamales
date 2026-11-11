@@ -194,7 +194,7 @@ function preCard(p) {
     V = m.role == 'vend',
     A = m.role == 'admin',
     can = A || V || p.by == m.user;
-  return `<div class="card"><div class="row"><div><b>${esc(p.client)}</b>${p.phone ? ' · ' + esc(p.phone) : ''}<br><small>${V ? '' : p.large ? '📦 Pedido grande · ' : esc(brs()[p.branch]) + ' · '}${p.date < D ? '<b class="bad">Pendiente desde ' + esc(fdate(p.date)) + '</b> · ' : p.date > D ? esc(fdate(p.date)) + ' · ' : ''}${p.exp && p.exp < Date.now() ? '<b class="bad">Vencido</b> · ' : ''}${p.large && p.time ? '🕒 ' + ftime(p.time) + ' · ' : ''}lo apartó ${esc(p.byName || p.by)}${p.ok ? ' · <b class="ok">✅ Aceptado</b>' : ''}</small></div><b>${money(preTot(p))}</b></div><div>${esc(preTxt(p))}</div>${p.large && p.addr ? `<div>📍 ${esc(p.addr)}</div>` : ''}${p.note ? `<small>📝 ${esc(p.note)}</small>` : ''}<div class="form">${(V || A) && p.date <= D && !(p.exp && p.exp < Date.now()) ? `<button class="go" onclick="deliverPre('${p._id}')">Entregar y cobrar</button>` : ''}${p.large && p.addr && !(p.dvId && (S.dv || []).some(x => x._id == p.dvId)) && (A || m.role == 'enc' || m.role == 'sup') ? `<button class="alt" onclick="dvAddFromPre('${p._id}')">Agregar reparto</button>` : ''}${can ? `<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>` : ''}</div></div>`;
+  return `<div class="card"><div class="row"><div><b>${esc(p.client)}</b>${p.phone ? ' · ' + esc(p.phone) : ''}<br><small>${V ? '' : p.large ? '📦 Pedido grande · ' : esc(brs()[p.branch]) + ' · '}${p.date < D ? '<b class="bad">Pendiente desde ' + esc(fdate(p.date)) + '</b> · ' : p.date > D ? esc(fdate(p.date)) + ' · ' : ''}${p.exp && p.exp < Date.now() ? '<b class="bad">Vencido</b> · ' : ''}${p.large && p.time ? '🕒 ' + ftime(p.time) + ' · ' : ''}lo apartó ${esc(p.byName || p.by)}${p.ok ? ' · <b class="ok">✅ Aceptado</b>' : ''}</small></div><b>${money(preTot(p))}</b></div><div>${esc(preTxt(p))}</div>${p.large && p.addr ? `<div>📍 ${esc(p.addr)}</div>` : ''}${p.note ? `<small>📝 ${esc(p.note)}</small>` : ''}<div class="form">${(V || A) && p.date <= D && !(p.exp && p.exp < Date.now()) ? `<button class="go" onclick="deliverPre('${p._id}')">Entregar y cobrar</button>` : ''}${p.large && p.status == 'pendiente' && (A || m.role == 'enc' || m.role == 'sup') ? `<button class="alt" onclick="editPre('${p._id}')">Editar</button>` : ''}${p.large && p.addr && !(p.dvId && (S.dv || []).some(x => x._id == p.dvId)) && (A || m.role == 'enc' || m.role == 'sup') ? `<button class="alt" onclick="dvAddFromPre('${p._id}')">Agregar reparto</button>` : ''}${can ? `<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>` : ''}</div></div>`;
 }
 
 const newBtn =
@@ -440,7 +440,7 @@ async function savePre() {
     }
   } else n.descChamp = 0;
   if (n.large && !S.skipDupWarn) {
-    const sameDay = (S.pre || []).filter(p => p.large && p.date == n.date && p.status != 'cancelado' && p.status != 'entregado' && p.status != 'fallido');
+    const sameDay = (S.pre || []).filter(p => p.large && p.date == n.date && p.status != 'cancelado' && p.status != 'entregado' && p.status != 'fallido' && p._id != S.editPreId);
     if (sameDay.length) {
       ask(
         'Ya hay ' +
@@ -462,9 +462,11 @@ async function savePre() {
     }
   }
   if (!lock('sp')) return;
+  const isEdit = !!S.editPreId;
+  const preId = isEdit ? S.editPreId : 'lg' + Date.now();
+  const oldP = isEdit ? S.pre.find(x => x._id == preId) : null;
   try {
-    const preId = 'lg' + Date.now();
-    await db.doc('pre/' + preId).set({
+    const preData = {
       branch: b,
       date: n.date,
       items,
@@ -483,7 +485,17 @@ async function savePre() {
       fee: +(n.fee || 0) || 0,
       descTamal: +(n.descTamal || 0) || 0,
       descChamp: +(n.descChamp || 0) || 0,
-    });
+    };
+    if (isEdit) {
+      await db.doc('pre/' + preId).update(preData);
+      if (oldP && oldP.dvId) {
+        try {
+          await db.doc('deliveries/' + oldP.dvId).delete();
+        } catch (_) {}
+      }
+    } else {
+      await db.doc('pre/' + preId).set(preData);
+    }
     if (n.large && n.addr.trim()) {
       const dvId = 'dv' + Date.now();
       const tamQty = Object.entries(items).filter(([k]) => +k.slice(1) < 100).reduce((a, [, v]) => a + v, 0);
@@ -512,11 +524,26 @@ async function savePre() {
         preId: preId,
       });
       await db.doc('pre/' + preId).update({ dvId: dvId, descTamal: +(n.descTamal || 0) || 0, descChamp: +(n.descChamp || 0) || 0 });
+    } else if (isEdit) {
+      await db.doc('pre/' + preId).update({ dvId: null });
     }
     if (S.nds) delete S.nds[(S.me && S.me.id) || 'anon'];
+    S.editPreId = null;
     S.anew = false;
     S.apt = n.date == D ? 'h' : 'o';
-    toast(n.large ? (n.addr.trim() ? 'Pedido grande a domicilio guardado' : 'Pedido grande guardado') : (n.date == D ? 'Apartado guardado para hoy' : 'Apartado guardado para ' + fdate(n.date)));
+    toast(
+      n.large
+        ? isEdit
+          ? n.addr.trim()
+            ? 'Pedido grande a domicilio actualizado'
+            : 'Pedido grande actualizado'
+          : n.addr.trim()
+          ? 'Pedido grande a domicilio guardado'
+          : 'Pedido grande guardado'
+        : n.date == D
+        ? 'Apartado guardado para hoy'
+        : 'Apartado guardado para ' + fdate(n.date)
+    );
     render(true);
   } catch (e) {
     delete lock.s.sp;
@@ -550,6 +577,42 @@ function cancelPre(id) {
       }
     }
   );
+}
+
+function editPre(id) {
+  const p = S.pre.find(x => x._id == id);
+  if (!p || !p.large || p.status != 'pendiente') return;
+  const x = nd();
+  x.large = true;
+  x.step = 1;
+  x.date = p.date;
+  x.items = {};
+  Object.entries(p.items || {}).forEach(([k, v]) => {
+    x.items[+k.slice(1)] = +v;
+  });
+  x.name = p.client || '';
+  x.phone = p.phone || '';
+  x.addr = p.addr || '';
+  x.time = p.time || '';
+  x.fee = p.fee || '';
+  x.descTamal = p.descTamal || '';
+  x.descChamp = p.descChamp || '';
+  x.note = p.note || '';
+  x.branch = null;
+  S.editPreId = id;
+  if (S.me.role == 'admin' || S.me.role == 'sup') {
+    S.tab = 'ap';
+    S.apt = p.date == D ? 'h' : 'o';
+  } else if (S.me.role == 'enc') {
+    S.et = 'a';
+    S.apt = p.date == D ? 'h' : 'o';
+  }
+  S.anew = true;
+  renderNow(true);
+  setTimeout(() => {
+    const e = $('#apf');
+    if (e) e.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 80);
 }
 
 function deliverPre(id) {
