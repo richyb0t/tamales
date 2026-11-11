@@ -582,14 +582,14 @@ function enableNotif() {
   });
 }
 
-function notifyNewLarge() {
+function notifyNewDv() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const nw = (S.dv || []).filter(d => d.large && d.status == 'pendiente' && !seenDv.has(d._id));
+  const nw = (S.dv || []).filter(d => d.status == 'pendiente' && !seenDv.has(d._id));
   if (!nw.length) return;
   nw.forEach(d => {
     seenDv.add(d._id);
     try {
-      new Notification('Nuevo pedido grande', {
+      new Notification(d.large ? 'Nuevo pedido grande' : 'Nuevo reparto', {
         body: (d.client || 'Cliente') + (d.addr ? ' · ' + d.addr : '') + ' · ' + money(dvDue(d)),
         tag: d._id,
       });

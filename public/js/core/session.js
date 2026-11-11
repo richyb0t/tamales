@@ -228,7 +228,7 @@ function subDv() {
     q.onSnapshot(
       qq => {
         S.dv = qq.docs.map(d => ({ _id: d.id, ...d.data() }));
-        if (S.me && S.me.role == 'rep' && typeof notifyNewLarge === 'function') notifyNewLarge();
+        if (S.me && S.me.role == 'rep' && typeof notifyNewDv === 'function') notifyNewDv();
         render();
       },
       err
