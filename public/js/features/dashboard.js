@@ -35,7 +35,7 @@ function resView() {
     pz = V.reduce((a, x) => a + (x.f < 100 ? nz(x.qty) : 0), 0),
     pc = x => (x.cg > 0 ? Math.max(0, Math.min(100, Math.round((x.vt / x.cg) * 100))) : 0);
   /* Compacto: el total del día y todas las sucursales caben en una sola pantalla del celular */
-  return `${priceCard()}${alertCard()}<div class="card rsm"><div class="rph"><small style="text-transform:capitalize">Hoy · ${esc(fdate(D))} · ${BI().length} ${BI().length == 1 ? 'sucursal' : 'sucursales'}</small><b>${money(tot)}</b></div>
+  return `${priceCard()}${alertCard()}${largeSoonCard()}<div class="card rsm"><div class="rph"><small style="text-transform:capitalize">Hoy · ${esc(fdate(D))} · ${BI().length} ${BI().length == 1 ? 'sucursal' : 'sucursales'}</small><b>${money(tot)}</b></div>
  <div class="rsk"><div><b>${np}</b><small>Pedidos</small></div><div><b>${money(np ? Math.round(tot / np) : 0)}</b><small>Ticket prom.</small></div><div><b>${pz}</b><small>Tamales</small></div></div></div>
  <div class="card brl"><div class="pkh"><span>Por sucursal</span><span>toca para ver movimientos</span></div>
  ${all.map(x => `<div class="brr tap" role="button" tabindex="0" onclick="S.mvf='*';showMv(${x.b})"><div class="brn"><b>${esc(brs()[x.b])}</b><small>${x.v} ${x.v == 1 ? 'vendido' : 'vendidos'}${x.a ? ` · <span class="low">${x.a} ${x.a == 1 ? 'apartado' : 'apartados'}</span>` : ''}${x.d ? ` · <span class="bad">${x.d} devol.</span>` : ''}</small></div><div class="brx"><b>${money(x.m)}</b><small>${pc(x)}% vendido</small></div><span class="chv">›</span><div class="bar"><i style="width:${pc(x)}%"></i></div></div>`).join('')}</div>

@@ -74,7 +74,7 @@ head() +
 ? apViewAdm()
 : t == 's'
 ? reqView()
-: `<div class="card"><h3>Disponibilidad de hoy</h3><small>Solo consulta · se actualiza sola.</small>${grid(BI())}</div>`) +
+: largeSoonCard() + `<div class="card"><h3>Disponibilidad de hoy</h3><small>Solo consulta · se actualiza sola.</small>${grid(BI())}</div>`) +
 nav(
 [
 ['d', '📋', 'Disponibilidad'],

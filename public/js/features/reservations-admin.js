@@ -142,6 +142,7 @@ function apViewAdm() {
       ...(S.me.role == 'admin' ? [['s', 'Entre sucursales' + (rp ? ' (' + rp + ')' : '')]] : []),
     ];
   return (
+    largeSoonCard() +
     `<div class="seg" style="margin-bottom:10px">${tabs.map(([k, n]) => `<button class="${t == k ? 'on' : ''}" onclick="admTab('${k}')">${n}</button>`).join('')}</div>` +
     (t == 'o'
       ? admBtn() + admLater(otro) + admFrm('o')
@@ -195,4 +196,22 @@ function admRejectPre(id) {
       err(e);
     }
   };
+}
+
+function largeSoonCard() {
+  const soon = (S.pre || [])
+    .filter(p => p.large && p.status != 'cancelado' && p.status != 'entregado' && p.status != 'fallido' && dayDiff(D, p.date) >= 0 && dayDiff(D, p.date) <= 4)
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  if (!soon.length) return '';
+  return (
+    `<div class="card" style="border:2px solid var(--ac)"><h3 style="margin:0">📦 Pedidos grandes próximos</h3><small>En los próximos 4 días</small>` +
+    soon
+      .map(p => {
+        const d = dayDiff(D, p.date);
+        const when = d == 0 ? 'Hoy' : d == 1 ? 'Mañana' : 'En ' + d + ' días';
+        return `<div class="row"><div><b>${esc(p.client)}</b><br><small>${when} · ${esc(fdate(p.date))}${p.time ? ' · 🕒 ' + ftime(p.time) : ''} · ${esc(preTxt(p))}</small>${p.addr ? `<br><small>📍 ${esc(p.addr)}</small>` : ''}</div><b>${money(preTot(p))}</b></div>`;
+      })
+      .join('') +
+    `</div>`
+  );
 }
