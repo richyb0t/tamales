@@ -147,14 +147,14 @@ function plUnlock() {
     '¿Desbloquear precios y costos para editarlos? Los cambios de precio aplican a ventas nuevas.',
     () => {
       S.pl = false;
-      render(true);
+      renderNow(true);
     }
   );
 }
 
 function plLock() {
   S.pl = true;
-  render(true);
+  renderNow(true);
 }
 
 function removeFlavor(i) {
@@ -164,7 +164,7 @@ function removeFlavor(i) {
   ask('¿Quitar "' + S.ajFlavors[i] + '"? Se puede reabrir después. Las ventas anteriores se conservan.', () => {
     const name = S.ajFlavors.splice(i, 1)[0];
     if (name) S.ajDisabled.push(name);
-    render(true);
+    renderNow(true);
   });
 }
 
@@ -176,7 +176,7 @@ function reopenFlavor(i) {
     if (S.ajFlavors.includes(name)) return toast('Ya está activo');
     S.ajFlavors.push(name);
   }
-  render(true);
+  renderNow(true);
 }
 
 function addFlavor() {
@@ -188,7 +188,7 @@ function addFlavor() {
   if (S.ajFlavors.includes(n) || S.ajDisabled.includes(n)) return toast('Ese sabor ya existe');
   S.ajFlavors.push(n);
   if (inp) inp.value = '';
-  render(true);
+  renderNow(true);
 }
 
 function ajView() {
@@ -280,7 +280,7 @@ async function saveAj() {
     if (S.ajDisabled) S.ajDisabled = (S.ajDisabled || []).slice();
     toast('Ajustes guardados');
     S.pl = true;
-    render(true);
+    renderNow(true);
   } catch (e) {
     err(e);
   }

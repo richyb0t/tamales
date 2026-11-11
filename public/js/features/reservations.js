@@ -103,7 +103,7 @@ function nd() {
 function pdAdd(f, n) {
   const x = nd();
   x.items = { ...x.items, [f]: Math.max(0, Math.min(499, (x.items[f] || 0) + n)) };
-  render(true);
+  renderNow(true);
 }
 
 /* Cantidad escrita a mano: se guarda sin volver a dibujar la pantalla para no perder el foco ni el botón Guardar */
@@ -141,7 +141,7 @@ function pdLarge() {
     n.descTamal = '';
     n.descChamp = '';
   }
-  render(true);
+  renderNow(true);
 }
 
 function pdStep(s) {
@@ -177,7 +177,7 @@ function pdCalc() {
 
 function pdBr(i) {
   nd().branch = i;
-  render(true);
+  renderNow(true);
 }
 
 function pdDate(v) {
@@ -187,7 +187,7 @@ function pdDate(v) {
     return toast('Para hoy ya no se puede: el inventario de esa sucursal ya se hizo');
   nd().date = v;
   if (nd().large) S.apt = v == D ? 'h' : 'o';
-  render(true);
+  renderNow(true);
 }
 
 function preCard(p) {
@@ -545,7 +545,7 @@ async function savePre() {
         ? 'Apartado guardado para hoy'
         : 'Apartado guardado para ' + fdate(n.date)
     );
-    render(true);
+    renderNow(true);
   } catch (e) {
     delete lock.s.sp;
     err(e);
@@ -681,17 +681,17 @@ function apView() {
     ...(V ? [['s', 'Entre sucursales' + (pin() ? ' (' + pin() + ')' : '')]] : []),
   ];
   const bf = A
-    ? `<div class="seg" style="margin-bottom:8px"><button class="${S.apb == null ? 'on' : ''}" onclick="S.apb=null;render(true)">Todas</button>${brs()
+    ? `<div class="seg" style="margin-bottom:8px"><button class="${S.apb == null ? 'on' : ''}" onclick="S.apb=null;renderNow(true)">Todas</button>${brs()
         .map((n, i) =>
           !isOpen(i)
             ? ''
-            : `<button class="${S.apb === i ? 'on' : ''}" onclick="S.apb=${i};render(true)">${esc(n)}</button>`
+            : `<button class="${S.apb === i ? 'on' : ''}" onclick="S.apb=${i};renderNow(true)">${esc(n)}</button>`
         )
         .join('')}</div>`
     : '';
   return (
     bf +
-    `<div class="seg" style="margin-bottom:10px">${tabs.map(([k, n]) => `<button class="${t == k ? 'on' : ''}" onclick="S.apt='${k}';S.anew=false;if(S.me.role=='vend'){S.apt=='s'?stockOn():stockOff()}render(true)">${n}</button>`).join('')}</div>` +
+    `<div class="seg" style="margin-bottom:10px">${tabs.map(([k, n]) => `<button class="${t == k ? 'on' : ''}" onclick="S.apt='${k}';S.anew=false;if(S.me.role=='vend'){S.apt=='s'?stockOn():stockOff()}renderNow(true)">${n}</button>`).join('')}</div>` +
     (t == 'o' ? admBtn() + preLater(otro) + admFrm('o') : t == 's' && V ? reqView() : preToday(hoy) + (V ? dvToday() : ''))
   );
 }

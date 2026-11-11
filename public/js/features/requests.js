@@ -241,7 +241,7 @@ function reqView() {
 
 function rdTo(i) {
   S.rd = { ...S.rd, to: i, items: {} };
-  render(true);
+  renderNow(true);
 }
 
 function rdSet(to, f, v, el) {
@@ -270,7 +270,7 @@ function rdAdd(to, f, n) {
         : (((S.stock || {})[to] || {}).f || {})['f' + f] || 0,
     c = Math.max(0, Math.min(mx, ((S.rd.items || {})[f] || 0) + n));
   S.rd.items = { ...S.rd.items, [f]: c };
-  render(true);
+  renderNow(true);
 }
 
 async function sendReq(to) {
@@ -313,7 +313,7 @@ async function sendReq(to) {
     });
     S.rd = { items: {} };
     toast('Solicitud enviada a ' + brs()[to]);
-    render(true);
+    renderNow(true);
   } catch (e) {
     delete lock.s.sr;
     err(e);

@@ -30,7 +30,7 @@ const rpScope = () => {
 
 function rpSetRange(f, t) {
   S.rp = { ...rpKeep(), from: f, to: t, rows: null };
-  render(true);
+  renderNow(true);
 }
 
 function rpRange(n) {
@@ -67,7 +67,7 @@ function rpDate(k, v) {
     r.mm = null;
     r.ct = null;
   }
-  render(true);
+  renderNow(true);
 }
 
 /* ---- Caché de días cerrados ----
@@ -206,7 +206,7 @@ async function rpRun(force) {
     pt = dayAdd(f, -1);
   if (force === 1) rcClear('sales', keep.cmp ? pf : f, t);
   S.rp = { ...keep, from: f, to: t, rows: null, busy: true };
-  render(true);
+  renderNow(true);
   try {
     const a = await rcFetch('sales', 'sales', f, t, spk);
     let reads = a.reads,
@@ -232,5 +232,5 @@ async function rpRun(force) {
     S.rp = { ...keep, from: f, to: t, rows: null };
     err(e);
   }
-  render(true);
+  renderNow(true);
 }

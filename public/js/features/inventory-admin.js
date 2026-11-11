@@ -233,7 +233,7 @@ function vaciarCarga() {
         await bt.commit();
         if (S.dr) delete S.dr[b];
         toast('Carga reiniciada. Ya puedes cargar de nuevo');
-        render(true);
+        renderNow(true);
       } catch (e) {
         delete lock.s['rc' + b];
         err(e);

@@ -182,11 +182,11 @@ function resetIfNewDay() {
     try { stopClaims(); } catch (e) {}
     subClaims();
     try { startSubs(); } catch (e) {}
-    render(true);
+    renderNow(true);
   } else {
     try { stopClaims(); } catch (e) {}
     subClaims();
-    render(true);
+    renderNow(true);
   }
 }
 document.addEventListener('visibilitychange', () => {

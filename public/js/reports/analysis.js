@@ -57,7 +57,7 @@ async function rpMerma(force) {
   if (!r || !r.rows) return;
   if (force === 1) rcClear('loads', r.from, r.to);
   r.mm = { busy: true };
-  render(true);
+  renderNow(true);
   try {
     const x = await rcFetch('loads', 'loads', r.from, r.to, lpk);
     r.mm = { rows: x.rows, reads: x.reads };
@@ -65,7 +65,7 @@ async function rpMerma(force) {
     r.mm = null;
     err(e);
   }
-  render(true);
+  renderNow(true);
 }
 
 function rpMermaHtml(r) {
@@ -158,7 +158,7 @@ async function rpControl(force) {
     rcClear('logs', r.from, r.to);
   }
   r.ct = { busy: true };
-  render(true);
+  renderNow(true);
   try {
     const a = await rcFetch('cuts', 'cuts', r.from, r.to, cpk),
       b = await rcFetch('logs', 'logs', r.from, r.to, gpk);
@@ -167,7 +167,7 @@ async function rpControl(force) {
     r.ct = null;
     err(e);
   }
-  render(true);
+  renderNow(true);
 }
 
 function rpControlHtml(r) {

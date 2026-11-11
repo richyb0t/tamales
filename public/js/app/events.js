@@ -17,7 +17,7 @@ addEventListener('popstate', () => {
     S.lp = null;
     if (prList().filter(p => p.role == S.lr).length < 2) S.lr = null;
   } else S.lr = null;
-  render(true);
+  renderNow(true);
 });
 
 document.addEventListener('keydown', e => {

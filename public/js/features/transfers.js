@@ -57,7 +57,7 @@ function trForm(from, adm) {
     row = (k, name, sub, mx, stp, idn, val) =>
       `<div class="tpq${(+val || 0) > 0 ? ' on' : ''}"><div class="tpn">${name}<small>${sub}</small></div><div class="st"><button class="gh" aria-label="Menos" onclick="trStp('${k}',-${stp},${mx})">−</button><input type="number" min="0" max="${mx}" ${k == 'ch' ? 'step="0.25" inputmode="decimal"' : 'inputmode="numeric"'} id="${idn}" aria-label="${esc(name)}" value="${val}" oninput="trIn('${k}')"><button aria-label="Más" onclick="trStp('${k}',${stp},${mx})">+</button></div></div>`;
   return `<div class="card"><h3>Pasar tamales a otra sucursal</h3><small>Por ejemplo si cierran un puesto y pasan los sobrantes. Escribe cuántos pasas de cada sabor, o usa los botones.</small>
- <div class="tpr"><div>${adm ? `<select aria-label="De" onchange="S.tf=+this.value;render(true)">${bs.map((n, i) => (!isOpen(i) ? '' : `<option value="${i}" ${i == from ? 'selected' : ''}>De: ${esc(n)}</option>`)).join('')}</select>` : `<div class="tpf"><small>De</small><b>${esc(bs[from])}</b></div>`}</div><span class="tpa" aria-hidden="true">→</span><div><select aria-label="A" onchange="S.tt=+this.value;render(true)">${o.map(i => `<option value="${i}" ${i == to ? 'selected' : ''}>A: ${esc(bs[i])}</option>`).join('')}</select></div></div>
+ <div class="tpr"><div>${adm ? `<select aria-label="De" onchange="S.tf=+this.value;renderNow(true)">${bs.map((n, i) => (!isOpen(i) ? '' : `<option value="${i}" ${i == from ? 'selected' : ''}>De: ${esc(n)}</option>`)).join('')}</select>` : `<div class="tpf"><small>De</small><b>${esc(bs[from])}</b></div>`}</div><span class="tpa" aria-hidden="true">→</span><div><select aria-label="A" onchange="S.tt=+this.value;renderNow(true)">${o.map(i => `<option value="${i}" ${i == to ? 'selected' : ''}>A: ${esc(bs[i])}</option>`).join('')}</select></div></div>
  ${fl.length || cl > 0 ? `<div class="form"><button class="alt" onclick="trFill(${from},1)">Pasar todo</button><button class="gh" onclick="trFill(${from},0)">Poner todo en 0</button></div>` + fl.map(x => row('f' + x[1], x[0], 'quedan ' + x[2], x[2], 1, 'tq' + x[1], S.trd['f' + x[1]] ?? 0)).join('') + (cl > 0 ? row('ch', '☕ Champurrado', 'quedan ' + cl + ' L', cl, 0.25, 'tqch', S.trd.ch ?? 0) : '') + `<div class="tps" id="trs">${trTxt()}</div><div class="form"><button class="go" style="flex:1" onclick="doTr(${from},${to})">${to != null ? 'Pasar a ' + esc(bs[to]) : 'Pasar'}</button></div>` : '<small>No quedan tamales en esta sucursal.</small>'}</div>`;
 }
 
@@ -71,7 +71,7 @@ function trFill(from, all) {
     const c = chLeft(from);
     if (c > 0) S.trd.ch = c;
   }
-  render(true);
+  renderNow(true);
 }
 
 function doTr(from, to) {
@@ -106,7 +106,7 @@ function doTr(from, to) {
           .add({ day: D, from, to, q, n, by: S.me.user, ts: Date.now() });
         S.trd = {};
         toast('Traspaso hecho');
-        render(true);
+        renderNow(true);
       } catch (e) {
         err(e);
       }

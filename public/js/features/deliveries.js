@@ -611,7 +611,7 @@ function enableNotif() {
   Notification.requestPermission().then(p => {
     if (p == 'granted') toast('Notificaciones activadas');
     else toast('No se activaron las notificaciones');
-    render(true);
+    renderNow(true);
   });
 }
 

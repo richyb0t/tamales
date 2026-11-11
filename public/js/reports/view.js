@@ -129,22 +129,22 @@ function rpView() {
         ? `<small>Lecturas de Firebase: <b>${r.reads}</b>${r.reads ? '' : ' (todo salió de la memoria del dispositivo)'}.</small>`
         : '';
   /* Con resultados, el periodo se resume en una línea para que se vean primero los datos; «Cambiar» abre los controles */
-  return `<div class="card"><div class="ivh"><h3>Reportes de ventas</h3>${open ? '' : '<button class="gh" onclick="S.rp.fo=1;render(true)">Cambiar</button>'}</div>
+  return `<div class="card"><div class="ivh"><h3>Reportes de ventas</h3>${open ? '' : '<button class="gh" onclick="S.rp.fo=1;renderNow(true)">Cambiar</button>'}</div>
  ${
    open
      ? `<small>Elige el periodo y toca Consultar. Los días ya cerrados se leen de Firebase una sola vez y se guardan en este dispositivo; repetir la consulta casi no gasta.</small>
  <div class="pkh" style="margin-top:12px"><span>Periodo</span></div>
  <div class="seg wr" style="margin:0 0 8px">${pz.map(([l, f, a, z]) => chip(r.from == a && r.to == z, f, l)).join('')}</div>
  <div class="rpd"><label><small>Desde</small><input type="date" id="rpf" aria-label="Desde" value="${r.from}" max="${D}" onchange="rpDate('from',this.value)"></label><label><small>Hasta</small><input type="date" id="rpt" aria-label="Hasta" value="${r.to}" max="${D}" onchange="rpDate('to',this.value)"></label></div>
- <label class="opt"><input type="checkbox" ${r.cmp ? 'checked' : ''} onchange="S.rp.cmp=this.checked;render(true)"> Comparar con el periodo anterior</label>
- <label class="opt"><input type="checkbox" ${r.gr !== false ? 'checked' : ''} onchange="S.rp.gr=this.checked;render(true)"> Mostrar gráficas aquí</label>
+ <label class="opt"><input type="checkbox" ${r.cmp ? 'checked' : ''} onchange="S.rp.cmp=this.checked;renderNow(true)"> Comparar con el periodo anterior</label>
+ <label class="opt"><input type="checkbox" ${r.gr !== false ? 'checked' : ''} onchange="S.rp.gr=this.checked;renderNow(true)"> Mostrar gráficas aquí</label>
  ${r.rows && r.cmp && !r.prev ? '<small class="low">Toca Consultar para traer el periodo anterior.</small>' : ''}
  <div class="form"><button class="go" style="flex:1" onclick="rpRun()">Consultar</button>${r.rows ? '<button class="gh" aria-label="Volver a leer desde Firebase" onclick="rpRun(1)">↻</button>' : ''}</div>${rd}`
      : `<div class="rps"><span>📅 <b>${per}</b></span><button class="gh" aria-label="Volver a leer desde Firebase" onclick="rpRun(1)">↻ Actualizar</button></div>${rd}`
  }</div>
  <div class="card" style="padding:10px 12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><small style="font-weight:700;opacity:.8">Filtrar resultados</small><small style="opacity:.5;font-size:11px">Solo lo ya consultado</small></div>
- <small style="display:block;font-weight:600;margin:10px 0 4px;opacity:.7">Sucursal</small><div class="seg wr" style="margin:0 0 4px">${chip(r.br == null, 'S.rp.br=null;render(true)', 'Todas')}${brs()
-   .map((n, i) => (!isOpen(i) ? '' : chip(r.br === i, `S.rp.br=${i};render(true)`, esc(n))))
+ <small style="display:block;font-weight:600;margin:10px 0 4px;opacity:.7">Sucursal</small><div class="seg wr" style="margin:0 0 4px">${chip(r.br == null, 'S.rp.br=null;renderNow(true)', 'Todas')}${brs()
+   .map((n, i) => (!isOpen(i) ? '' : chip(r.br === i, `S.rp.br=${i};renderNow(true)`, esc(n))))
    .join('')}</div>
  <small style="display:block;font-weight:600;margin:10px 0 4px;opacity:.7">Categoría</small><div class="seg wr" style="margin:0">${[
    ['t', 'Todo'],
@@ -152,13 +152,13 @@ function rpView() {
    ['d', 'Dulces'],
    ['b', 'Bebidas'],
  ]
-   .map(([k, l]) => chip((r.cat || 't') == k, `S.rp.cat='${k}';render(true)`, l))
+   .map(([k, l]) => chip((r.cat || 't') == k, `S.rp.cat='${k}';renderNow(true)`, l))
    .join('')}</div>
   <small style="display:block;font-weight:600;margin:10px 0 4px;opacity:.7">Tipo de venta</small><div class="seg wr" style="margin:0">${[
     ['t', 'Todo'],
     ['mostrador', 'Mostrador'],
     ['dv', 'A domicilio'],
   ]
-    .map(([k, l]) => chip((r.dv || 't') == k, `S.rp.dv='${k}';render(true)`, l))
+    .map(([k, l]) => chip((r.dv || 't') == k, `S.rp.dv='${k}';renderNow(true)`, l))
     .join('')}</div></div>${body}`;
 }

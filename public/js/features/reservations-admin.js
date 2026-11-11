@@ -221,10 +221,10 @@ function largeSoonCard() {
   if (S.lgHide) {
     const next = soon[0];
     const when = minD == 0 ? 'Hoy' : minD == 1 ? 'Mañana' : 'En ' + minD + ' días';
-    return `<div class="card alb" style="border:2px solid ${col}"><span>📦 ${soon.length} pedido${soon.length > 1 ? 's' : ''} grande${soon.length > 1 ? 's' : ''} próximo${soon.length > 1 ? 's' : ''} · ${esc(fdate(next.date))} (${when})</span><button class="gh" onclick="S.lgHide=false;render(true)">Mostrar</button></div>`;
+    return `<div class="card alb" style="border:2px solid ${col}"><span>📦 ${soon.length} pedido${soon.length > 1 ? 's' : ''} grande${soon.length > 1 ? 's' : ''} próximo${soon.length > 1 ? 's' : ''} · ${esc(fdate(next.date))} (${when})</span><button class="gh" onclick="S.lgHide=false;renderNow(true)">Mostrar</button></div>`;
   }
   return (
-    `<div class="card" style="border:2px solid ${col}"><div class="alr"><h3 style="margin:0">📦 Pedidos grandes próximos</h3><button class="gh" onclick="S.lgHide=true;render(true)">Ocultar</button></div><small>En los próximos 4 días</small>` +
+    `<div class="card" style="border:2px solid ${col}"><div class="alr"><h3 style="margin:0">📦 Pedidos grandes próximos</h3><button class="gh" onclick="S.lgHide=true;renderNow(true)">Ocultar</button></div><small>En los próximos 4 días</small>` +
     soon
       .map(p => {
         const d = dayDiff(D, p.date);

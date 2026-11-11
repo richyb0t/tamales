@@ -67,7 +67,7 @@ function loginView() {
     return (
       loginForm() +
       (l.length
-        ? '<div class="who"><button class="gh" onclick="S.lm=false;render(true)">← Volver a los perfiles</button></div>'
+        ? '<div class="who"><button class="gh" onclick="S.lm=false;renderNow(true)">← Volver a los perfiles</button></div>'
         : '')
     );
   const LOGO = '<div style="font-size:42px">🫔</div>',

@@ -66,7 +66,7 @@ function setCday(v) {
   S.csales = null;
   subCuts();
   subCSales();
-  render(true);
+  renderNow(true);
 }
 
 function anCorte(id) {

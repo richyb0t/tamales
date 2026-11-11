@@ -41,11 +41,11 @@ function onUser(u) {
     FB.initExists()
       .then(x => {
         S.setup = !x;
-        render(true);
+        renderNow(true);
       })
       .catch(() => {
         S.setup = false;
-        render(true);
+        renderNow(true);
       });
     return;
   }
@@ -67,7 +67,7 @@ function onUser(u) {
       } catch (e) {}
       startSubs();
     }
-    render(true);
+    renderNow(true);
   }, err);
 }
 

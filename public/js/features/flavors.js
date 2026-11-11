@@ -55,7 +55,7 @@ function fsq(v) {
 
 function seg() {
   const o = S.so || S.q;
-  return `<div class="sw"><div class="seg">${[['t', 'Todos'], ['s', 'Salados'], ['d', 'Dulces'], ...(S.me && S.me.role == 'vend' ? [['b', 'Bebidas']] : [])].map(([k, l]) => `<button class="${(S.cat || 't') == k ? 'on' : ''}" onclick="S.cat='${k}';render(true)">${l}</button>`).join('')}</div><button class="lupa ${o ? 'on' : ''}" aria-label="Buscar" onclick="fso()">🔍</button></div>`;
+  return `<div class="sw"><div class="seg">${[['t', 'Todos'], ['s', 'Salados'], ['d', 'Dulces'], ...(S.me && S.me.role == 'vend' ? [['b', 'Bebidas']] : [])].map(([k, l]) => `<button class="${(S.cat || 't') == k ? 'on' : ''}" onclick="S.cat='${k}';renderNow(true)">${l}</button>`).join('')}</div><button class="lupa ${o ? 'on' : ''}" aria-label="Buscar" onclick="fso()">🔍</button></div>`;
 }
 
 function srch() {

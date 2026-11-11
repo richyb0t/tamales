@@ -15,7 +15,7 @@ function cadd(f, n) {
   }
   if (c) S.cart[f] = c;
   else delete S.cart[f];
-  render(true);
+  renderNow(true);
 }
 
 const ctot = () => Object.entries(S.cart).reduce((a, [f, q]) => a + q * price(+f), 0);
@@ -39,7 +39,7 @@ async function order(t, p) {
   order.b = 1;
   S.cart = {};
   S.cd = false;
-  render(true);
+  renderNow(true);
   try {
     const bt = db.batch();
     e.forEach(([f, q], i) =>
@@ -67,7 +67,7 @@ async function order(t, p) {
     );
   } catch (x) {
     S.cart = cart;
-    render(true);
+    renderNow(true);
     err(x);
   } finally {
     order.b = 0;
@@ -207,7 +207,7 @@ function cartBar() {
     ]
       .filter(Boolean)
       .join(' + ');
-  return `<div class="cart"><div class="ct">${S.cd ? `<div class="cd">${e.map(([f, q]) => `<div class="row"><div>${q}× ${nm(f)}</div><b style="font-size:16px">${money(q * price(+f))}</b></div>`).join('')}</div>` : ''}<div class="ci" onclick="S.cd=!S.cd;render(true)"><small>${lbl} · ${S.cd ? 'ocultar' : 'ver pedido'}</small><b>${money(ctot())}</b></div><button class="gh" aria-label="Vaciar pedido" onclick="S.cart={};S.cd=false;render(true)">✕</button><button class="alt" onclick="order('apartado')">Apartar</button><button class="go" onclick="pay()">Cobrar</button></div></div>`;
+  return `<div class="cart"><div class="ct">${S.cd ? `<div class="cd">${e.map(([f, q]) => `<div class="row"><div>${q}× ${nm(f)}</div><b style="font-size:16px">${money(q * price(+f))}</b></div>`).join('')}</div>` : ''}<div class="ci" onclick="S.cd=!S.cd;renderNow(true)"><small>${lbl} · ${S.cd ? 'ocultar' : 'ver pedido'}</small><b>${money(ctot())}</b></div><button class="gh" aria-label="Vaciar pedido" onclick="S.cart={};S.cd=false;renderNow(true)">✕</button><button class="alt" onclick="order('apartado')">Apartar</button><button class="go" onclick="pay()">Cobrar</button></div></div>`;
 }
 
 function precioBanner(b) {
