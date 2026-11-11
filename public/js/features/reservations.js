@@ -47,8 +47,8 @@ const preChamp = items => {
 
 const champNote = c =>
   c.qty
-    ? `Champurrado: ${c.liters} L · ${c.perL ? money(c.perL) + ' por litro · subtotal ' + money(c.total) : 'precio normal'}`
-    : 'Champurrado al mayoreo: 5 L = $45 por litro · 10 L = $35 por litro.';
+    ? `Champurrado: ${c.liters} L · ${c.perL ? money(c.perL) + '/L · ' + money(c.total) : 'precio normal'}`
+    : 'Champurrado al mayoreo: 5 L = $45/L · 10 L = $35/L.';
 
 const preSum = l => {
   const items = [];
@@ -237,13 +237,14 @@ function apForm(hoy) {
       ? `<small>Paso ${step} de 4 · ${steps[step - 1]}</small><div style="display:flex;gap:4px;margin:6px 0 10px">${steps.map((s, i) => `<div style="flex:1;height:4px;border-radius:2px;background:${i + 1 <= step ? 'var(--ac)' : 'var(--bd)'}"></div>`).join('')}</div>`
       : '<small>Elige para qué día. El administrador lo ve antes de preparar el inventario de ese día.</small>'
   }
- ${V ? '' : large ? `<small style="display:block;margin-top:8px">📦 Pedido grande · <b>sin sucursal</b></small>` : fb ? `<small style="display:block;margin-top:8px">Sucursal: <b>${esc(brs()[n.branch])}</b></small>` : `<small style="display:block;margin-top:8px">¿Para qué sucursal?</small>` + bchips(n.branch, 'pdBr')}
-  ${canLarge ? `<div class="form" style="margin:8px 0"><button class="${large ? 'go' : 'alt'}" style="flex:1" onclick="pdLarge()">${large ? '📦 Pedido grande: SÍ' : '📦 Convertir en pedido grande'}</button></div>` : ''}`;
+ ${V || large ? '' : fb ? `<small style="display:block;margin-top:8px">Sucursal: <b>${esc(brs()[n.branch])}</b></small>` : `<small style="display:block;margin-top:8px">¿Para qué sucursal?</small>` + bchips(n.branch, 'pdBr')}
+  ${canLarge && (!large || step === 1) ? `<div class="form" style="margin:${large ? '4px 0 0' : '8px 0'}"><button class="${large ? 'gh' : 'alt'}" style="flex:1" onclick="pdLarge()">${large ? 'Cambiar a apartado de sucursal' : '📦 Convertir en pedido grande'}</button></div>` : ''}`;
 
-  const dateBox =
-    hoy && !large
+  const dateBox = large
+    ? `<small style="display:block;margin-top:8px;font-weight:700">Fecha de entrega</small><div class="form" style="margin-top:4px"><input type="date" id="pdd" aria-label="Fecha de entrega" min="${D}" value="${n.date}" onchange="pdDate(this.value)" style="flex:1"></div>`
+    : hoy
       ? `<small style="display:block;margin-top:8px">Fecha</small><small style="display:block"><b>Hoy · ${esc(fdate(D))}</b></small>${!V && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : ''}`
-      : `<small style="display:block;margin-top:8px">Fecha</small>${cl ? (encBlk(n.branch) ? `<small class="low" style="display:block">La carga de hoy ya está guardada: ya no se puede apartar para hoy en ${esc(brs()[n.branch])}.</small>` : '') : !V && !large && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado de hoy se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : large ? `<small style="display:block">Elige la fecha de entrega.</small>` : `<small style="display:block">Para hoy solo se puede antes de hacer el inventario.</small>`}<div class="seg" style="margin:4px 0">${[0, 1, 2]
+      : `<small style="display:block;margin-top:8px">Fecha</small>${cl ? (encBlk(n.branch) ? `<small class="low" style="display:block">La carga de hoy ya está guardada: ya no se puede apartar para hoy en ${esc(brs()[n.branch])}.</small>` : '') : !V && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado de hoy se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : `<small style="display:block">Para hoy solo se puede antes de hacer el inventario.</small>`}<div class="seg" style="margin:4px 0">${[0, 1, 2]
           .filter(k => !(k == 0 && cl))
           .map(k => `<button class="${n.date == tmr(k) ? 'on' : ''}" onclick="pdDate('${tmr(k)}')">${k == 0 ? 'Hoy' : k == 1 ? 'Mañana' : 'Pasado mañana'}</button>`)
           .join('')}</div>
@@ -251,7 +252,7 @@ function apForm(hoy) {
 
   const prodBox = `${F.map((nm, f) => `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>${esc(nm)}</b><small>${money(price(f))}</small></div><div class="st"><button class="gh" onclick="pdAdd(${f},-1)">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de ${esc(nm)}" oninput="pdSet(${f},this.value,this)" onchange="this.value=nd().items[${f}]||0"><button onclick="pdAdd(${f},1)" aria-label="Más">+</button></div></div>`).join('')}
   <small style="display:block;margin:8px 0 6px">Champurrado</small>
-  ${large ? '<small style="display:block;margin:0 0 6px;opacity:.8">Mayoreo: captura los litros en “Grande 1 l”.</small>' : ''}
+  ${large ? '<small style="display:block;margin:0 0 6px;opacity:.8">Mayoreo: 5 L = $45/L · 10 L = $35/L (usa “Grande 1 l”).</small>' : ''}
   ${CH.map((cc, i) => { const f = 100 + i; return price(f) ? `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>Champurrado ${esc(cc[0])}</b><small>${esc(cc[1])} · ${money(price(f))}</small></div><div class="st"><button class="gh" onclick="pdAdd(${f},-1)">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de champurrado ${esc(cc[0])}" oninput="pdSet(${f},this.value,this)" onchange="this.value=nd().items[${f}]||0"><button onclick="pdAdd(${f},1)" aria-label="Más">+</button></div></div>` : ''; }).join('')}`;
 
   let body = '';
@@ -263,12 +264,30 @@ function apForm(hoy) {
   <div class="form"><input placeholder="Nota" value="${esc(n.note)}" oninput="nd().note=this.value" style="flex:1"></div>`;
   } else if (step === 1) {
     body = `
-  <div class="form"><input id="pdn" placeholder="Cliente" value="${esc(n.name)}" oninput="nd().name=this.value" style="flex:1"><input placeholder="Teléfono" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1"></div>
-  <div class="form"><input id="pdaddr" placeholder="Dirección (opcional)" value="${esc(n.addr)}" oninput="nd().addr=this.value" style="flex:1 1 100%"></div>
-  <small style="display:block;margin-top:4px;opacity:.75">Si van a recoger, deja la dirección vacía.</small>
-  <small style="display:block;margin-top:8px">Hora de entrega (opcional)</small>
-  <div class="form"><input type="time" id="pdtime" aria-label="Hora de entrega (opcional)" value="${esc(n.time)}" oninput="nd().time=this.value" style="flex:1"></div>
-  <div class="form"><input placeholder="Nota" value="${esc(n.note)}" oninput="nd().note=this.value" style="flex:1"></div>`;
+  <div style="margin-top:4px">
+   <small style="display:block;font-weight:700;color:var(--fg);margin-bottom:4px">Cliente</small>
+   <div class="form" style="margin:0">
+    <input id="pdn" placeholder="Nombre" value="${esc(n.name)}" oninput="nd().name=this.value" style="flex:1 1 0;min-width:0">
+    <input placeholder="Teléfono" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1 1 0;min-width:0">
+   </div>
+  </div>
+  <div style="margin-top:14px">
+   <small style="display:block;font-weight:700;color:var(--fg);margin-bottom:4px">Entrega</small>
+   <div class="form" style="margin:0">
+    <input id="pdaddr" placeholder="Dirección (opcional)" value="${esc(n.addr)}" oninput="nd().addr=this.value" style="flex:1 1 100%">
+   </div>
+   <small style="display:block;margin-top:4px;opacity:.7">Déjala vacía si van a recoger.</small>
+   <div class="form" style="margin:8px 0 0;align-items:flex-end">
+    <div style="flex:0 0 128px;min-width:0">
+     <small style="display:block;margin-bottom:4px;opacity:.75">Hora</small>
+     <input type="time" id="pdtime" aria-label="Hora de entrega (opcional)" value="${esc(n.time)}" oninput="nd().time=this.value" style="width:100%">
+    </div>
+    <div style="flex:1 1 0;min-width:0">
+     <small style="display:block;margin-bottom:4px;opacity:.75">Nota</small>
+     <input placeholder="Opcional" value="${esc(n.note)}" oninput="nd().note=this.value" style="width:100%">
+    </div>
+   </div>
+  </div>`;
   } else if (step === 2) {
     body = `
   ${prodBox}
@@ -276,8 +295,7 @@ function apForm(hoy) {
   } else if (step === 3) {
     body = `
   <div class="form"><input type="number" step="0.5" min="0" placeholder="Desc. tamal $" aria-label="Descuento por tamal" value="${esc(n.descTamal)}" oninput="nd().descTamal=this.value;pdCalc()" style="flex:1"><input type="number" step="0.5" min="0" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="nd().fee=this.value;pdCalc()" style="flex:1"></div>
-  <small style="display:block;margin-top:6px;opacity:.75">El champurrado al mayoreo se aplica solo: 5 L = $45 por litro · 10 L = $35 por litro.</small>
-  <small id="pdc" style="display:block;margin-top:6px;opacity:.85">${champNote(ch)}</small>
+  ${ch.qty ? `<small id="pdc" style="display:block;margin-top:6px;opacity:.85">${champNote(ch)}</small>` : ''}
   <div style="margin-top:10px;padding:10px;border-radius:12px;background:var(--fill)">
    <div style="display:flex;justify-content:space-between"><small>Productos</small><small id="pds">${money(base)}</small></div>
    <div style="display:flex;justify-content:space-between"><small>Descuento</small><small id="pdd2">−${money(descT + ch.disc)}</small></div>
@@ -296,7 +314,6 @@ function apForm(hoy) {
    <small style="display:block"><b>${esc(n.name || 'Sin cliente')}</b>${n.phone ? ' · ' + esc(n.phone) : ''}</small>
    <small style="display:block;margin-top:2px">${n.addr.trim() ? '📍 ' + esc(n.addr) : '🏪 Recoge en el local'}${n.time ? ' · 🕒 ' + ftime(n.time) : ''}</small>
    <small style="display:block;margin-top:6px">${esc(txt || 'Sin productos')}</small>
-   ${ch.qty ? `<small style="display:block;margin-top:4px;opacity:.85">${esc(champNote(ch))}</small>` : ''}
    <div style="display:flex;justify-content:space-between;margin-top:8px"><b>Productos</b><b>${money(totalP)}</b></div>
    ${fee ? `<div style="display:flex;justify-content:space-between"><small>Envío</small><small>${money(fee)}</small></div><div style="display:flex;justify-content:space-between"><b>Total</b><b>${money(totalP + fee)}</b></div>` : ''}
   </div>`;
