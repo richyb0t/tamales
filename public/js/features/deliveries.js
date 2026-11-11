@@ -219,7 +219,40 @@ function dvForm() {
 }
 
 function dvStep(s) {
-  dvn().step = s;
+  const n = dvn();
+  if (s === 4 && n.step === 3) {
+    const items = Object.entries(n.items || {}).filter(([_, v]) => +v > 0);
+    if (items.length) {
+      const b = n.branch;
+      const ok = items.every(([k, v]) => left(b, +k.slice(1)) >= +v);
+      if (!ok) {
+        let cand = BI().filter(i => items.every(([k, v]) => left(i, +k.slice(1)) >= +v));
+        if (!cand.length) {
+          toast('Ninguna sucursal tiene suficiente stock para este reparto');
+          return;
+        }
+        const lat = +n.lat,
+          lng = +n.lng;
+        if (lat && lng) {
+          const ranked = cand
+            .map(i => {
+              const l = (S.cfg.branchLocs || [])[i];
+              const d = l ? distKm({ lat, lng }, l) : null;
+              return { i, d };
+            })
+            .filter(x => x.d != null)
+            .sort((a, b) => a.d - b.d);
+          if (ranked.length) cand = [ranked[0].i];
+        }
+        const nb = cand[0];
+        if (nb !== b) {
+          n.branch = nb;
+          toast('La sucursal seleccionada no tiene suficiente. Se cambió a ' + brs()[nb]);
+        }
+      }
+    }
+  }
+  n.step = Math.min(4, Math.max(1, +s || 1));
   renderNow(true);
   requestAnimationFrame(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
