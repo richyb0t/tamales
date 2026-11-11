@@ -106,8 +106,7 @@ const dvResv = (b, f) =>
 
 const left = (b, f) => {
   if (f >= 100) {
-    const dvCh = dvResv(b, f) * CL[f - 100];
-    return Math.max(0, Math.floor((chLeft(b) - dvCh + 1e-9) / CL[f - 100]));
+    return Math.max(0, Math.floor((chLeft(b) + 1e-9) / CL[f - 100]));
   }
   return Math.max(0, load(b, f) - used(b, f) + tx(b, f, 'to') - tx(b, f, 'from') - resv(b, f) - dvResv(b, f));
 };

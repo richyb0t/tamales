@@ -57,6 +57,12 @@ async function deleteBrForever(i) {
     return toast('Hay un vendedor en esa sucursal hoy: libérala primero (en Usuarios)');
   if (F.some((_, f) => left(i, f) > 0) || chLeft(i) > 0)
     return toast('Aún tiene tamales o champurrado hoy: pásalos a otra sucursal en Traspasos');
+  try {
+    const qs = await db.collection('sales').where('branch', '==', i).limit(1).get();
+    if (!qs.empty) return toast('Esta sucursal tiene ventas registradas: no se puede eliminar definitivamente');
+  } catch (e) {
+    return toast('No se pudo verificar el historial de la sucursal');
+  }
   ask(
     '¿Eliminar definitivamente "' +
       brs()[i] +
