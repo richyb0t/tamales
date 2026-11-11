@@ -732,3 +732,5 @@ async function initFcm() {
     console.warn('FCM init', e);
   }
 }
+const dvOpenN = () => (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
+
