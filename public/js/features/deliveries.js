@@ -356,7 +356,10 @@ const dvCancel = id =>
   ask('¿Cancelar y eliminar este reparto?', async () => {
     try {
       const d = (S.dv || []).find(x => x._id == id);
-      if (d && d.large && d.preId) {
+      /* S.pre solo trae apartados pendientes. Si el apartado ya se rechazó o canceló,
+         las reglas no dejan tocarlo: se borra solo el reparto. */
+      const preOpen = !!(d && d.large && d.preId && (S.pre || []).some(x => x._id == d.preId));
+      if (preOpen) {
         const bt = db.batch();
         bt.delete('deliveries/' + id);
         bt.update('pre/' + d.preId, { status: 'cancelado', doneAt: Date.now(), doneBy: S.me.user, dvId: null });

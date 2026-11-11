@@ -193,9 +193,16 @@ function admRejectPre(id) {
     m.style.display = 'none';
     if (!S.pre.find(x => x._id == id)) return toast('Este apartado ya no está pendiente');
     try {
-      await db
-        .doc('pre/' + id)
-        .update({ status: 'rechazado', reason: r, doneAt: Date.now(), doneBy: S.me.user });
+      /* Al rechazar, el reparto pendiente ligado se elimina para que no quede huérfano */
+      const dv = p.dvId
+        ? (S.dv || []).find(x => x._id == p.dvId)
+        : (S.dv || []).find(x => x.preId == id);
+      const dvId = p.dvId || (dv && dv._id) || null;
+      if (dv && dv.status != 'pendiente') return toast('El reparto ya no está pendiente');
+      const bt = db.batch();
+      bt.update('pre/' + id, { status: 'rechazado', reason: r, doneAt: Date.now(), doneBy: S.me.user });
+      if (dvId) bt.delete('deliveries/' + dvId);
+      await bt.commit();
       toast('Apartado rechazado');
       logEv({
         branch: p.branch,

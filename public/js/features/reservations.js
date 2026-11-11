@@ -559,11 +559,15 @@ function cancelPre(id) {
     '¿Cancelar el apartado de ' + p.client + '? Los tamales vuelven a quedar disponibles.',
     async () => {
       try {
-        const dv = p.dvId ? (S.dv || []).find(x => x._id == p.dvId) : null;
+        /* Si el apartado no guardó dvId (le pasa a Pedidos), se busca el reparto por preId */
+        const dv = p.dvId
+          ? (S.dv || []).find(x => x._id == p.dvId)
+          : (S.dv || []).find(x => x.preId == id);
+        const dvId = p.dvId || (dv && dv._id) || null;
         if (dv && dv.status != 'pendiente') return toast('El reparto ya no está pendiente');
         const bt = db.batch();
         bt.update('pre/' + id, { status: 'cancelado', doneAt: Date.now(), doneBy: S.me.user });
-        if (p.dvId) bt.delete('deliveries/' + p.dvId);
+        if (dvId) bt.delete('deliveries/' + dvId);
         await bt.commit();
         toast('Apartado cancelado');
         logEv({
