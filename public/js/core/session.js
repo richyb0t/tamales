@@ -29,6 +29,10 @@ function onUser(u) {
   S.alHide = true;
   if (u) vRest = false;
   restoreView(u);
+  if (u) {
+    S.alHide = true;
+    S.lgHide = true;
+  }
   if (!u) {
     S.lp = null;
     S.lr = null;

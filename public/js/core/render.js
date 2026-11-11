@@ -5,6 +5,7 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
 let rT = 0,
   rForce = false,
+  rLastForce = 0,
   vk = '';
 
 /* Clave de la pantalla visible: al cambiar de pantalla se vuelve hasta arriba. */
@@ -18,6 +19,12 @@ function viewKey() {
 }
 
 function render(force) {
+  if (force) rLastForce = Date.now();
+  if (!force && rLastForce && Date.now() - rLastForce < 250) {
+    clearTimeout(rT);
+    rT = setTimeout(() => render(false), 260);
+    return;
+  }
   if (force) rForce = true;
   clearTimeout(rT);
   // Agrupa llamadas síncronas/consecutivas en un solo pintado para evitar parpadeo
