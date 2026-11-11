@@ -26,26 +26,20 @@ function alertCard() {
   if (H && S.alHide) {
     const o = l.filter(x => x.o).length,
       w = l.length - o;
-    const names = l
-      .slice(0, 6)
-      .map(x => esc(x.n) + (x.o ? ' 🚫' : ''))
-      .join(', ') + (l.length > 6 ? '…' : '');
-    return `<div class="card alb" style="border:2px solid ${o ? 'var(--bad)' : 'var(--low)'}"><div><span>${[o ? '🚫 ' + o + (o == 1 ? ' agotado' : ' agotados') : '', w ? '⚠️ ' + w + ' por agotarse' : ''].filter(Boolean).join(' · ')}</span><br><small>${names}</small></div><button class="gh" onclick="S.alHide=false;render(true)">Mostrar</button></div>`;
+    return `<div class="card alb" style="border:2px solid ${o ? 'var(--bad)' : 'var(--low)'}"><span>${[o ? '🚫 ' + o + (o == 1 ? ' agotado' : ' agotados') : '', w ? '⚠️ ' + w + ' por agotarse' : ''].filter(Boolean).join(' · ')}</span><button class="gh" onclick="S.alHide=false;render(true)">Mostrar</button></div>`;
   }
-  const sec = (arr, title, col, fmt) => {
+  const sec = (arr, title, col) => {
     if (!arr.length) return '';
-    const g = {};
-    arr.forEach(x => (g[x.b] = g[x.b] || []).push(x));
-    return `<div style="margin-top:12px"><b style="color:${col}">${title}</b>${Object.keys(g)
+    return `<div style="margin-top:12px"><b style="color:${col}">${title}</b>${arr
       .map(
-        b =>
-          `<div class="row"><div><b>${esc(brs()[b])}</b><br><small>${g[b].map(fmt).join(' · ')}</small></div></div>`
+        x =>
+          `<div class="row"><div><b>${esc(x.n)}</b><br><small>${esc(brs()[x.b])}${x.o ? '' : ' · ' + x.l + (x.L ? ' L' : '')}</small></div></div>`
       )
       .join('')}</div>`;
   };
   const out = l.filter(x => x.o),
     low = l.filter(x => !x.o);
-  return `<div class="card" style="border:2px solid ${out.length ? 'var(--bad)' : 'var(--low)'}"><div class="alr"><h3 style="margin:0">Existencias</h3>${H ? '<button class="gh" onclick="S.alHide=true;render(true)">Ocultar</button>' : ''}</div>${sec(out, '🚫 Agotados', 'var(--bad)', x => esc(x.n))}${sec(low, '⚠️ Por agotarse', 'var(--low)', x => esc(x.n) + ' (' + x.l + (x.L ? ' L' : '') + ')')}<small>Se avisa cuando quedan ${lowT()} o menos por sabor (${lowL()} L de champurrado).</small></div>`;
+  return `<div class="card" style="border:2px solid ${out.length ? 'var(--bad)' : 'var(--low)'}"><div class="alr"><h3 style="margin:0">Existencias</h3>${H ? '<button class="gh" onclick="S.alHide=true;render(true)">Ocultar</button>' : ''}</div>${sec(out, '🚫 Agotados', 'var(--bad)')}${sec(low, '⚠️ Por agotarse', 'var(--low)')}<small>Se avisa cuando quedan ${lowT()} o menos por sabor (${lowL()} L de champurrado).</small></div>`;
 }
 
 function chkAlerts() {
