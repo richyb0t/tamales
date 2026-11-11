@@ -31,10 +31,11 @@ import {
   runTransaction,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import {
-  getFunctions,
-  httpsCallable,
-} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js';
-const cfg = {
+  getMessaging,
+  getToken,
+  onMessage,
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js';
+window.VAPID_PUBLIC_KEY = 'REEMPLAZA_CON_TU_VAPID_PUBLIC_KEY_DE_FIREBASE';
   apiKey: 'AIzaSyCipjbj_Sy2t5hZYR6a-ctGzP8tUodmpz0',
   authDomain: 'tamalescastro-ca1bf.firebaseapp.com',
   projectId: 'tamalescastro-ca1bf',
@@ -43,7 +44,8 @@ const cfg = {
   appId: '1:122126152237:web:1e5d68e0ee2793aa42fea4',
 };
 const app = initializeApp(cfg),
-  auth = getAuth(app);
+  auth = getAuth(app),
+  messaging = getMessaging(app);
 const fs = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 });
@@ -145,7 +147,9 @@ window.FB = {
     await setDoc(doc(fs, 'profiles/' + u.uid), { user: nu }, { merge: true });
     return nu;
   },
-  logout: () => signOut(auth),
+  messaging,
+  getToken: (swReg) => getToken(messaging, { vapidKey: window.VAPID_PUBLIC_KEY || '', serviceWorkerRegistration: swReg }),
+  onMessage: (cb) => onMessage(messaging, cb),
   onAuth: f => onAuthStateChanged(auth, f),
   initExists: async () => (await getDoc(doc(fs, 'config/init'))).exists(),
   async bootstrap(e, p, prof) {

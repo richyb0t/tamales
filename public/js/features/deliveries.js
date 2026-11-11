@@ -706,3 +706,29 @@ function initMinimaps() {
     }
   });
 }
+
+
+async function initFcm() {
+  if (!('Notification' in window) || !window.FB || !FB.messaging) return;
+  if (Notification.permission !== 'granted') return;
+  if (!window.VAPID_PUBLIC_KEY) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const token = await FB.getToken(reg);
+    if (token && S.me && S.me.id) {
+      await db.doc('users/' + S.me.id).update({ fcmToken: token });
+    }
+    FB.onMessage((payload) => {
+      const title = (payload.notification && payload.notification.title) || 'Nuevo reparto';
+      const body = (payload.notification && payload.notification.body) || '';
+      try {
+        new Notification(title, { body });
+      } catch (_) {}
+      try {
+        toast(title + (body ? ' · ' + body : ''));
+      } catch (_) {}
+    });
+  } catch (e) {
+    console.warn('FCM init', e);
+  }
+}

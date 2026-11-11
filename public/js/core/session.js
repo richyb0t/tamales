@@ -113,6 +113,7 @@ function startSubs() {
   if (m.role != 'vend' || rd) subDv();
   if (m.role == 'rep') {
     render();
+    if (typeof initFcm === 'function') initFcm();
     return;
   } /* el repartidor solo necesita configuración y repartos */
   if (!rd) {
