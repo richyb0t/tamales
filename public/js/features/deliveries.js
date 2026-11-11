@@ -594,6 +594,9 @@ function notifyNewDv() {
         tag: d._id,
       });
     } catch (_) {}
+    try {
+      toast('Nuevo reparto: ' + (d.client || 'Cliente'));
+    } catch (_) {}
   });
   try {
     localStorage.setItem('tm_seen_dv', JSON.stringify([...seenDv]));
