@@ -186,6 +186,7 @@ function pdDate(v) {
   if (v == D && !nd().large && encBlk(nd().branch))
     return toast('Para hoy ya no se puede: el inventario de esa sucursal ya se hizo');
   nd().date = v;
+  if (nd().large) S.apt = v == D ? 'h' : 'o';
   render(true);
 }
 
