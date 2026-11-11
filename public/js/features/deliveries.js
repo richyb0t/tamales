@@ -189,6 +189,16 @@ function dvForm() {
       }).filter(x => x.d != null).sort((a, b) => a.d - b.d);
       if (ranked.length) nearest = ranked[0].i;
     }
+    if (items.length) {
+      const has = i => items.every(([k, v]) => left(i, +k.slice(1)) >= v);
+      if (!has(n.branch)) {
+        const cand = ranked.filter(r => has(r.i)).sort((a, b) => a.d - b.d)[0];
+        if (cand) {
+          n.branch = cand.i;
+          nearest = cand.i;
+        }
+      }
+    }
     body = `
      <small style="display:block;margin-bottom:6px">¿De qué sucursal sale?</small>
      <div class="seg" style="flex-wrap:wrap;overflow:visible;padding-top:8px">${BI().map(i => {
@@ -199,7 +209,7 @@ function dvForm() {
        return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative;padding:8px 12px;overflow:visible">${badge}${esc(brs()[i])}${dot}</button>`;
      }).join('')}</div>
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !items.every(([k, v]) => left(nearest, +k.slice(1)) >= v) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
-     ${ranked.length ? ranked.slice(0, 3).map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km</div>`).join('') : ''}
+     ${ranked.length ? ranked.filter(r => items.every(([k, v]) => left(r.i, +k.slice(1)) >= v)).map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km</div>`).join('') : ''}
      ${nav(2, 4, 'Siguiente: Datos →')}
     `;
   } else {
