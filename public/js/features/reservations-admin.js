@@ -205,7 +205,7 @@ function admRejectPre(id) {
 }
 
 function largeSoonCard() {
-  if (S.lgHide == null) S.lgHide = true;
+  if (S.lgHide == null) S.lgHide = false;
   const soon = (S.pre || [])
     .filter(p => p.large && p.status != 'cancelado' && p.status != 'entregado' && p.status != 'fallido' && dayDiff(D, p.date) >= 0 && dayDiff(D, p.date) <= 4)
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
