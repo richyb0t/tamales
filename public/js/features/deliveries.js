@@ -568,8 +568,37 @@ async function dvOut(id) {
   }
 }
 
-/* Repartos activos de hoy (por tomar o en camino) */
-const dvOpenN = () =>
+const seenDv = new Set();
+try {
+  JSON.parse(localStorage.getItem('tm_seen_dv') || '[]').forEach(x => seenDv.add(x));
+} catch (_) {}
+
+function enableNotif() {
+  if (!('Notification' in window)) return toast('Este navegador no soporta notificaciones');
+  Notification.requestPermission().then(p => {
+    if (p == 'granted') toast('Notificaciones activadas');
+    else toast('No se activaron las notificaciones');
+    render(true);
+  });
+}
+
+function notifyNewLarge() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const nw = (S.dv || []).filter(d => d.large && d.status == 'pendiente' && !seenDv.has(d._id));
+  if (!nw.length) return;
+  nw.forEach(d => {
+    seenDv.add(d._id);
+    try {
+      new Notification('Nuevo pedido grande', {
+        body: (d.client || 'Cliente') + (d.addr ? ' · ' + d.addr : '') + ' · ' + money(dvDue(d)),
+        tag: d._id,
+      });
+    } catch (_) {}
+  });
+  try {
+    localStorage.setItem('tm_seen_dv', JSON.stringify([...seenDv]));
+  } catch (_) {}
+}
   (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
 
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */
@@ -618,6 +647,9 @@ function repView() {
   return (
     head() +
     alertSpace() +
+    (typeof Notification !== 'undefined' && Notification.permission !== 'granted'
+      ? `<div class="card"><button class="go" style="width:100%" onclick="enableNotif()">🔔 Activar notificaciones</button><small>Para recibir pedidos grandes aunque la app esté en segundo plano.</small></div>`
+      : '') +
     kp +
     body +
     nav(
