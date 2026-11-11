@@ -50,6 +50,18 @@ const champNote = c =>
     ? `Champurrado: ${c.liters} L · ${c.perL ? money(c.perL) + '/L · ' + money(c.total) : 'precio normal'}`
     : 'Champurrado al mayoreo: 5 L = $45/L · 10 L = $35/L.';
 
+/* Líneas del pedido grande en orden: primero tamales y luego champurrado, con su descuento por pieza. */
+const pdLines = (items, descTamal) => {
+  const ch = preChamp(items);
+  return [
+    ...F.map((name, f) => ({ f, name, qty: +(items[f] || 0), unit: price(f), disc: +descTamal || 0 })),
+    ...CH.map((c, i) => {
+      const f = 100 + i;
+      return { f, name: 'Champurrado ' + c[0], qty: +(items[f] || 0), unit: price(f), disc: ch.unit };
+    }),
+  ].filter(x => x.qty > 0);
+};
+
 const preSum = l => {
   const items = [];
   F.forEach((n, f) => {
@@ -128,22 +140,25 @@ function pdStep(s) {
 function pdCalc() {
   const n = nd();
   if (!n.large) return;
-  const base = Object.entries(n.items).reduce((a, [k, v]) => a + (+v || 0) * price(+k), 0),
-    tamQty = Object.entries(n.items).filter(([k]) => +k < 100).reduce((a, [, v]) => a + (+v || 0), 0),
-    ch = preChamp(n.items),
-    desc = tamQty * (+n.descTamal || 0) + ch.disc,
+  const lines = pdLines(n.items, n.descTamal),
+    base = lines.reduce((a, x) => a + x.qty * x.unit, 0),
+    desc = lines.reduce((a, x) => a + x.qty * x.disc, 0),
     fee = +(n.fee || 0) || 0,
     total = Math.max(0, base - desc),
     set = (id, text) => {
       const e = document.getElementById(id);
       if (e) e.textContent = text;
     };
+  lines.forEach(x => {
+    set('pdlt' + x.f, money(Math.max(0, x.qty * (x.unit - x.disc))));
+    set('pdld' + x.f, money(x.unit) + ' c/u' + (x.disc ? ' · desc. ' + money(x.disc) + ' c/u' : ''));
+  });
   set('pds', money(base));
   set('pdd2', '−' + money(desc));
   set('pdt2', money(total));
   set('pdf', money(fee));
   set('pdtot', money(total + fee));
-  set('pdc', champNote(ch));
+  set('pdc', champNote(preChamp(n.items)));
 }
 
 function pdBr(i) {
@@ -225,10 +240,10 @@ function apForm(hoy) {
     step = large ? Math.min(4, Math.max(1, +n.step || 1)) : 0,
     steps = ['Cliente', 'Productos', 'Precios', 'Fecha'],
     base = Object.entries(sel).reduce((a, [k, v]) => a + (+v || 0) * price(+k), 0),
-    tamQty = Object.entries(sel).filter(([k]) => +k < 100).reduce((a, [, v]) => a + (+v || 0), 0),
+    lines = pdLines(sel, n.descTamal),
     fee = +(n.fee || 0) || 0,
-    descT = tamQty * (+n.descTamal || 0),
-    totalP = Math.max(0, base - descT - ch.disc);
+    descTotal = lines.reduce((a, x) => a + x.qty * x.disc, 0),
+    totalP = Math.max(0, base - descTotal);
   if (large) n.step = step;
 
   const canLarge = !V && (m.role == 'admin' || m.role == 'enc' || m.role == 'sup');
@@ -296,26 +311,31 @@ function apForm(hoy) {
     body = `
   <div class="form"><input type="number" step="0.5" min="0" placeholder="Desc. tamal $" aria-label="Descuento por tamal" value="${esc(n.descTamal)}" oninput="nd().descTamal=this.value;pdCalc()" style="flex:1"><input type="number" step="0.5" min="0" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="nd().fee=this.value;pdCalc()" style="flex:1"></div>
   ${ch.qty ? `<small id="pdc" style="display:block;margin-top:6px;opacity:.85">${champNote(ch)}</small>` : ''}
+  <div style="margin-top:10px">
+   <small style="display:block;font-weight:700;margin-bottom:2px">Desglose</small>
+   ${lines.length ? lines.map(x => `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid var(--bd)">
+     <div style="min-width:0"><small style="display:block"><b>${x.qty}×</b> ${esc(x.name)}</small><small id="pdld${x.f}" style="display:block;opacity:.7">${money(x.unit)} c/u${x.disc ? ' · desc. ' + money(x.disc) + ' c/u' : ''}</small></div>
+     <b id="pdlt${x.f}" style="white-space:nowrap">${money(Math.max(0, x.qty * (x.unit - x.disc)))}</b>
+    </div>`).join('') : '<small style="display:block;opacity:.75">Sin productos</small>'}
+  </div>
   <div style="margin-top:10px;padding:10px;border-radius:12px;background:var(--fill)">
-   <div style="display:flex;justify-content:space-between"><small>Productos</small><small id="pds">${money(base)}</small></div>
-   <div style="display:flex;justify-content:space-between"><small>Descuento</small><small id="pdd2">−${money(descT + ch.disc)}</small></div>
-   <div style="display:flex;justify-content:space-between;margin-top:4px"><b>Total productos</b><b id="pdt2">${money(totalP)}</b></div>
+   <div style="display:flex;justify-content:space-between"><small>Subtotal</small><small id="pds">${money(base)}</small></div>
+   <div style="display:flex;justify-content:space-between"><small>Descuento</small><small id="pdd2">−${money(descTotal)}</small></div>
+   <div style="display:flex;justify-content:space-between;margin-top:4px"><b>Total</b><b id="pdt2">${money(totalP)}</b></div>
    <div style="display:flex;justify-content:space-between"><small>Envío</small><small id="pdf">${money(fee)}</small></div>
    <div style="display:flex;justify-content:space-between"><b>Total con envío</b><b id="pdtot">${money(totalP + fee)}</b></div>
   </div>`;
   } else {
-    const txt = Object.entries(sel)
-      .filter(([, v]) => +v > 0)
-      .map(([k, v]) => v + '× ' + nm(+k))
-      .join(', ');
     body = `
   ${dateBox}
   <div style="margin-top:10px;padding:10px;border-radius:12px;background:var(--fill)">
    <small style="display:block"><b>${esc(n.name || 'Sin cliente')}</b>${n.phone ? ' · ' + esc(n.phone) : ''}</small>
    <small style="display:block;margin-top:2px">${n.addr.trim() ? '📍 ' + esc(n.addr) : '🏪 Recoge en el local'}${n.time ? ' · 🕒 ' + ftime(n.time) : ''}</small>
-   <small style="display:block;margin-top:6px">${esc(txt || 'Sin productos')}</small>
-   <div style="display:flex;justify-content:space-between;margin-top:8px"><b>Productos</b><b>${money(totalP)}</b></div>
-   ${fee ? `<div style="display:flex;justify-content:space-between"><small>Envío</small><small>${money(fee)}</small></div><div style="display:flex;justify-content:space-between"><b>Total</b><b>${money(totalP + fee)}</b></div>` : ''}
+   <div style="margin-top:8px">
+    ${lines.length ? lines.map(x => `<div style="display:flex;justify-content:space-between;gap:8px"><small><b>${x.qty}×</b> ${esc(x.name)}</small><small>${money(Math.max(0, x.qty * (x.unit - x.disc)))}</small></div>`).join('') : '<small style="opacity:.75">Sin productos</small>'}
+   </div>
+   <div style="display:flex;justify-content:space-between;margin-top:8px;border-top:1px solid var(--bd);padding-top:6px"><b>Total</b><b>${money(totalP)}</b></div>
+   ${fee ? `<div style="display:flex;justify-content:space-between"><small>Envío</small><small>${money(fee)}</small></div><div style="display:flex;justify-content:space-between"><b>Total con envío</b><b>${money(totalP + fee)}</b></div>` : ''}
   </div>`;
   }
 
