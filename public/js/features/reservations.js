@@ -111,7 +111,7 @@ function preCard(p) {
     V = m.role == 'vend',
     A = m.role == 'admin',
     can = A || V || p.by == m.user;
-  return `<div class="card"><div class="row"><div><b>${esc(p.client)}</b>${p.phone ? ' · ' + esc(p.phone) : ''}<br><small>${V ? '' : p.large ? '📦 Pedido grande · ' : esc(brs()[p.branch]) + ' · '}${p.date < D ? '<b class="bad">Pendiente desde ' + esc(fdate(p.date)) + '</b> · ' : p.date > D ? esc(fdate(p.date)) + ' · ' : ''}${p.exp && p.exp < Date.now() ? '<b class="bad">Vencido</b> · ' : ''}${p.time ? '🕒 ' + ftime(p.time) + ' · ' : ''}lo apartó ${esc(p.byName || p.by)}${p.ok ? ' · <b class="ok">✅ Aceptado</b>' : ''}</small></div><b>${money(preTot(p))}</b></div><div>${esc(preTxt(p))}</div>${p.large && p.addr ? `<div>📍 ${esc(p.addr)}</div>` : ''}${p.note ? `<small>📝 ${esc(p.note)}</small>` : ''}<div class="form">${(V || A) && p.date <= D && !(p.exp && p.exp < Date.now()) ? `<button class="go" onclick="deliverPre('${p._id}')">Entregar y cobrar</button>` : ''}${can ? `<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>` : ''}</div></div>`;
+  return `<div class="card"><div class="row"><div><b>${esc(p.client)}</b>${p.phone ? ' · ' + esc(p.phone) : ''}<br><small>${V ? '' : p.large ? '📦 Pedido grande · ' : esc(brs()[p.branch]) + ' · '}${p.date < D ? '<b class="bad">Pendiente desde ' + esc(fdate(p.date)) + '</b> · ' : p.date > D ? esc(fdate(p.date)) + ' · ' : ''}${p.exp && p.exp < Date.now() ? '<b class="bad">Vencido</b> · ' : ''}${p.large && p.time ? '🕒 ' + ftime(p.time) + ' · ' : ''}lo apartó ${esc(p.byName || p.by)}${p.ok ? ' · <b class="ok">✅ Aceptado</b>' : ''}</small></div><b>${money(preTot(p))}</b></div><div>${esc(preTxt(p))}</div>${p.large && p.addr ? `<div>📍 ${esc(p.addr)}</div>` : ''}${p.note ? `<small>📝 ${esc(p.note)}</small>` : ''}<div class="form">${(V || A) && p.date <= D && !(p.exp && p.exp < Date.now()) ? `<button class="go" onclick="deliverPre('${p._id}')">Entregar y cobrar</button>` : ''}${can ? `<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>` : ''}</div></div>`;
 }
 
 const newBtn =
@@ -170,7 +170,7 @@ function apForm(hoy) {
   return `<div class="card" id="apf"><h3>Nuevo apartado</h3><small>Elige para qué día. El administrador lo ve antes de preparar el inventario de ese día.</small>
  ${V ? '' : n.large ? `<small style="display:block;margin-top:8px">📦 Pedido grande · <b>sin sucursal</b></small>` : fb ? `<small style="display:block;margin-top:8px">Sucursal: <b>${esc(brs()[n.branch])}</b></small>` : `<small style="display:block;margin-top:8px">¿Para qué sucursal?</small>` + bchips(n.branch, 'pdBr')}
   ${!V && (S.me.role == 'admin' || S.me.role == 'enc' || S.me.role == 'sup') ? `<div class="form" style="margin:8px 0"><button class="${n.large ? 'go' : 'alt'}" style="flex:1" onclick="nd().large=!nd().large;render(true)">${n.large ? '📦 Pedido grande: SÍ' : '📦 Convertir en pedido grande'}</button></div>` : ''}
-  ${n.large ? `<div class="form"><input id="pdaddr" placeholder="Dirección de entrega (opcional, si van a recoger déjalo vacío)" value="${esc(n.addr)}" oninput="nd().addr=this.value" style="flex:1 1 100%"></div><div class="form"><input type="number" step="0.5" min="0" placeholder="Descuento por tamal $" value="${esc(n.descTamal)}" oninput="nd().descTamal=this.value" style="flex:1"><input type="number" step="0.5" min="0" placeholder="Costo de envío (opcional)" value="${esc(n.fee)}" oninput="nd().fee=this.value" style="flex:1"></div><small id="pdc" style="display:block;margin-top:6px;opacity:.8">${champNote(ch)}</small>` : ''}
+  ${n.large ? `<div class="form"><input id="pdaddr" placeholder="Dirección (opcional)" value="${esc(n.addr)}" oninput="nd().addr=this.value" style="flex:1 1 100%"></div><small style="display:block;margin-top:4px;opacity:.75">Si van a recoger, deja la dirección vacía.</small><small style="display:block;margin-top:8px">Hora de entrega (opcional)</small><div class="form"><input type="time" id="pdtime" aria-label="Hora de entrega (opcional)" value="${esc(n.time)}" oninput="nd().time=this.value" style="flex:1"></div><div class="form"><input type="number" step="0.5" min="0" placeholder="Desc. tamal $" value="${esc(n.descTamal)}" oninput="nd().descTamal=this.value" style="flex:1"><input type="number" step="0.5" min="0" placeholder="Envío $" value="${esc(n.fee)}" oninput="nd().fee=this.value" style="flex:1"></div><small id="pdc" style="display:block;margin-top:6px;opacity:.8">${champNote(ch)}</small>` : ''}
  ${
    hoy
      ? `<small style="display:block;margin-top:8px">Fecha</small><small style="display:block"><b>Hoy · ${esc(fdate(D))}</b></small>${!V && !n.large && loadDone(n.branch) ? `<small style="display:block">${loadEmpty(n.branch) ? 'La carga de hoy está vacía: puedes apartar sin límite y se suman al volver a guardar la carga.' : encBlk(n.branch) ? 'La carga de hoy ya está guardada: ya no se puede apartar para hoy en ' + esc(brs()[n.branch]) + '.' : 'La carga de hoy ya está guardada: el apartado se descuenta de lo que queda en ' + esc(brs()[n.branch]) + '.'}</small>` : ''}`
@@ -189,10 +189,8 @@ function apForm(hoy) {
   <small style="display:block;margin:8px 0 6px">Champurrado</small>
   ${n.large ? '<small style="display:block;margin:0 0 6px;opacity:.8">Mayoreo: captura los litros en “Grande 1 l”.</small>' : ''}
   ${CH.map((cc, i) => { const f = 100 + i; return price(f) ? `<div class="fl ${sel[f] ? 'sel' : ''}"><div class="fn"><b>Champurrado ${esc(cc[0])}</b><small>${esc(cc[1])} · ${money(price(f))}</small></div><div class="st"><button class="gh" onclick="pdAdd(${f},-1)">−</button><input type="number" min="0" max="499" inputmode="numeric" value="${sel[f] || 0}" aria-label="Cantidad de champurrado ${esc(cc[0])}" oninput="pdSet(${f},this.value,this)" onchange="this.value=nd().items[${f}]||0"><button onclick="pdAdd(${f},1)" aria-label="Más">+</button></div></div>` : ''; }).join('')}
- <div class="form"><input id="pdn" placeholder="Nombre del cliente" value="${esc(n.name)}" oninput="nd().name=this.value" style="flex:1"><input placeholder="Teléfono (opcional)" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1"></div>
- <small style="display:block;margin-top:8px">Hora de entrega (opcional)</small>
- <div class="form"><input type="time" id="pdtime" aria-label="Hora de entrega (opcional)" value="${esc(n.time)}" oninput="nd().time=this.value" style="flex:1"></div>
- <div class="form"><input placeholder="Nota (detalles)" value="${esc(n.note)}" oninput="nd().note=this.value" style="flex:1"></div>
+ <div class="form"><input id="pdn" placeholder="Cliente" value="${esc(n.name)}" oninput="nd().name=this.value" style="flex:1"><input placeholder="Teléfono" inputmode="tel" value="${esc(n.phone)}" oninput="nd().phone=this.value" style="flex:1"></div>
+ <div class="form"><input placeholder="Nota" value="${esc(n.note)}" oninput="nd().note=this.value" style="flex:1"></div>
  </div><div class="cart"><div class="ct"><button class="go" style="flex:1" onclick="savePre()"${hoy && encBlk(n.branch) ? ' disabled' : ''}>Guardar apartado${tot ? ' · ' + tot + (tot == 1 ? ' tamal' : ' tamales') : ''}</button></div></div>`;
 }
 
@@ -261,7 +259,7 @@ async function savePre() {
       client: n.name.trim(),
       phone: n.phone.trim(),
       note: n.note.trim(),
-      time: (n.time || '').trim(),
+      time: n.large ? (n.time || '').trim() : '',
       status: 'pendiente',
       by: S.me.user,
       byName: S.me.name,

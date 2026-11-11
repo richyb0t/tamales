@@ -117,6 +117,7 @@ input::placeholder,
 textarea::placeholder {
   color: var(--mut);
   opacity: 1;
+  font-size: 14px;
 }
 input:focus,
 select:focus,
