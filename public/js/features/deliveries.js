@@ -179,9 +179,10 @@ function dvForm() {
   } else if (step === 3) {
     const items = Object.entries(sel).filter(([k, v]) => v > 0);
     const lat = +n.lat, lng = +n.lng;
+    let ranked = [];
     let nearest = null;
     if (lat && lng) {
-      const ranked = BI().map(i => {
+      ranked = BI().map(i => {
         const l = (S.cfg.branchLocs || [])[i];
         const d = l ? distKm({ lat, lng }, l) : null;
         return { i, d };
@@ -198,6 +199,7 @@ function dvForm() {
        return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative;padding:8px 12px;overflow:visible">${badge}${esc(brs()[i])}${dot}</button>`;
      }).join('')}</div>
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !items.every(([k, v]) => left(nearest, +k.slice(1)) >= v) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
+     ${ranked.length ? `<div class="card" style="margin-top:8px"><small style="display:block;margin-bottom:4px">Sucursales ordenadas por cercanía:</small>${ranked.slice(0, 3).map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km${items.length && !items.every(([k, v]) => left(r.i, +k.slice(1)) >= v) ? ' · sin disponibilidad completa' : ''}</div>`).join('')}</div>` : ''}
      ${nav(2, 4, 'Siguiente: Datos →')}
     `;
   } else {
@@ -207,8 +209,7 @@ function dvForm() {
      <div class="form"><button class="alt" style="flex:1" onclick="dvGeocode()" id="dvgeo">🔍 Buscar ubicación de la dirección</button></div>
      ${n.lat && n.lng ? `<small style="display:block;opacity:.7;margin:4px 0">Ubicación: ${(+n.lat).toFixed(5)}, ${(+n.lng).toFixed(5)} (${esc(n.addr || '')})</small><iframe src="https://www.google.com/maps?q=${encodeURIComponent(mq)}&z=16&output=embed" width="100%" height="140" style="border:0;border-radius:8px;margin:4px 0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : ''}
      <details style="margin:4px 0"><summary style="cursor:pointer;opacity:.7;font-size:12px">Ingresar coordenadas manualmente</summary><div class="form"><input type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div></details>
-     <small style="display:block;margin-top:8px">Hora de entrega (opcional)</small>
-     <div class="form"><input type="time" aria-label="Hora de entrega (opcional)" value="${esc(n.time)}" oninput="dvn().time=this.value" style="flex:1"><input type="number" min="0" inputmode="decimal" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="dvn().fee=this.value" style="flex:1"></div>
+     <div class="form"><input type="number" min="0" inputmode="decimal" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="dvn().fee=this.value" style="flex:1"></div>
      <div class="form"><input placeholder="Nota" value="${esc(n.note)}" oninput="dvn().note=this.value" style="flex:1"></div>
      <small style="display:block;margin:8px 0;opacity:.7">Productos: <b>${money(tot)}</b>${pcs ? ' · ' + pcs + (pcs == 1 ? ' tamal' : ' tamales') : ''}${n.fee ? ' · Envío ' + money(+n.fee || 0) : ''}</small>
      <div class="form"><button class="go" style="flex:1" onclick="saveDv()">Guardar reparto</button></div>
