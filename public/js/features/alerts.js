@@ -26,7 +26,11 @@ function alertCard() {
   if (H && S.alHide) {
     const o = l.filter(x => x.o).length,
       w = l.length - o;
-    return `<div class="card alb" style="border:2px solid ${o ? 'var(--bad)' : 'var(--low)'}"><span>${[o ? '🚫 ' + o + (o == 1 ? ' agotado' : ' agotados') : '', w ? '⚠️ ' + w + ' por agotarse' : ''].filter(Boolean).join(' · ')}</span><button class="gh" onclick="S.alHide=false;render(true)">Mostrar</button></div>`;
+    const names = l
+      .slice(0, 6)
+      .map(x => esc(x.n) + (x.o ? ' 🚫' : ''))
+      .join(', ') + (l.length > 6 ? '…' : '');
+    return `<div class="card alb" style="border:2px solid ${o ? 'var(--bad)' : 'var(--low)'}"><div><span>${[o ? '🚫 ' + o + (o == 1 ? ' agotado' : ' agotados') : '', w ? '⚠️ ' + w + ' por agotarse' : ''].filter(Boolean).join(' · ')}</span><br><small>${names}</small></div><button class="gh" onclick="S.alHide=false;render(true)">Mostrar</button></div>`;
   }
   const sec = (arr, title, col, fmt) => {
     if (!arr.length) return '';
