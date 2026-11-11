@@ -25,7 +25,7 @@ const navBadge = k =>
     : k == 'ap'
       ? preN()
       : k == 'dv'
-        ? (S.dv || []).filter(d => d.status == 'pendiente').length
+        ? dvOpenN()
         : 0;
 
 async function setNav(a) {

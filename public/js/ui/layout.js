@@ -85,7 +85,7 @@ function menu(o) {
             ['tr', '🔁', 'Traspasos'],
             ['ct', '🧾', 'Cortes'],
             ['ap', '📌', 'Apartados', preN()],
-            ['dv', '🛵', 'Repartos'],
+            ['dv', '🛵', 'Repartos', dvOpenN()],
           ],
         ],
         [
@@ -136,8 +136,8 @@ function menu(o) {
       `<button class="mi ${cur == k ? 'on' : ''}" onclick="go('${k}')"${cur == k ? ' aria-current="page"' : ''}><span>${i}</span><em>${l}</em>${n ? `<i class="dot2">${n}</i>` : ''}</button>`;
   d.innerHTML = `<div class="bk" onclick="menu(0)"></div><div class="pn"><div class="mh"><span class="mav" style="background:${avC(m.user || m.id)}">${avI(m.name)}</span><div class="mt"><b>${esc(m.name)}</b><small>${ROLE[m.role] || ''}</small>${V && m.branch != null ? `<span class="chip">📍 ${esc(brs()[m.branch])}</span>` : ''}</div><button class="mx" onclick="menu(0)" aria-label="Cerrar menú">✕</button></div>${G.map(([t, l]) => (t ? `<div class="mg">${t}</div>` : '') + l.map(it).join('')).join('')}<div class="mf">${V ? '<button class="mi" onclick="menu(0);setTimeout(chBr,400)"><span>📍</span><em>Cambiar de sucursal</em></button>' : ''}<button class="mi" onclick="menu(0);setTimeout(accountDlg,400)"><span>👤</span><em>Cambiar mi cuenta</em></button><button class="mi out" onclick="menu(0);logout()"><span>🚪</span><em>Salir</em></button></div></div>`;
   document.body.classList.add('nolock');
+  d.classList.add('open');
   requestAnimationFrame(() => {
-    d.classList.add('open');
     const f = d.querySelector('.mi');
     if (f) f.focus({ preventScroll: true });
   });

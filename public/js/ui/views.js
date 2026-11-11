@@ -2,7 +2,7 @@
 
 function vendView() {
 const b = S.me.branch,
-vt = S.vt || 'v',
+vt = ['v', 'h', 'r', 'm'].includes(S.vt) ? S.vt : 'v',
 mine = S.sales.filter(s => s.branch == b).sort((a, c) => c.ts - a.ts);
 const sm = (t, k) =>
 mine.filter(s => s.type == t && live(s)).reduce((a, s) => a + s.qty * (k ? s.price : 1), 0);
@@ -63,7 +63,7 @@ vt,
 }
 
 function encView() {
-const t = S.et || 'd';
+const t = ['d', 'r', 'a', 's'].includes(S.et) ? S.et : 'd';
 const rqN = (S.rq || []).filter(r => ['pendiente', 'aceptado'].includes(rqSt(r))).length;
 return (
 head() +
@@ -89,7 +89,8 @@ t,
 }
 
 function adminView() {
-const t = (S.me && S.me.role === 'sup' && (S.tab === 'us' || S.tab === 'rp')) ? 'res' : S.tab,
+const raw = (S.me && S.me.role === 'sup' && (S.tab === 'us' || S.tab === 'rp')) ? 'res' : S.tab,
+  t = ['res', 'inv', 'tr', 'dv', 'ct', 'aj', 'us', 'ap', 'rp'].includes(raw) ? raw : 'res',
   isSup = S.me && S.me.role === 'sup',
   v = {
     res: resView,
@@ -104,15 +105,12 @@ const t = (S.me && S.me.role === 'sup' && (S.tab === 'us' || S.tab === 'rp')) ? 
   };
 const sel0 = navSel(),
   sel = isSup ? sel0.filter(k => k !== 'us' && k !== 'rp') : sel0,
-  cu = t || 'res',
-  hid = Object.keys(NAVALL)
-    .filter(k => !sel.includes(k))
-    .reduce((a, k) => a + navBadge(k), 0);
+  cu = t || 'res';
 return (
 head() +
 (v[t] || resView)() +
 nav(
-[...sel.map(k => [k, NAVALL[k][0], NAVALL[k][1], navBadge(k)]), ['more', '⋯', 'Más', hid]],
+[...sel.map(k => [k, NAVALL[k][0], NAVALL[k][1], navBadge(k)]), ['more', '⋯', 'Más']],
 sel.includes(cu) ? cu : 'more',
 'adNav'
 )

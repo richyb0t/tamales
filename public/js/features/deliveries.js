@@ -544,7 +544,7 @@ function dvToday() {
 /* Repartidor */
 function repView() {
   const me = S.me.user,
-    t = S.rt || 'e',
+    t = ['e', 'c', 't'].includes(S.rt) ? S.rt : 'e',
     L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
     free = L.filter(d => d.status == 'pendiente'),
     mine = L.filter(d => d.drv == me && d.status == 'en_ruta'),
