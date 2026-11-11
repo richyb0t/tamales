@@ -62,6 +62,17 @@ const pdLines = (items, descTamal) => {
   ].filter(x => x.qty > 0);
 };
 
+/* Resumen corto de piezas para el botón de guardar: tamales y champurrado por separado. */
+const pdQtyText = items => {
+  const sum = min => Object.entries(items).reduce((a, [k, v]) => a + ((+k < 100) === min ? +v || 0 : 0), 0),
+    tam = sum(true),
+    ch = sum(false),
+    parts = [];
+  if (tam) parts.push(tam + (tam == 1 ? ' tamal' : ' tamales'));
+  if (ch) parts.push(ch + (ch == 1 ? ' champurrado' : ' champurrados'));
+  return parts.join(' · ');
+};
+
 const preSum = l => {
   const items = [];
   F.forEach((n, f) => {
@@ -99,9 +110,8 @@ function pdSet(f, v, el) {
   if (r) r.classList.toggle('sel', q > 0);
   if (!nd().large) {
     const b = document.querySelector('.cart .ct .go'),
-      t = Object.values(nd().items).reduce((a, x) => a + x, 0);
-    if (b)
-      b.textContent = 'Guardar apartado' + (t ? ' · ' + t + (t == 1 ? ' tamal' : ' tamales') : '');
+      t = pdQtyText(nd().items);
+    if (b) b.textContent = 'Guardar apartado' + (t ? ' · ' + t : '');
   }
   const tEl = document.getElementById('pdt');
   if (tEl) {
@@ -341,7 +351,7 @@ function apForm(hoy) {
 
   const cart = large
     ? `<div class="cart"><div class="ct">${step > 1 ? `<button class="alt" style="flex:1" onclick="pdStep(${step - 1})">← Atrás</button>` : ''}${step < 4 ? `<button class="go" style="flex:1" onclick="pdStep(${step + 1})">${step == 1 ? 'Siguiente: Productos →' : step == 2 ? 'Siguiente: Precios →' : 'Siguiente: Fecha →'}</button>` : `<button class="go" style="flex:1" onclick="savePre()">Guardar pedido grande</button>`}</div></div>`
-    : `<div class="cart"><div class="ct"><button class="go" style="flex:1" onclick="savePre()"${hoy && encBlk(n.branch) ? ' disabled' : ''}>Guardar apartado${tot ? ' · ' + tot + (tot == 1 ? ' tamal' : ' tamales') : ''}</button></div></div>`;
+    : `<div class="cart"><div class="ct"><button class="go" style="flex:1" onclick="savePre()"${hoy && encBlk(n.branch) ? ' disabled' : ''}>Guardar apartado${pdQtyText(sel) ? ' · ' + pdQtyText(sel) : ''}</button></div></div>`;
 
   return head + body + '</div>' + cart;
 }
