@@ -359,7 +359,7 @@ const dvCancel = id =>
       if (d && d.large && d.preId) {
         const bt = db.batch();
         bt.delete('deliveries/' + id);
-        bt.update('pre/' + d.preId, { dvId: null });
+        bt.update('pre/' + d.preId, { status: 'cancelado', doneAt: Date.now(), doneBy: S.me.user, dvId: null });
         await bt.commit();
       } else {
         await db.doc('deliveries/' + id).delete();
