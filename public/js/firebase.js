@@ -150,7 +150,7 @@ window.FB = {
   },
   messaging,
   getToken: (swReg) => getToken(messaging, { vapidKey: window.VAPID_PUBLIC_KEY || '', serviceWorkerRegistration: swReg }),
-  onMessage: (cb) => onMessage(messaging, cb),
+  logout: () => signOut(auth),
   onAuth: f => onAuthStateChanged(auth, f),
   initExists: async () => (await getDoc(doc(fs, 'config/init'))).exists(),
   async bootstrap(e, p, prof) {
