@@ -168,7 +168,13 @@ async function accPre(id) {
     await db
       .doc('pre/' + id)
       .update({ ok: v, okAt: v ? Date.now() : null, okBy: v ? S.me.user : null });
+    if (p) {
+      p.ok = v;
+      p.okAt = v ? Date.now() : null;
+      p.okBy = v ? S.me.user : null;
+    }
     toast(v ? 'Aceptado: ' + p.client : 'Se quitó la aceptación de ' + p.client);
+    renderNow(true);
   } catch (e) {
     err(e);
   }
