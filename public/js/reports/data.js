@@ -75,7 +75,7 @@ function rpDate(k, v) {
    Así repetir un reporte, cambiar de rango o comparar con el periodo anterior casi no gasta lecturas.
    Hoy siempre se lee de nuevo. Cada consulta pide solo los tramos de días que faltan. */
 const RC = {},
-  RCK = 'tm_rc1_';
+  RCK = 'tm_rc2_';
 
 function rcGet(n) {
   if (!RC[n]) {
@@ -174,6 +174,7 @@ const spk = (d, id) =>
         d.order || d.pre || d.req || id,
         d.restock ? 1 : 0,
         d.type == 'devolucion' ? d.reason || '' : '',
+        d.descuento || 0,
       ];
 
 const sup = ([day, a]) => ({
@@ -188,6 +189,7 @@ const sup = ([day, a]) => ({
   order: a[7],
   restock: a[8] == 1,
   reason: a[9],
+  descuento: a[10] || 0,
 });
 
 async function rpRun(force) {

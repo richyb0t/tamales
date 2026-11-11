@@ -56,6 +56,7 @@ function rpS(rows) {
     dy = rpAgg(rows, s => s.day).sort((a, b) => b[1].a - a[1].a),
     fl = rpAgg(rows, s => s.f).sort((a, b) => b[1].a - a[1].a),
     dr = de.reduce((a, s) => a + nz(s.qty) * nz(s.price), 0),
+    desc = ve.reduce((a, s) => a + nz(s.descuento), 0),
     net = rows.reduce((a, s) => a + (s.type == 'devolucion' ? -1 : 1) * nz(s.qty) * nz(s.price), 0);
   return {
     V: ve,
@@ -67,6 +68,7 @@ function rpS(rows) {
     dy,
     fl,
     dr,
+    desc,
     net,
     tk: n ? gross / n : 0,
     pp: n ? units / n : 0,

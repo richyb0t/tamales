@@ -24,7 +24,7 @@ function rpCsv(det) {
   let t;
   if (det)
     t =
-      '﻿dia,hora,sucursal,vendedor,producto,tipo,cantidad,precio,importe,pedido\n' +
+      '﻿dia,hora,sucursal,vendedor,producto,tipo,cantidad,precio,importe,descuento,pedido\n' +
       rows
         .slice()
         .sort((a, b) => a.ts - b.ts)
@@ -39,6 +39,7 @@ function rpCsv(det) {
             s.qty,
             s.price,
             (s.type == 'devolucion' ? -1 : 1) * s.qty * s.price,
+            s.descuento || 0,
             s.order,
           ]
             .map(q)

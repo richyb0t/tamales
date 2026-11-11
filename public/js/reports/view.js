@@ -7,7 +7,7 @@ function rpHero(rows, pS, dias) {
     k = (a, b, d) => `<div><small>${a}</small><b>${b}</b>${d || ''}</div>`;
   return `<div class="card"><div class="rph"><small>Total neto</small><b>${money(x.net)}</b>${pS ? dlt(x.net, pS.net) : ''}<small>${dias} día${dias > 1 ? 's' : ''} con ventas${rpScope() ? ' · ' + esc(rpScope()) : ''}</small></div>
  <div class="kp">${k('Pedidos', x.n)}${k('Ticket prom.', money(x.tk), pS ? dlt(x.tk, pS.tk) : '')}${k('Prom. por día', money(Math.round(x.avg)), pS ? dlt(x.avg, pS.avg) : '')}${hc ? k('Utilidad', money(x.ut), `<small class="mut">${x.net ? Math.round((x.ut / x.net) * 100) : 0}% del total</small>`) : k('Piezas/pedido', x.pp.toFixed(1))}${k('Devoluciones', money(x.dr), pS ? dlt(x.dr, pS.dr, 1) : '')}${hc ? k('Piezas/pedido', x.pp.toFixed(1)) : k('Días con ventas', dias)}</div>
- <small>No cuenta apartados sin entregar ni movimientos anulados.</small>
+ <small>No cuenta apartados sin entregar ni movimientos anulados.${x.desc ? ' · Descuentos: ' + money(x.desc) : ''}</small>
  <div class="ivt"><button class="alt" onclick="rpHtml()"><span>📊</span>Con gráficas</button><button class="alt" onclick="rpCsv()"><span>📄</span>CSV</button><button class="alt" onclick="rpCsv(1)"><span>📑</span>CSV detalle</button></div></div>`;
 }
 
