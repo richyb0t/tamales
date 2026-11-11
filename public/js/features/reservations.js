@@ -88,12 +88,16 @@ const preSum = l => {
 };
 
 function nd() {
-  if (!S.nd) S.nd = { date: tmr(1), items: {}, name: '', phone: '', note: '', branch: BI()[0], large: false, addr: '', time: '', fee: '', descTamal: '', descChamp: '', step: 1 };
-  if (S.nd.date < D) S.nd.date = tmr(1);
-  if (!BI().includes(S.nd.branch)) S.nd.branch = BI()[0];
-  if (S.nd.date < D || (S.nd.date == D && !S.nd.large && (S.me.role == 'vend' || encBlk(S.nd.branch))))
-    S.nd.date = tmr(1);
-  return S.nd;
+  const id = (S.me && S.me.id) || 'anon';
+  S.nds = S.nds || {};
+  if (!S.nds[id])
+    S.nds[id] = { date: tmr(1), items: {}, name: '', phone: '', note: '', branch: BI()[0], large: false, addr: '', time: '', fee: '', descTamal: '', descChamp: '', step: 1 };
+  const n = S.nds[id];
+  if (n.date < D) n.date = tmr(1);
+  if (!BI().includes(n.branch)) n.branch = BI()[0];
+  if (n.date < D || (n.date == D && !n.large && (S.me.role == 'vend' || encBlk(n.branch))))
+    n.date = tmr(1);
+  return n;
 }
 
 function pdAdd(f, n) {
@@ -487,7 +491,7 @@ async function savePre() {
       });
       await db.doc('pre/' + preId).update({ dvId: dvId, descTamal: +(n.descTamal || 0) || 0, descChamp: +(n.descChamp || 0) || 0 });
     }
-    S.nd = null;
+    if (S.nds) delete S.nds[(S.me && S.me.id) || 'anon'];
     S.anew = false;
     S.apt = n.date == D ? 'h' : 'o';
     toast(n.large ? (n.addr.trim() ? 'Pedido grande a domicilio guardado' : 'Pedido grande guardado') : (n.date == D ? 'Apartado guardado para hoy' : 'Apartado guardado para ' + fdate(n.date)));
