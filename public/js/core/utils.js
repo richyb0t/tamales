@@ -47,6 +47,16 @@ const hm = ts => {
   return h + ':' + pad(m) + ' ' + ampm;
 };
 
+/* Hora escrita como «14:30» → «2:30 PM» */
+const ftime = t => {
+  const x = /^(\d{1,2}):(\d{2})/.exec(t || '');
+  if (!x) return '';
+  let h = +x[1];
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return h + ':' + x[2] + ' ' + ampm;
+};
+
 /* --- corte a ciegas: el vendedor no ve cuánto debe haber hasta hacerlo --- */
 const dstr = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 
