@@ -181,6 +181,7 @@ function dvForm() {
     const lat = +n.lat, lng = +n.lng;
     let ranked = [];
     let nearest = null;
+    let autoBr = null;
     if (lat && lng) {
       ranked = BI().map(i => {
         const l = (S.cfg.branchLocs || [])[i];
@@ -195,7 +196,7 @@ function dvForm() {
         const cand = ranked.filter(r => has(r.i)).sort((a, b) => a.d - b.d)[0];
         if (cand) {
           n.branch = cand.i;
-          nearest = cand.i;
+          autoBr = cand.i;
         }
       }
     }
@@ -205,7 +206,9 @@ function dvForm() {
        const ok = items.length ? items.every(([k, v]) => left(i, +k.slice(1)) >= v) : null;
        const isNear = i === nearest;
        const dot = ok === null ? '' : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${ok ? '#22c55e' : '#ef4444'};box-shadow:0 0 6px ${ok ? 'rgba(34,197,94,.6)' : 'rgba(239,68,68,.6)'};margin-left:6px;vertical-align:middle"></span>`;
-       const badge = isNear ? `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">MÁS CERCANA</span>` : '';
+               const badgeA = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">MÁS CERCANA</span>`;
+        const badgeB = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">INDICADA</span>`;
+        const badge = i === nearest ? badgeA : autoBr && i === autoBr ? badgeB : '';
        return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative;padding:8px 12px;overflow:visible">${badge}${esc(brs()[i])}${dot}</button>`;
      }).join('')}</div>
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !items.every(([k, v]) => left(nearest, +k.slice(1)) >= v) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
