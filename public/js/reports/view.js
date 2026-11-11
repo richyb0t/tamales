@@ -60,7 +60,7 @@ function rpBody(r) {
         'Sucursal',
         grp(s => s.branch)
           .sort((a, b) => b[1].a - a[1].a)
-          .map(([k, x]) => [brs()[+k] || 'Sucursal ' + k, x])
+          .map(([k, x]) => [k == 'null' ? '📦 Pedido grande' : brs()[+k] || 'Sucursal ' + k, x])
       ) +
       tb(
         'Por sabor',

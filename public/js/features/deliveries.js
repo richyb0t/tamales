@@ -351,20 +351,24 @@ function dvDone(id) {
     try {
       const bt = db.batch();
       bt.update('deliveries/' + id, { status: 'entregado', cobrado: due, tsDone: ts });
-      it.forEach(([k, v], i) =>
+      if (d.large && d.preId) bt.update('pre/' + d.preId, { status: 'entregado', doneAt: ts });
+      it.forEach(([k, v], i) => {
+        const f = +k.slice(1);
+        const disc = f >= 100 ? (+(d.descChamp) || 0) : (+(d.descTamal) || 0);
         bt.set('sales/dv' + id + '_' + i, {
           day: D,
           branch: d.branch,
-          f: +k.slice(1),
+          f: f,
           qty: v,
           type: 'vendido',
-          price: price(+k.slice(1)),
+          price: Math.max(0, price(f) - disc),
+          descuento: disc * v,
           dv: id,
           client: d.client,
           by: S.me.user,
           ts: ts + i,
-        })
-      );
+        });
+      });
       await bt.commit();
       try {
         navigator.vibrate && navigator.vibrate(40);
@@ -392,7 +396,7 @@ function dvFail(id) {
       try {
         const bt = db.batch();
         bt.update('deliveries/' + id, { status: 'fallido', reason: r, tsDone: Date.now() });
-        bt.update('pre/' + d0.preId, { status: 'fallido', reason: r, tsDone: Date.now() });
+        bt.update('pre/' + d0.preId, { status: 'fallido', reason: r, doneAt: Date.now() });
         await bt.commit();
         toast('Marcado como no entregado');
       } catch (e) { err(e); }
@@ -417,7 +421,7 @@ function dvCard(d, rep) {
       bt = `<button class="go p" onclick="dvDone('${d._id}')">Entregar y cobrar ${money(dvDue(d))}</button><button class="alt" onclick="dvFail('${d._id}')">No se pudo</button><button class="gh" onclick="dvRelease('${d._id}')">Soltar</button>`;
   } else if ((A || me.role == 'enc' || me.role == 'sup') && d.status == 'pendiente')
     bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
-  return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b>${d.large ? ' <span class="chip ok">📦 Grande</span>' : ''}<div class="apm">${esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
+  return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b>${d.large ? ' <span class="chip ok">📦 Grande</span>' : ''}<div class="apm">${d.large ? '📦 Pedido grande' : esc(brs()[d.branch] || '')} · ${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}</div>
  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${q ? `<div style="margin:4px 0"><iframe src="https://www.google.com/maps?q=${encodeURIComponent(q)}&z=16&output=embed" width="100%" height="180" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div style="margin-top:4px"><a href="https://www.google.com/maps?q=${encodeURIComponent(q)}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div></div>` : ''}${(() => {
     if (d.lat == null || d.lng == null) return '';
@@ -482,7 +486,7 @@ function dvRouteMap(d) {
 
 /* Administrador y Pedidos */
 function dvPanel() {
-  const L = (S.dv || []).filter(d => !d.large).slice().sort((a, b) => b.ts - a.ts),
+  const L = (S.dv || []).slice().sort((a, b) => b.ts - a.ts),
     n = s => L.filter(d => d.status == s).length,
     cash = L.filter(d => d.status == 'entregado').reduce((a, d) => a + nz(d.cobrado), 0);
   return `<div class="kp" style="margin-bottom:8px"><div><small>Por tomar</small><b>${n('pendiente')}</b></div><div><small>En camino</small><b>${n('en_ruta')}</b></div><div><small>Entregados</small><b>${n('entregado')}</b></div></div>

@@ -23,8 +23,14 @@ function admOrSup() { return adm() || sup(); }
       return d.type == 'devolucion'
         ? d.price > 0
         : (d.f >= 100
-            ? d.price > 0 && d.price == get(/databases/$(database)/documents/config/main).data.prices.get('f' + string(d.f), [20, 30, 50][d.f - 100])
-            : d.price > 0 && d.price == get(/databases/$(database)/documents/config/main).data.prices['f' + string(d.f)]);
+            ? (d.price > 0 && (d.price == get(/databases/$(database)/documents/config/main).data.prices.get('f' + string(d.f), [20, 30, 50][d.f - 100])
+                || (d.price < get(/databases/$(database)/documents/config/main).data.prices.get('f' + string(d.f), [20, 30, 50][d.f - 100])
+                    && d.get('descuento', 0) > 0
+                    && (d.get('pre', null) != null || d.get('dv', null) != null))))
+            : (d.price > 0 && (d.price == get(/databases/$(database)/documents/config/main).data.prices['f' + string(d.f)]
+                || (d.price < get(/databases/$(database)/documents/config/main).data.prices['f' + string(d.f)]
+                    && d.get('descuento', 0) > 0
+                    && (d.get('pre', null) != null || d.get('dv', null) != null)))));
     }
     function validSale(d) {
       return d.qty is int && d.qty > 0 && d.qty < 500
@@ -100,7 +106,14 @@ function admOrSup() { return adm() || sup(); }
     match /sales/{id} {
       allow read: if adm() || sup() || enc() || vend(resource.data.branch);
       allow create: if adm() || (okId(id) && vend(request.resource.data.branch) && validSale(request.resource.data)
-        && (request.resource.data.type == 'apartado' || noCut(request.resource.data.day)));
+        && (request.resource.data.type == 'apartado' || noCut(request.resource.data.day)))
+        // El repartidor cobra un reparto que él mismo llevó y cerró
+        || (rep() && request.resource.data.type == 'vendido'
+            && request.resource.data.get('dv', null) is string
+            && validSale(request.resource.data)
+            && noCut(request.resource.data.day)
+            && getAfter(/databases/$(database)/documents/deliveries/$(request.resource.data.dv)).data.drv == prof().user
+            && getAfter(/databases/$(database)/documents/deliveries/$(request.resource.data.dv)).data.status == 'entregado');
       // El vendedor solo puede entregar un apartado (apartado -> vendido) a su nombre, antes del corte; no cambia precio, cantidad ni ventas ya cobradas
       allow update: if adm() || (vend(resource.data.branch)
         && resource.data.type == 'apartado' && request.resource.data.type == 'vendido'
@@ -163,8 +176,14 @@ function admOrSup() { return adm() || sup(); }
       // Solo se modifica un apartado que sigue pendiente: así dos dispositivos no pueden entregar el mismo apartado
       allow update: if resource.data.status == 'pendiente' && (adm() || sup()
         || (vend(resource.data.branch) && vendPreOk(id))
-        || (enc() && resource.data.by == prof().user && request.resource.data.status == 'cancelado'));
-      allow delete: if adm() || sup();
+        || (enc() && resource.data.by == prof().user && request.resource.data.status == 'cancelado')
+        // El repartidor cierra el pedido grande cuando entrega o falla el reparto
+        || (rep() && resource.data.get('large', false) == true
+            && resource.data.get('dvId', null) is string
+            && request.resource.data.status in ['entregado', 'fallido']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reason', 'doneAt'])
+            && getAfter(/databases/$(database)/documents/deliveries/$(resource.data.dvId)).data.drv == prof().user));
+      allow delete: if adm() || sup() || (enc() && resource.data.get('large', false) == true);
     }
     // Bitácora de anulaciones y cancelaciones (solo el administrador la lee; no se puede editar ni borrar)
     match /logs/{id} {

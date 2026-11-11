@@ -63,7 +63,7 @@ function admCard(p) {
       (mine
         ? `<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>`
         : '');
-  return `<div class="card apc${p.ok ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(p.client)}</b><div class="apm">${esc(brs()[p.branch])} · ${od ? '<b class="bad">Pendiente desde ' + esc(fdate(p.date)) + '</b>' : fut ? esc(fdate(p.date)) : 'Para hoy'} · lo apartó ${esc(p.byName || p.by)}</div></div><div style="text-align:right;flex:none"><b>${money(preTot(p))}</b><br><span class="chip ${p.ok ? 'ok' : 'low'}">${p.ok ? '✓ Aceptado' : 'Por aceptar'}</span></div></div>
+  return `<div class="card apc${p.ok ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(p.client)}</b><div class="apm">${p.large ? '📦 Pedido grande' : esc(brs()[p.branch])} · ${od ? '<b class="bad">Pendiente desde ' + esc(fdate(p.date)) + '</b>' : fut ? esc(fdate(p.date)) : 'Para hoy'} · lo apartó ${esc(p.byName || p.by)}</div></div><div style="text-align:right;flex:none"><b>${money(preTot(p))}</b><br><span class="chip ${p.ok ? 'ok' : 'low'}">${p.ok ? '✓ Aceptado' : 'Por aceptar'}</span></div></div>
  <div class="apt">${esc(preTxt(p))}</div>${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${p.note ? `<small>📝 ${esc(p.note)}</small>` : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
 }
 
@@ -71,7 +71,10 @@ function admToday(l) {
   const q = l.reduce((a, p) => a + preQty(p), 0),
     tot = l.reduce((a, p) => a + preTot(p), 0),
     g = {};
-  l.forEach(p => (g[p.branch] = g[p.branch] || []).push(p));
+  l.forEach(p => {
+    const k = p.large ? 'lg' : p.branch;
+    (g[k] = g[k] || []).push(p);
+  });
   if (!l.length)
     return (
       admBtn() +
@@ -84,9 +87,9 @@ function admToday(l) {
     sum +
     admBtn() +
     Object.keys(g)
-      .map(Number)
-      .sort((a, b) => a - b)
+      .sort((a, b) => (a == 'lg' ? 1 : 0) - (b == 'lg' ? 1 : 0) || a - b)
       .map(b => {
+        const isLg = b == 'lg';
         const a = g[b].sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.ts - y.ts)),
           td = a.filter(p => p.date == D),
           od = a.filter(p => p.date < D),
@@ -94,9 +97,9 @@ function admToday(l) {
         if (td.length) pt.push(preSum(td));
         if (a.length) pt.push(a.filter(p => p.ok).length + '/' + a.length + ' aceptados');
         if (od.length) pt.push('<b class="bad">' + od.length + ' de días anteriores</b>');
-        if (td.length) pt.push(loadDone(b) ? '✅ ya en la carga' : 'se suma al guardar la carga');
+        if (!isLg && td.length) pt.push(loadDone(b) ? '✅ ya en la carga' : 'se suma al guardar la carga');
         return (
-          `<div class="apg"><div class="row" style="border:0;padding:0"><div><h3 style="margin:0">${esc(brs()[b])}${isOpen(b) ? '' : ' · cerrada'}</h3><small>${pt.join(' · ')}</small></div>${S.me.role == 'admin' ? `<button class="gh" onclick="admInv(${b})">Inventario</button>` : ''}</div><div class="bar"><i style="width:${Math.round((a.filter(p => p.ok).length / a.length) * 100)}%"></i></div></div>` +
+          `<div class="apg"><div class="row" style="border:0;padding:0"><div><h3 style="margin:0">${isLg ? '📦 Pedidos grandes' : esc(brs()[b]) + (isOpen(b) ? '' : ' · cerrada')}</h3><small>${pt.join(' · ')}</small></div>${S.me.role == 'admin' && !isLg ? `<button class="gh" onclick="admInv(${b})">Inventario</button>` : ''}</div><div class="bar"><i style="width:${Math.round((a.filter(p => p.ok).length / a.length) * 100)}%"></i></div></div>` +
           a.map(admCard).join('')
         );
       })
@@ -125,7 +128,7 @@ function admLater(l) {
 function apViewAdm() {
   S.apb = null;
   const t = ['h', 'o', ...(S.me.role == 'admin' ? ['s'] : [])].includes(S.apt) ? S.apt : 'h',
-    l = S.pre.filter(p => S.apb == null || p.branch == S.apb),
+    l = S.pre.filter(p => p.large || S.apb == null || p.branch == S.apb),
     hoy = l.filter(p => p.date <= D),
     otro = l.filter(p => p.date > D),
     rp = (S.rq || []).filter(r => rqSt(r) == 'pendiente').length,

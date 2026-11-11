@@ -26,9 +26,7 @@ const navBadge = k =>
       ? preN()
       : k == 'dv'
         ? (S.dv || []).filter(d => d.status == 'pendiente').length
-        : k == 'lg'
-          ? (S.dv || []).filter(d => d.large && d.status == 'pendiente').length
-          : 0;
+        : 0;
 
 async function setNav(a) {
   try {

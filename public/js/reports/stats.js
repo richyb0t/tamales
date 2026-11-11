@@ -174,7 +174,7 @@ function rpMore(rows) {
   return (
     `<div class="card"><h3>Pedidos por sucursal</h3>${T(['Sucursal', 'Pedidos', 'Ticket prom.', '% del total'], bt.map(r => `<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${money(r[2] / r[1])}</td><td>${Math.round((r[2] / ga) * 100)}%</td></tr>`).join(''))}</div>` +
     `<div class="card"><h3>Ventas por categoría</h3>${bars(cat, x => x[1].a)}</div><div class="card"><h3>Ventas por hora</h3>${bars(hr, x => x[1].a)}</div><div class="card"><h3>Promedio por día de la semana</h3><small>Entre paréntesis, cuántos días hubo en el periodo</small>${bars(wd, x => x[1].a)}</div>` +
-    `<div class="card"><h3>Piezas por sabor y sucursal</h3>${T(['Sabor', ...mb.map(b => esc(brs()[b] || b)), 'Total'], fr.map(([f, r]) => `<tr><td>${nm(f)}</td>${r.map(u => `<td style="background:rgba(184,50,31,${((u / mx) * 0.55).toFixed(2)})">${u}</td>`).join('')}<td><b>${r.reduce((a, c) => a + c, 0)}</b></td></tr>`).join(''))}</div>` +
+    `<div class="card"><h3>Piezas por sabor y sucursal</h3>${T(['Sabor', ...mb.map(b => esc(brs()[b] || (b == null ? 'Pedido grande' : b))), 'Total'], fr.map(([f, r]) => `<tr><td>${nm(f)}</td>${r.map(u => `<td style="background:rgba(184,50,31,${((u / mx) * 0.55).toFixed(2)})">${u}</td>`).join('')}<td><b>${r.reduce((a, c) => a + c, 0)}</b></td></tr>`).join(''))}</div>` +
     `<div class="card"><h3>Sin ventas en el periodo</h3><small>${idle.length ? esc(idle.join(', ')) : 'Todos los sabores tuvieron ventas.'}</small></div>` +
     `<div class="card"><h3>Devoluciones por motivo</h3><small>${
       Object.keys(rs).length

@@ -32,7 +32,7 @@ function rpCsv(det) {
           [
             s.day,
             hm(s.ts),
-            brs()[s.branch] || s.branch,
+            brs()[s.branch] || (s.branch == null ? 'Pedido grande' : s.branch),
             s.by,
             nm(s.f),
             s.type,
@@ -48,7 +48,7 @@ function rpCsv(det) {
   else {
     const m = {};
     rows.forEach(s => {
-      const k = [s.day, brs()[s.branch] || s.branch, nm(s.f)].join('|'),
+      const k = [s.day, brs()[s.branch] || (s.branch == null ? 'Pedido grande' : s.branch), nm(s.f)].join('|'),
         x = (m[k] = m[k] || { u: 0, a: 0 }),
         g = s.type == 'devolucion' ? -1 : 1;
       x.u += g * s.qty;
