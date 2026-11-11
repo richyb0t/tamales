@@ -176,7 +176,8 @@ function admOrSup() { return adm() || sup(); }
       // Solo se modifica un apartado que sigue pendiente: así dos dispositivos no pueden entregar el mismo apartado
       allow update: if resource.data.status == 'pendiente' && (adm() || sup()
         || (vend(resource.data.branch) && vendPreOk(id))
-        || (enc() && resource.data.by == prof().user && request.resource.data.status == 'cancelado')
+        // El rol de pedidos cancela los pedidos grandes pendientes (el repartidor cierra al entregar o fallar)
+        || (enc() && resource.data.get('large', false) == true && request.resource.data.status == 'cancelado')
         // El repartidor cierra el pedido grande cuando entrega o falla el reparto
         || (rep() && resource.data.get('large', false) == true
             && resource.data.get('dvId', null) is string
