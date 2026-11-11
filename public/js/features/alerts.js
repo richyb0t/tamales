@@ -22,7 +22,7 @@ function lowList() {
 function alertCard() {
   const l = lowList();
   if (!l.length) return '';
-  const A = !!S.me && S.me.role == 'admin';
+  const A = !!S.me && (S.me.role == 'admin' || S.me.role == 'enc');
   if (A && S.alHide) {
     const o = l.filter(x => x.o).length,
       w = l.length - o;
