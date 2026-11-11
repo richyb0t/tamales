@@ -2,7 +2,8 @@
 
 function usView() {
   return `<div class="card"><h3>Nuevo usuario</h3><div class="form"><input id="un" placeholder="Nombre"><input id="uu" placeholder="Usuario" autocapitalize="none"><input id="up" placeholder="PIN (6 dígitos)" inputmode="numeric"><select id="ur" aria-label="Rol"><option value="vend">Vendedor</option><option value="enc">Encargado de pedidos</option><option value="rep">Repartidor</option><option value="sup">Supervisor</option><option value="admin">Administrador</option></select></div><small>Cada vendedor elige su sucursal al entrar a la app.</small><div class="form"><button onclick="addUser()">Crear usuario</button></div></div>
- <div class="card"><h3>Usuarios</h3>${S.users.map(u => `<div class="ucard"><div class="uinfo"><div class="uav" style="background:${avC(u.user || u.id)}">${avI(u.name)}</div><div style="min-width:0;flex:1"><b>${esc(u.name)}${u.active === false ? ' <small class="bad">(desactivado)</small>' : ''}</b><br><small>${esc(u.user || u.id)} · ${ROLE[u.role] || ''}${u.role == 'vend' ? ' · ' + (vbr(u) != null ? esc(brs()[vbr(u)]) : 'Sin sucursal hoy') : ''}</small></div></div><div class="uacts">${u.role == 'vend' && vbr(u) != null ? `<button class="gh" data-b="${vbr(u)}" onclick="freeBr(this.dataset.b)">Liberar sucursal</button>` : ''}<button class="gh" data-id="${esc(u.id)}" onclick="renameUser(this.dataset.id)">Cambiar nombre</button>${u.id == S.me.id ? '' : `<button class="gh" data-id="${esc(u.id)}" onclick="pinUser(this.dataset.id)">Cambiar PIN</button><button class="gh" data-id="${esc(u.id)}" onclick="delUser(this.dataset.id,${u.active === false})">${u.active === false ? 'Reactivar' : 'Desactivar'}</button><button class="gh" style="color:var(--bad)" data-id="${esc(u.id)}" onclick="rmUser(this.dataset.id)">Eliminar</button>`}</div></div>`).join('')}</div>`;
+ <div class="card"><h3>Usuarios</h3>${S.users.map(u => `<div class="ucard"><div class="uinfo"><div class="uav" style="background:${avC(u.user || u.id)}">${avI(u.name)}</div><div style="min-width:0;flex:1"><b>${esc(u.name)}${u.active === false ? ' <small class="bad">(desactivado)</small>' : ''}</b><br><small>${esc(u.user || u.id)} · ${ROLE[u.role] || ''}${u.role == 'vend' ? ' · ' + (vbr(u) != null ? esc(brs()[vbr(u)]) : 'Sin sucursal hoy') : ''}</small></div></div><div class="uacts">${u.role == 'vend' && vbr(u) != null ? `<button class="gh" data-b="${vbr(u)}" onclick="freeBr(this.dataset.b)">Liberar sucursal</button>` : ''}${u.id == S.me.id ? '' : `<button class="gh" data-id="${esc(u.id)}" onclick="roleUser(this.dataset.id)">Cambiar rol</button>`}
+<button class="gh" data-id="${esc(u.id)}" onclick="renameUser(this.dataset.id)">Cambiar nombre</button>${u.id == S.me.id ? '' : `<button class="gh" data-id="${esc(u.id)}" onclick="pinUser(this.dataset.id)">Cambiar PIN</button><button class="gh" data-id="${esc(u.id)}" onclick="delUser(this.dataset.id,${u.active === false})">${u.active === false ? 'Reactivar' : 'Desactivar'}</button><button class="gh" style="color:var(--bad)" data-id="${esc(u.id)}" onclick="rmUser(this.dataset.id)">Eliminar</button>`}</div></div>`).join('')}</div>`;
 }
 
 /* El administrador mantiene 'profiles' igual que 'users' (altas, bajas, desactivados, cambios de nombre) */
@@ -64,6 +65,38 @@ async function addUser(first) {
   } catch (e) {
     toast(fe(e));
   }
+}
+
+function roleUser(id) {
+  const u = S.users.find(x => x.id == id);
+  if (!u || id == S.me.id) return;
+  const m = $('#modal');
+  const opts = ['vend', 'enc', 'rep', 'sup', 'admin']
+    .map(r => `<option value="${r}">${ROLE[r] || r}</option>`)
+    .join('');
+  m.innerHTML = `<div class="card"><h3>Cambiar rol · ${esc(u.name)}</h3><div class="form"><select id="rur" aria-label="Rol">${opts}</select></div><small>Si deja de ser vendedor, se libera su sucursal del día.</small><div class="form"><button id="rkm">Guardar</button><button class="alt" id="rkn">Cancelar</button></div></div>`;
+  m.style.display = 'flex';
+  $('#rur').value = u.role;
+  $('#rkn').onclick = () => (m.style.display = 'none');
+  $('#rkm').onclick = async () => {
+    const r = $('#rur').value;
+    if (r == u.role) {
+      m.style.display = 'none';
+      return;
+    }
+    try {
+      if (u.role == 'vend' && r != 'vend' && vbr(u) != null) {
+        try {
+          await db.doc('claims/' + vbr(u)).delete();
+        } catch (_) {}
+      }
+      await db.doc('users/' + id).update({ role: r });
+      toast('Rol actualizado');
+      m.style.display = 'none';
+    } catch (e) {
+      err(e);
+    }
+  };
 }
 
 function rmUser(id) {
