@@ -26,7 +26,7 @@ function onUser(u) {
   S.vt = 'v';
   S.rt = 'e';
   S.q = '';
-  S.alHide = false;
+  S.alHide = true;
   if (u) vRest = false;
   restoreView(u);
   if (!u) {
@@ -201,12 +201,17 @@ function startSubs() {
       }, err)
     );
   S.pre = [];
+  let _preSig = '';
   subs.push(
     (M
       ? db.collection('pre').where('branch', '==', b).where('status', '==', 'pendiente')
       : db.collection('pre').where('status', '==', 'pendiente')
     ).onSnapshot(q => {
-      S.pre = q.docs.map(d => ({ _id: d.id, ...d.data() }));
+      const next = q.docs.map(d => ({ _id: d.id, ...d.data() }));
+      const sig = JSON.stringify(next.map(p => p._id + '|' + (p.ts || 0)));
+      if (sig === _preSig) return;
+      _preSig = sig;
+      S.pre = next;
       render();
     }, err)
   );
