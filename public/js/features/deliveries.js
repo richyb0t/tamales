@@ -199,7 +199,7 @@ function dvForm() {
        return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative;padding:8px 12px;overflow:visible">${badge}${esc(brs()[i])}${dot}</button>`;
      }).join('')}</div>
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !items.every(([k, v]) => left(nearest, +k.slice(1)) >= v) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
-     ${ranked.length ? `<div class="card" style="margin-top:8px"><small style="display:block;margin-bottom:4px">Sucursales ordenadas por cercanía:</small>${ranked.slice(0, 3).map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km${items.length && !items.every(([k, v]) => left(r.i, +k.slice(1)) >= v) ? ' · sin disponibilidad completa' : ''}</div>`).join('')}</div>` : ''}
+     ${ranked.length ? ranked.slice(0, 3).map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km</div>`).join('') : ''}
      ${nav(2, 4, 'Siguiente: Datos →')}
     `;
   } else {
