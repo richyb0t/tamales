@@ -64,7 +64,7 @@ function admCard(p) {
         ? `<button class="gh" style="color:var(--bad)" onclick="cancelPre('${p._id}')">Cancelar</button>`
         : '');
   return `<div class="card apc${p.ok ? ' ok' : ''}"><div class="aph"><div><b class="n">${esc(p.client)}</b><div class="apm">${p.large ? '📦 Pedido grande' : esc(brs()[p.branch])} · ${od ? '<b class="bad">Pendiente desde ' + esc(fdate(p.date)) + '</b>' : fut ? esc(fdate(p.date)) : 'Para hoy'} · lo apartó ${esc(p.byName || p.by)}</div></div><div style="text-align:right;flex:none"><b>${money(preTot(p))}</b><br><span class="chip ${p.ok ? 'ok' : 'low'}">${p.ok ? '✓ Aceptado' : 'Por aceptar'}</span></div></div>
- <div class="apt">${esc(preTxt(p))}</div>${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${p.note ? `<small>📝 ${esc(p.note)}</small>` : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
+ <div class="apt">${esc(preTxt(p))}</div>${p.large && p.addr ? `<div>📍 ${esc(p.addr)}</div>` : ''}${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${p.note ? `<small>📝 ${esc(p.note)}</small>` : ''}${bt ? `<div class="apa">${bt}</div>` : ''}</div>`;
 }
 
 function admToday(l) {
