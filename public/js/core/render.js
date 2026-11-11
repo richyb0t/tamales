@@ -1,7 +1,21 @@
 /* Motor de pintado: render con retardo, renderNow y rotulado de controles. */
 
+/* Evita que el navegador restaure el scroll al recargar: cada pantalla empieza arriba. */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
 let rT = 0,
-  rForce = false;
+  rForce = false,
+  vk = '';
+
+/* Clave de la pantalla visible: al cambiar de pantalla se vuelve hasta arriba. */
+function viewKey() {
+  const m = S.me;
+  if (!m) return '';
+  if (m.role == 'admin' || m.role == 'sup') return 'a:' + (S.tab || 'res') + ':' + (S.ib || 0) + ':' + (S.apt || 'h');
+  if (m.role == 'vend') return 'v:' + (S.vt || 'v') + ':' + (S.apt || 'h');
+  if (m.role == 'rep') return 'e:' + (S.rt || 'e');
+  return 'e:' + (S.et || 'd') + ':' + (S.apt || 'h');
+}
 
 function render(force) {
   if (force) rForce = true;
@@ -33,10 +47,12 @@ function renderNow(force) {
     return;
   }
   if (!S.fu) {
+    vk = '';
     a.innerHTML = S.setup ? setupView() : loginView();
     return;
   }
   if (!S.me) {
+    vk = '';
     a.innerHTML = S.pf ? noAccess() : w;
     return;
   }
@@ -47,6 +63,11 @@ function renderNow(force) {
   a.innerHTML = (
     { admin: adminView, sup: adminView, vend: vendView, enc: encView, rep: repView  }[S.me.role] || (() => '<p>Rol no válido</p>')
   )();
+  const k = viewKey();
+  if (k !== vk) {
+    vk = k;
+    scrollTo(0, 0);
+  }
   if (!['vend', 'rep'].includes(S.me.role)) chkAlerts();
   if (!['enc', 'rep'].includes(S.me.role)) schedSt();
   labelControls();

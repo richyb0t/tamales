@@ -151,6 +151,7 @@ function go(k) {
   else if (m.role == 'enc') {
     S.et = k;
     renderNow(true);
+    scrollTo(0, 0);
   } else setRt(k);
 }
 
@@ -162,4 +163,5 @@ const adNav = k => (k == 'more' ? menu(1) : setTab(k)),
     if (k == 'a') S.apt = S.apt == 's' ? 'h' : S.apt;
     S.et = k;
     renderNow(true);
+    scrollTo(0, 0);
   };
