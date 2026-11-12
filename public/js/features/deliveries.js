@@ -699,7 +699,11 @@ function enableNotif() {
       }
       if (S.me && S.me.id) {
         OneSignal.User.addTag('role', S.me.role);
-        try { localStorage.setItem('tm_push_role', S.me.role); } catch (_) {}
+        try {
+          localStorage.setItem('tm_push_role', S.me.role);
+          localStorage.setItem('tm_push_appid', appId);
+        } catch (_) {}
+        try { await OneSignal.User.PushSubscription.optIn(); } catch (_) {}
         const id = await OneSignal.User.PushSubscription.id;
         if (id) await db.doc('users/' + S.me.id).update({ onesignalId: id });
       }
@@ -950,8 +954,12 @@ async function initOnesignal() {
       console.log('[OneSignal] init OK, permission:', Notification.permission);
       if (S.me && S.me.id) {
         OneSignal.User.addTag('role', S.me.role);
-        try { localStorage.setItem('tm_push_role', S.me.role); } catch (_) {}
+        try {
+          localStorage.setItem('tm_push_role', S.me.role);
+          localStorage.setItem('tm_push_appid', appId);
+        } catch (_) {}
         if (Notification.permission === 'granted') {
+          try { await OneSignal.User.PushSubscription.optIn(); } catch (_) {}
           const id = await OneSignal.User.PushSubscription.id;
           console.log('[OneSignal] PushSubscription.id:', id);
           if (id) await db.doc('users/' + S.me.id).update({ onesignalId: id });
@@ -965,27 +973,38 @@ async function initOnesignal() {
   });
 }
 
-/* Quita la etiqueta role de este dispositivo (al salir, cambiar de rol o quedar inactivo).
-   Así un teléfono que fue de repartidor deja de recibir avisos. */
+/* Quita la etiqueta role y apaga la suscripción de este dispositivo (al salir, cambiar de rol
+   o quedar inactivo). Así un teléfono que fue de repartidor deja de recibir avisos, incluso
+   si el servidor tarda en aplicar la etiqueta. */
 async function clearPushTag() {
+  let appId = '';
   try {
     if (localStorage.getItem('tm_push_role') !== 'rep') return;
+    appId = localStorage.getItem('tm_push_appid') || '';
   } catch (_) {
     return;
   }
   for (let i = 0; i < 40 && !S.cfgOk; i++) await new Promise(r => setTimeout(r, 250));
-  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
+  appId = appId || (S.cfg && S.cfg.onesignalAppId) || '';
   if (!appId) return;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
-  window.OneSignalDeferred.push(async function (OneSignal) {
-    try {
-      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
-      await OneSignal.User.removeTag('role');
-      try { localStorage.removeItem('tm_push_role'); } catch (_) {}
-      console.log('[OneSignal] etiqueta role eliminada');
-    } catch (e) {
-      console.warn('[OneSignal] clear tag', e);
-    }
+  await new Promise(resolve => {
+    window.OneSignalDeferred.push(async function (OneSignal) {
+      try {
+        await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
+        await OneSignal.User.removeTag('role');
+        /* Apagar la suscripción corta el envío de inmediato en este dispositivo. */
+        try { await OneSignal.User.PushSubscription.optOut(); } catch (_) {}
+        try {
+          localStorage.removeItem('tm_push_role');
+          localStorage.removeItem('tm_push_appid');
+        } catch (_) {}
+        console.log('[OneSignal] etiqueta role eliminada y suscripción apagada');
+      } catch (e) {
+        console.warn('[OneSignal] clear tag', e);
+      }
+      resolve();
+    });
   });
 }
 

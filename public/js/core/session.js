@@ -37,6 +37,8 @@ function onUser(u) {
     S.lp = null;
     S.lr = null;
     S.lm = false;
+    /* Si este teléfono fue de repartidor, apaga el push al quedar en la pantalla de entrada. */
+    if (typeof clearPushTag === 'function') clearPushTag();
     profSub();
     FB.initExists()
       .then(x => {
