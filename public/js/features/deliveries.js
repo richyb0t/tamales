@@ -652,12 +652,44 @@ try {
 
 function enableNotif() {
   if (!('Notification' in window)) return toast('Este navegador no soporta notificaciones');
-  if (typeof onesignalRequestPermission === 'function' && (S.cfg && S.cfg.onesignalAppId)) {
-    onesignalRequestPermission();
-    return;
+  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
+  if (appId && window.OneSignal) {
+    try {
+      window.OneSignal.init({ appId, notifyButton: { enable: false } }).then(() => {
+        window.OneSignal.Notifications.requestPermission().then(perm => {
+          if (perm) {
+            setTimeout(() => {
+              window.OneSignal.User.PushSubscription.id.then(id => {
+                if (id && S.me && S.me.id) {
+                  db.doc('users/' + S.me.id).update({ onesignalId: id });
+                  window.OneSignal.User.addTag('role', S.me.role);
+                }
+                toast('Notificaciones activadas');
+              });
+            }, 2000);
+          } else {
+            toast('No se activaron las notificaciones');
+          }
+          renderNow(true);
+        }).catch(e => {
+          console.warn('OneSignal perm error:', e);
+          toast('Error: ' + (e && e.message ? e.message : e));
+        });
+      }).catch(e => {
+        console.warn('OneSignal init error:', e);
+        Notification.requestPermission().then(pp => {
+          if (pp == 'granted') toast('Notificaciones activadas');
+          else toast('No se activaron las notificaciones');
+          renderNow(true);
+        });
+      });
+      return;
+    } catch (e) {
+      console.warn('OneSignal error:', e);
+    }
   }
-  Notification.requestPermission().then(p => {
-    if (p == 'granted') toast('Notificaciones activadas');
+  Notification.requestPermission().then(pp => {
+    if (pp == 'granted') toast('Notificaciones activadas');
     else toast('No se activaron las notificaciones');
     renderNow(true);
   });
@@ -839,37 +871,7 @@ async function initOnesignal() {
   });
 }
 
-async function onesignalRequestPermission() {
-  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
-  if (!appId) { toast('Falta el App ID de OneSignal en Ajustes'); return; }
-  if (!('Notification' in window)) { toast('Este navegador no soporta notificaciones'); return; }
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  window.OneSignalDeferred.push(async function (OneSignal) {
-    try {
-      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
-      const perm = await OneSignal.Notifications.requestPermission();
-      console.log('[OneSignal] permission result:', perm);
-      if (perm) {
-        await new Promise(r => setTimeout(r, 2000));
-        const id = await OneSignal.User.PushSubscription.id;
-        console.log('[OneSignal] PushSubscription.id:', id);
-        if (id && S.me && S.me.id) {
-          await db.doc('users/' + S.me.id).update({ onesignalId: id });
-          OneSignal.User.addTag('role', S.me.role);
-          toast('Notificaciones activadas');
-        } else {
-          toast('No se pudo obtener el ID de suscripción');
-        }
-      } else {
-        toast('No se activaron las notificaciones');
-      }
-      renderNow(true);
-    } catch (e) {
-      console.warn('[OneSignal] requestPermission error:', e);
-      toast('Error: ' + (e && e.message ? e.message : e));
-    }
-  });
-}
+
 
 async function onesignalNotify(title, body) {
   const appId = (S.cfg && S.cfg.onesignalAppId) || '';
