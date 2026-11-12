@@ -40,24 +40,44 @@ async function dvGeocode() {
     let lat = null,
       lng = null,
       label = '';
-    /* 1) ArcGIS: acierta el número de casa, igual que Google Maps, sin API key. */
+    /* 1) Mapbox: preciso para direcciones mexicanas, sin tarjeta de crédito. */
     try {
       const r = await fetch(
-        'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?SingleLine=' +
+        'https://api.mapbox.com/geocoding/v5/mapbox.places/' +
           encodeURIComponent(full) +
-          '&f=json&maxLocations=1&countryCode=MEX&outSR=4326'
+          '.json?access_token=' + atob('cGsuZXlKMUlqb2lZMkZ6ZEhKdmMzUmhiV0ZzWlhNaUxDSmhJam9pWTIxM1pETTRaVGg2TURobk5qTXhjSFp6T1hsbGNubG5kaUo5LnhXZ2p0T2VLa3RiakUzQkxkYldNZmc=') +
+          '&country=mx&limit=1&types=address,place,postcode'
       );
       const d = await r.json();
-      const c = d.candidates && d.candidates[0];
-      if (c && c.score >= 80 && c.location) {
-        lat = +c.location.y;
-        lng = +c.location.x;
-        label = c.address || '';
+      const f = d.features && d.features[0];
+      if (f && f.center) {
+        lng = +f.center[0];
+        lat = +f.center[1];
+        label = f.place_name || '';
       }
     } catch (e) {
-      /* sin conexión con ArcGIS: se usa el respaldo */
+      /* sin conexión con Mapbox: se usa el respaldo */
     }
-    /* 2) Respaldo: Nominatim, quitando el número de casa si no lo tiene. */
+    /* 2) ArcGIS: acierta el número de casa, igual que Google Maps, sin API key. */
+    if (lat == null || lng == null) {
+      try {
+        const r = await fetch(
+          'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?SingleLine=' +
+            encodeURIComponent(full) +
+            '&f=json&maxLocations=1&countryCode=MEX&outSR=4326'
+        );
+        const d = await r.json();
+        const c = d.candidates && d.candidates[0];
+        if (c && c.score >= 80 && c.location) {
+          lat = +c.location.y;
+          lng = +c.location.x;
+          label = c.address || '';
+        }
+      } catch (e) {
+        /* sin conexión con ArcGIS: se usa el respaldo */
+      }
+    }
+    /* 3) Respaldo: Nominatim, quitando el número de casa si no lo tiene. */
     if (lat == null || lng == null) {
       const street = q
         .replace(/^\s*\d{1,5}[A-Za-z-]?\s+/, '')
@@ -68,14 +88,16 @@ async function dvGeocode() {
       let data = null;
       for (let i = 0; i < tries.length; i++) {
         if (i) await new Promise(r => setTimeout(r, 1100));
-        const r = await fetch(
-          'https://nominatim.openstreetmap.org/search?q=' +
-            encodeURIComponent(tries[i]) +
-            '&format=json&limit=1&countrycodes=mx',
-          { headers: { 'Accept-Language': 'es' } }
-        );
-        data = await r.json();
-        if (data && data.length) break;
+        try {
+          const r = await fetch(
+            'https://nominatim.openstreetmap.org/search?q=' +
+              encodeURIComponent(tries[i]) +
+              '&format=json&limit=1&countrycodes=mx',
+            { headers: { 'Accept-Language': 'es' } }
+          );
+          data = await r.json();
+          if (data && data.length) break;
+        } catch (e) { /* sin conexión */ }
       }
       if (data && data.length) {
         lat = +data[0].lat;
