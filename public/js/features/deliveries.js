@@ -343,6 +343,7 @@ async function saveDv() {
     S.dvn = null;
     S.dvf = false;
     toast('Reparto guardado');
+    if (typeof onesignalNotify === 'function') onesignalNotify('Nuevo reparto', n.client.trim() + ' · ' + n.addr.trim());
     renderNow(true);
   } catch (e) {
     delete lock.s.dv;
@@ -429,6 +430,7 @@ async function dvAddFromPre(preId) {
     });
     await db.doc('pre/' + preId).update({ dvId: dvId });
     toast('Reparto agregado');
+    if (typeof onesignalNotify === 'function') onesignalNotify('Nuevo pedido grande', p.client + ' · ' + (p.addr || ''));
   } catch (e) {
     err(e);
   }
@@ -650,6 +652,10 @@ try {
 
 function enableNotif() {
   if (!('Notification' in window)) return toast('Este navegador no soporta notificaciones');
+  if (typeof onesignalRequestPermission === 'function' && (S.cfg && S.cfg.onesignalAppId)) {
+    onesignalRequestPermission();
+    return;
+  }
   Notification.requestPermission().then(p => {
     if (p == 'granted') toast('Notificaciones activadas');
     else toast('No se activaron las notificaciones');
@@ -807,5 +813,78 @@ async function initFcm() {
     console.warn('FCM init', e);
   }
 }
+async function initOnesignal() {
+  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
+  console.log('[OneSignal] initOnesignal called, appId:', appId ? appId.slice(0, 8) + '...' : '(empty)');
+  if (!appId || !('Notification' in window)) { console.log('[OneSignal] skipped: no appId or no Notification API'); return; }
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    try {
+      console.log('[OneSignal] SDK loaded, initializing...');
+      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
+      console.log('[OneSignal] init OK, permission:', Notification.permission);
+      if (S.me && S.me.id) {
+        OneSignal.User.addTag('role', S.me.role);
+        if (Notification.permission === 'granted') {
+          const id = await OneSignal.User.PushSubscription.id;
+          console.log('[OneSignal] PushSubscription.id:', id);
+          if (id) await db.doc('users/' + S.me.id).update({ onesignalId: id });
+        } else {
+          console.log('[OneSignal] permission not granted yet; user needs to tap Activar notificaciones');
+        }
+      }
+    } catch (e) {
+      console.warn('[OneSignal] init error:', e);
+    }
+  });
+}
+
+async function onesignalRequestPermission() {
+  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
+  if (!appId) { toast('Falta el App ID de OneSignal en Ajustes'); return; }
+  if (!('Notification' in window)) { toast('Este navegador no soporta notificaciones'); return; }
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    try {
+      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
+      const perm = await OneSignal.Notifications.requestPermission();
+      console.log('[OneSignal] permission result:', perm);
+      if (perm) {
+        await new Promise(r => setTimeout(r, 2000));
+        const id = await OneSignal.User.PushSubscription.id;
+        console.log('[OneSignal] PushSubscription.id:', id);
+        if (id && S.me && S.me.id) {
+          await db.doc('users/' + S.me.id).update({ onesignalId: id });
+          OneSignal.User.addTag('role', S.me.role);
+          toast('Notificaciones activadas');
+        } else {
+          toast('No se pudo obtener el ID de suscripción');
+        }
+      } else {
+        toast('No se activaron las notificaciones');
+      }
+      renderNow(true);
+    } catch (e) {
+      console.warn('[OneSignal] requestPermission error:', e);
+      toast('Error: ' + (e && e.message ? e.message : e));
+    }
+  });
+}
+
+async function onesignalNotify(title, body) {
+  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
+  if (!appId) { console.warn('[OneSignal] notify skipped: no appId'); return; }
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    try {
+      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
+      OneSignal.User.trackEvent('new_delivery', { title: title, body: body });
+      console.log('[OneSignal] event recorded: new_delivery', title);
+    } catch (e) {
+      console.warn('[OneSignal] notify error:', e);
+    }
+  });
+}
+
 const dvOpenN = () => (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
 

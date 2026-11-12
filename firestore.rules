@@ -1,6 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+      // Clave REST de OneSignal: solo admin/sup/enc la escriben y admin/sup/enc la leen (no el repartidor).
+      match /config/onesignal {
+        allow read: if adm() || sup() || enc();
+        allow write: if adm() || sup();
+      }
     function hasProf() { return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
     function prof() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
     function ok() { return hasProf() && prof().active != false; }

@@ -230,6 +230,7 @@ function ajView() {
   <div class="pkh" style="margin-top:10px"><span>Bebidas · precio y costo por vaso</span></div>${CH.map((c, i) => `<div class="row"><div>Champurrado ${c[0].toLowerCase()}<br><small>${c[1]}</small></div>${ni('pr' + (100 + i), price(100 + i), '', dis, 'Precio de champurrado ' + c[0].toLowerCase())}${ni('co' + (100 + i), cst(100 + i) || '', '—', 'step="0.5"' + dis, 'Costo de champurrado ' + c[0].toLowerCase())}</div>`).join('')}</div>
 </div>` : ''}
   <div class="cartsp"></div><div class="cart"><div class="ct one"><button class="go" style="flex:1" onclick="saveAj()">Guardar ajustes</button></div></div>
+  ${isAdmin ? `<div class="card ${lk ? 'plk' : ''}"><div class="ivh"><h3>${lk ? '🔒' : '🔓'} OneSignal (notificaciones push)</h3><button class="${lk ? 'alt' : 'gh'}" onclick="${lk ? 'plUnlock()' : 'plLock()'}">${lk ? 'Desbloquear' : 'Bloquear'}</button></div><small>Para que el repartidor reciba avisos con la app cerrada. Crea la app en onesignal.com, copia el App ID y la REST API Key, y pégalos aquí. Toca Guardar ajustes. ${lk ? 'Bloqueados para que no se cambien por error.' : 'Desbloqueados: edita y toca Guardar ajustes.'}</small><div class="form" style="margin:4px 0"><input id="osAppId" placeholder="App ID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)" aria-label="OneSignal App ID" value="${esc((S.cfg.onesignalAppId) || '')}" ${dis} style="flex:1"></div><div class="form" style="margin:4px 0"><input id="osRestKey" type="password" placeholder="REST API Key" aria-label="OneSignal REST API Key" value="${esc((S.cfg.onesignalRestKey) || '')}" ${dis} style="flex:1"></div></div>` : ''}
   ${isAdmin ? `<div class="card" style="border:2px solid var(--bad);margin-top:12px"><div class="ivh"><h3 style="color:var(--bad)">⚠️ Zona de peligro</h3></div><small>Borra todos los datos de prueba (ventas, cargas, apartados, traspasos, cortes, solicitudes, repartos y existencias publicadas). Conserva usuarios, sucursales, precios y costos. Los logs de anulación no se pueden borrar. Úsalo solo para demos o reinicio.</small><div class="form"><button class="gh bad" style="width:100%" onclick="resetTestData()">🗑️ Resetear datos de prueba</button></div></div>` : ''}`;
 }
 
@@ -275,6 +276,12 @@ async function saveAj() {
       },
       { merge: true }
     );
+    if (S.me && S.me.role === 'admin') {
+      await db.doc('config/onesignal').set(
+        { restKey: ($('#osRestKey') && $('#osRestKey').value || '').trim() },
+        { merge: true }
+      );
+    }
     F = flavors.slice();
     if (S.ajFlavors) S.ajFlavors = flavors.slice();
     if (S.ajDisabled) S.ajDisabled = (S.ajDisabled || []).slice();
