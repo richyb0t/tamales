@@ -219,6 +219,7 @@ function ajView() {
     .join('')}
  <div class="form"><button class="alt" style="width:100%" onclick="addBranch()">＋ Agregar sucursal</button></div></div>
   ${isAdmin ? `<div class="card ${lk ? 'plk' : ''}"><div class="ivh"><h3>${lk ? '🔒' : '🔓'} Ubicaciones (lat, lng)</h3><button class="${lk ? 'alt' : 'gh'}" onclick="${lk ? 'plUnlock()' : 'plLock()'}">${lk ? 'Desbloquear' : 'Bloquear'}</button></div><small>Para logística de repartos: sucursal más cercana al pedido. ${lk ? 'Bloqueadas para que no se cambien por error.' : 'Desbloqueadas: edita y toca Guardar ajustes.'}</small>${brs().map((n, i) => `<div class="form" style="margin:2px 0 8px"><small style="flex:1 1 100%;font-weight:700">${esc(n)}</small><input id="blat${i}" type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud ${esc(n)}" value="${esc((S.cfg.branchLocs || [])[i]?.lat ?? '')}" ${dis} style="flex:1"><input id="blng${i}" type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud ${esc(n)}" value="${esc((S.cfg.branchLocs || [])[i]?.lng ?? '')}" ${dis} style="flex:1"></div>`).join('')}</div>` : ''}
+  ${isAdmin ? `<div class="card"><div class="ivh"><h3>🔔 OneSignal (notificaciones push)</h3></div><small>Para que el repartidor reciba avisos con la app cerrada. Crea la app en onesignal.com, copia el App ID y la REST API Key, y pégalos aquí. Toca Guardar ajustes.</small><div class="form" style="margin:4px 0"><input id="osAppId" placeholder="App ID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)" aria-label="OneSignal App ID" value="${esc((S.cfg.onesignalAppId) || '')}" style="flex:1"></div><div class="form" style="margin:4px 0"><input id="osRestKey" type="password" placeholder="REST API Key" aria-label="OneSignal REST API Key" value="${esc((S.cfg.onesignalRestKey) || '')}" style="flex:1"></div></div>` : ''}
   <div class="card"><h3>🔔 Apartados y alertas</h3>${al('Minutos que se guarda un apartado de otra sucursal', 'Cuenta desde que la otra sucursal lo acepta', ni('holdIn', holdMin(), '', '', 'Minutos de apartado').replace('min="0"', 'min="5"'))}${al('Avisar cuando queden esta cantidad de tamales o menos', 'Por cada sabor', ni('lowIn', lowT(), '', '', 'Aviso de tamales'))}${al('Avisar cuando queden estos litros o menos de champurrado', '', ni('lowlIn', lowL(), '', 'step="0.25"', 'Aviso de champurrado'))}</div>
   <div class="card"><h3>💵 Fondo inicial por vendedor</h3>${al('Efectivo con el que empieza cada vendedor', 'Se usa en el corte de caja', ni('fondoIn', fondo(), '', '', 'Fondo inicial'))}</div>
   ${isAdmin ? navCard() : ''}
@@ -272,6 +273,8 @@ async function saveAj() {
         hold: Math.max(5, +$('#holdIn').value || 60),
         low: Math.max(0, +$('#lowIn').value || 0),
         lowl: Math.max(0, +$('#lowlIn').value || 0),
+        onesignalAppId: ($('#osAppId') && $('#osAppId').value || '').trim(),
+        onesignalRestKey: ($('#osRestKey') && $('#osRestKey').value || '').trim(),
       },
       { merge: true }
     );
@@ -286,6 +289,8 @@ async function saveAj() {
       if (!la && !lo) return (S.cfg.branchLocs || [])[i] || null;
       return { lat: +((la && la.value) || 0) || null, lng: +((lo && lo.value) || 0) || null };
     });
+    S.cfg.onesignalAppId = ($('#osAppId') && $('#osAppId').value || '').trim();
+    S.cfg.onesignalRestKey = ($('#osRestKey') && $('#osRestKey').value || '').trim();
     renderNow(true);
   } catch (e) {
     err(e);

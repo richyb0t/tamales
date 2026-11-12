@@ -118,6 +118,7 @@ function startSubs() {
   if (m.role == 'rep') {
     render();
     if (typeof initFcm === 'function') initFcm();
+    if (typeof initOnesignal === 'function') initOnesignal();
     return;
   } /* el repartidor solo necesita configuración y repartos */
   if (!rd) {

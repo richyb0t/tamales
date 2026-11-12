@@ -343,6 +343,7 @@ async function saveDv() {
     S.dvn = null;
     S.dvf = false;
     toast('Reparto guardado');
+    if (typeof onesignalNotify === 'function') onesignalNotify('Nuevo reparto', n.client.trim() + ' · ' + n.addr.trim());
     renderNow(true);
   } catch (e) {
     delete lock.s.dv;
@@ -429,6 +430,7 @@ async function dvAddFromPre(preId) {
     });
     await db.doc('pre/' + preId).update({ dvId: dvId });
     toast('Reparto agregado');
+    if (typeof onesignalNotify === 'function') onesignalNotify('Nuevo pedido grande', p.client + ' · ' + (p.addr || ''));
   } catch (e) {
     err(e);
   }
@@ -807,5 +809,43 @@ async function initFcm() {
     console.warn('FCM init', e);
   }
 }
+async function initOnesignal() {
+  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
+  if (!appId || !('Notification' in window)) return;
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    try {
+      await OneSignal.init({ appId, notifyButton: { enable: false } });
+      if (Notification.permission === 'granted' && S.me && S.me.id) {
+        const id = await OneSignal.User.PushSubscription.id;
+        if (id) await db.doc('users/' + S.me.id).update({ onesignalId: id });
+        OneSignal.User.addTag('role', S.me.role);
+      }
+    } catch (e) {
+      console.warn('OneSignal init', e);
+    }
+  });
+}
+
+async function onesignalNotify(title, body) {
+  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
+  const restKey = (S.cfg && S.cfg.onesignalRestKey) || '';
+  if (!appId || !restKey) return;
+  try {
+    await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + restKey },
+      body: JSON.stringify({
+        app_id: appId,
+        filters: [{ field: 'tag', key: 'role', relation: '=', value: 'rep' }],
+        headings: { es: title, en: title },
+        contents: { es: body, en: body },
+      }),
+    });
+  } catch (e) {
+    console.warn('OneSignal notify', e);
+  }
+}
+
 const dvOpenN = () => (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
 
