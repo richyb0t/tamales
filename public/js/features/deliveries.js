@@ -701,8 +701,9 @@ async function notifShow(title, body, tag) {
   const opts = {
     body: body || '',
     tag: tag || 'tamales',
-    /* Icono: Twemoji 🛵 (CC-BY 4.0) */
-    icon: '/icons/scooter-192.png',
+    /* Izquierda: scooter (badge). Derecha: logo de tamales (icon).
+       El scooter es de Twemoji 🛵 (CC-BY 4.0). */
+    icon: '/icons/icon-192.png',
     badge: '/icons/scooter-192.png',
     data: { url: '/' },
   };
