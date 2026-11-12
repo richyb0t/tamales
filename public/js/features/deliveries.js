@@ -19,7 +19,7 @@ const dvSum = n => Object.entries(n.items).reduce((a, [f, v]) => a + v * price(+
 
 function dvn() {
   if (!S.dvn)
-    S.dvn = { branch: null, autoBr: null, items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1 };
+    S.dvn = { branch: null, autoBr: null, items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1, geoAddr: '', geoBusy: false };
   if (S.dvn.branch != null && !BI().includes(S.dvn.branch)) S.dvn.branch = null;
   return S.dvn;
 }
@@ -31,10 +31,16 @@ function dvBr(i) {
   renderNow(true);
 }
 
-async function dvGeocode() {
+async function dvGeocode(silent) {
   const n = dvn();
   const q = (n.addr || '').trim();
-  if (!q) return toast('Escribe la dirección primero');
+  if (!q) {
+    if (!silent) toast('Escribe la dirección primero');
+    return;
+  }
+  if (n.geoBusy) return;
+  n.geoBusy = true;
+  n.geoAddr = q;
   const b = document.getElementById('dvgeo');
   if (b) { b.disabled = true; b.textContent = 'Buscando…'; }
   try {
@@ -108,16 +114,18 @@ async function dvGeocode() {
       }
     }
     if (lat == null || lng == null) {
-      toast('No se encontró la dirección. Pega las coordenadas manualmente o usa GPS.');
+      if (!silent) toast('No se encontró la dirección. Pega las coordenadas manualmente o usa GPS.');
       return;
     }
     n.lat = lat;
     n.lng = lng;
-    toast('Ubicación encontrada: ' + (label || '').slice(0, 60));
+    n.geoAddr = q;
+    if (!silent) toast('Ubicación encontrada: ' + (label || '').slice(0, 60));
     renderNow(true);
   } catch (e) {
-    toast('Error al buscar. Pega las coordenadas manualmente.');
+    if (!silent) toast('Error al buscar. Pega las coordenadas manualmente.');
   } finally {
+    n.geoBusy = false;
     if (b) { b.disabled = false; b.textContent = '🔍 Buscar ubicación de la dirección'; }
   }
 }
@@ -197,6 +205,14 @@ function dvForm() {
   } else if (step === 3) {
     const items = Object.entries(sel).filter(([k, v]) => v > 0);
     const lat = +n.lat, lng = +n.lng;
+    const addr = (n.addr || '').trim();
+    /* Si no se tocó "Buscar ubicación", se geocodifica sola al entrar al paso. */
+    if ((!lat || !lng) && addr && n.geoAddr !== addr && !n.geoBusy) {
+      n.geoAddr = addr;
+      setTimeout(() => {
+        if (S.dvn === n && n.step === 3) dvGeocode(true);
+      }, 0);
+    }
     let ranked = [];
     let nearest = null;
     if (lat && lng) {
@@ -236,7 +252,8 @@ function dvForm() {
      }).join('')}</div>
      ${items.length && !order.length ? '<small style="display:block;margin:4px 0 8px;color:var(--bad)">Ninguna sucursal tiene existencia completa. Ajusta cantidades o carga inventario.</small>' : ''}
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !has(nearest) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
-     ${list.length ? list.map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b>${r.d != null ? ' · ' + r.d.toFixed(1) + ' km' : ''}${items.length ? (has(r.i) ? ' · <span style="color:#22c55e">con existencia</span>' : ' · <span style="color:var(--bad)">sin existencia</span>') : ''}</div>`).join('') : '<small style="display:block;margin:4px 0 8px;opacity:.7">No hay sucursales abiertas.</small>'}
+     ${!ranked.length ? `<small style="display:block;margin:4px 0 8px;opacity:.7">${n.geoBusy ? 'Calculando distancias…' : lat && lng ? 'Las sucursales no tienen ubicación configurada. Revísalas en Ajustes.' : addr ? 'No se pudo ubicar la dirección. Revísala o usa GPS.' : 'Escribe la dirección para calcular los km.'}</small>` : ''}
+     ${list.length ? list.map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b>${r.d != null ? ' · ' + r.d.toFixed(1) + ' km' : ' · sin ubicación'}${items.length ? (has(r.i) ? ' · <span style="color:#22c55e">con existencia</span>' : ' · <span style="color:var(--bad)">sin existencia</span>') : ''}</div>`).join('') : '<small style="display:block;margin:4px 0 8px;opacity:.7">No hay sucursales abiertas.</small>'}
      ${nav(2, 4, 'Siguiente: Datos →')}
     `;
   } else {
