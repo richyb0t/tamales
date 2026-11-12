@@ -652,6 +652,10 @@ try {
 
 function enableNotif() {
   if (!('Notification' in window)) return toast('Este navegador no soporta notificaciones');
+  if (typeof onesignalRequestPermission === 'function' && (S.cfg && S.cfg.onesignalAppId)) {
+    onesignalRequestPermission();
+    return;
+  }
   Notification.requestPermission().then(p => {
     if (p == 'granted') toast('Notificaciones activadas');
     else toast('No se activaron las notificaciones');
@@ -811,18 +815,55 @@ async function initFcm() {
 }
 async function initOnesignal() {
   const appId = (S.cfg && S.cfg.onesignalAppId) || '';
-  if (!appId || !('Notification' in window)) return;
+  console.log('[OneSignal] initOnesignal called, appId:', appId ? appId.slice(0, 8) + '...' : '(empty)');
+  if (!appId || !('Notification' in window)) { console.log('[OneSignal] skipped: no appId or no Notification API'); return; }
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    try {
+      console.log('[OneSignal] SDK loaded, initializing...');
+      await OneSignal.init({ appId, notifyButton: { enable: false } });
+      console.log('[OneSignal] init OK, permission:', Notification.permission);
+      if (S.me && S.me.id) {
+        OneSignal.User.addTag('role', S.me.role);
+        if (Notification.permission === 'granted') {
+          const id = await OneSignal.User.PushSubscription.id;
+          console.log('[OneSignal] PushSubscription.id:', id);
+          if (id) await db.doc('users/' + S.me.id).update({ onesignalId: id });
+        }
+      }
+    } catch (e) {
+      console.warn('[OneSignal] init error:', e);
+    }
+  });
+}
+
+async function onesignalRequestPermission() {
+  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
+  if (!appId) { toast('Falta el App ID de OneSignal en Ajustes'); return; }
+  if (!('Notification' in window)) { toast('Este navegador no soporta notificaciones'); return; }
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function (OneSignal) {
     try {
       await OneSignal.init({ appId, notifyButton: { enable: false } });
-      if (Notification.permission === 'granted' && S.me && S.me.id) {
+      const perm = await OneSignal.Notifications.requestPermission();
+      console.log('[OneSignal] permission result:', perm);
+      if (perm) {
         const id = await OneSignal.User.PushSubscription.id;
-        if (id) await db.doc('users/' + S.me.id).update({ onesignalId: id });
-        OneSignal.User.addTag('role', S.me.role);
+        console.log('[OneSignal] PushSubscription.id:', id);
+        if (id && S.me && S.me.id) {
+          await db.doc('users/' + S.me.id).update({ onesignalId: id });
+          OneSignal.User.addTag('role', S.me.role);
+          toast('Notificaciones activadas');
+        } else {
+          toast('No se pudo obtener el ID de suscripción');
+        }
+      } else {
+        toast('No se activaron las notificaciones');
       }
+      renderNow(true);
     } catch (e) {
-      console.warn('OneSignal init', e);
+      console.warn('[OneSignal] requestPermission error:', e);
+      toast('Error: ' + (e && e.message ? e.message : e));
     }
   });
 }
@@ -836,9 +877,10 @@ async function onesignalNotify(title, body) {
       if (d.exists) { restKey = (d.data() || {}).restKey || ''; S.cfg = S.cfg || {}; S.cfg.onesignalRestKey = restKey; }
     } catch (e) { console.warn('OneSignal restKey', e); }
   }
-  if (!appId || !restKey) return;
+  if (!appId || !restKey) { console.warn('[OneSignal] notify skipped: appId or restKey missing'); return; }
+  console.log('[OneSignal] sending notification:', title);
   try {
-    await fetch('https://onesignal.com/api/v1/notifications', {
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + restKey },
       body: JSON.stringify({
@@ -848,10 +890,13 @@ async function onesignalNotify(title, body) {
         contents: { es: body, en: body },
       }),
     });
+    const data = await res.json();
+    console.log('[OneSignal] notify response:', data);
   } catch (e) {
-    console.warn('OneSignal notify', e);
+    console.warn('[OneSignal] notify error:', e);
   }
 }
+
 
 const dvOpenN = () => (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
 
