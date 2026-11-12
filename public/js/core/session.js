@@ -38,7 +38,7 @@ function onUser(u) {
     S.lr = null;
     S.lm = false;
     /* Si este teléfono fue de repartidor, apaga el push al quedar en la pantalla de entrada. */
-    if (typeof clearPushTag === 'function') clearPushTag();
+    if (typeof clearPushTag === 'function') clearPushTag(true);
     profSub();
     FB.initExists()
       .then(x => {
@@ -58,7 +58,7 @@ function onUser(u) {
       S.pf = true;
       stopSubs();
       stopClaims();
-      if (typeof clearPushTag === 'function') clearPushTag();
+      if (typeof clearPushTag === 'function') clearPushTag(true);
     } else {
       S.me = { id: u.uid, ...x };
       if (S.me.role == 'vend') {

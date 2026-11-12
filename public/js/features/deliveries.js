@@ -4,6 +4,11 @@
    sesión de repartidor no compite con la limpieza que dejó la pantalla de entrada. */
 let pushSeq = 0;
 
+/* App ID público de OneSignal. Se usa como respaldo para poder apagar el push desde la
+   pantalla de entrada, donde la configuración de Firestore todavía no está cargada. */
+const OS_APP_ID = '48fb9d48-43ac-485c-b399-a08b9557a0f7';
+const OS_SAFARI_ID = 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4';
+
 const DV = {
   pendiente: ['Por tomar', 'low'],
   en_ruta: ['En camino', 'ok'],
@@ -681,8 +686,7 @@ try {
 
 function enableNotif() {
   if (!('Notification' in window)) return toast('Este navegador no soporta notificaciones');
-  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
-  if (!appId) return toast('Falta el App ID de OneSignal en Ajustes');
+  const appId = (S.cfg && S.cfg.onesignalAppId) || OS_APP_ID;
   /* El SDK carga con `defer`; OneSignalDeferred espera a que esté listo. */
   const seq = ++pushSeq;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -691,7 +695,7 @@ function enableNotif() {
     try {
       await OneSignal.init({
         appId,
-        safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4',
+        safari_web_id: OS_SAFARI_ID,
         serviceWorkerPath: '/sw.js',
         serviceWorkerParam: { scope: '/' },
         notifyButton: { enable: false },
@@ -948,17 +952,15 @@ function hookOneSignalForeground(OneSignal) {
 
 async function initOnesignal() {
   const seq = ++pushSeq;
-  /* La configuración llega por un snapshot asíncrono: espera a que esté cargada. */
-  for (let i = 0; i < 40 && !S.cfgOk; i++) await new Promise(r => setTimeout(r, 250));
-  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
-  console.log('[OneSignal] initOnesignal called, appId:', appId ? appId.slice(0, 8) + '...' : '(empty)');
-  if (!appId || !('Notification' in window)) { console.log('[OneSignal] skipped: no appId or no Notification API'); return; }
+  const appId = (S.cfg && S.cfg.onesignalAppId) || OS_APP_ID;
+  console.log('[OneSignal] initOnesignal called, appId:', appId.slice(0, 8) + '...');
+  if (!('Notification' in window)) { console.log('[OneSignal] skipped: no Notification API'); return; }
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function (OneSignal) {
     if (seq !== pushSeq) return;
     try {
       console.log('[OneSignal] SDK loaded, initializing...');
-      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
+      await OneSignal.init({ appId, safari_web_id: OS_SAFARI_ID, serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
       if (seq !== pushSeq) return;
       hookOneSignalForeground(OneSignal);
       console.log('[OneSignal] init OK, permission:', Notification.permission);
@@ -985,25 +987,24 @@ async function initOnesignal() {
 
 /* Quita la etiqueta role y apaga la suscripción de este dispositivo (al salir, cambiar de rol
    o quedar inactivo). Así un teléfono que fue de repartidor deja de recibir avisos, incluso
-   si el servidor tarda en aplicar la etiqueta. */
-async function clearPushTag() {
+   si el servidor tarda en aplicar la etiqueta.
+   `force` limpia aunque no exista la marca local (teléfonos que se actualizaron después). */
+async function clearPushTag(force) {
   let appId = '';
   try {
-    if (localStorage.getItem('tm_push_role') !== 'rep') return;
+    if (!force && localStorage.getItem('tm_push_role') !== 'rep') return;
     appId = localStorage.getItem('tm_push_appid') || '';
   } catch (_) {
-    return;
+    if (!force) return;
   }
-  for (let i = 0; i < 40 && !S.cfgOk; i++) await new Promise(r => setTimeout(r, 250));
-  appId = appId || (S.cfg && S.cfg.onesignalAppId) || '';
-  if (!appId) return;
+  appId = appId || (S.cfg && S.cfg.onesignalAppId) || OS_APP_ID;
   const seq = ++pushSeq;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   await new Promise(resolve => {
     window.OneSignalDeferred.push(async function (OneSignal) {
       if (seq !== pushSeq) return resolve();
       try {
-        await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
+        await OneSignal.init({ appId, safari_web_id: OS_SAFARI_ID, serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
         /* Si mientras tanto entró un repartidor, no apagues su suscripción. */
         if (seq !== pushSeq) return resolve();
         await OneSignal.User.removeTag('role');

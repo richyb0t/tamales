@@ -192,7 +192,7 @@ async function logout() {
   try {
     /* Espera a apagar la suscripción, pero sin dejar la pantalla trabada si no hay internet. */
     if (typeof clearPushTag === 'function')
-      await Promise.race([clearPushTag(), new Promise(r => setTimeout(r, 4000))]);
+      await Promise.race([clearPushTag(true), new Promise(r => setTimeout(r, 4000))]);
   } catch (e) {}
   try {
     await FB.logout();
