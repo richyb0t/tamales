@@ -720,7 +720,7 @@ async function notifShow(title, body, tag) {
        El scooter es de Twemoji 🛵 (CC-BY 4.0). */
     icon: '/icons/icon-192.png',
     badge: '/icons/scooter-192.png',
-    data: { url: '/' },
+    data: { url: '/', local: true },
   };
   if ('serviceWorker' in navigator) {
     try {

@@ -13,7 +13,7 @@ try {
   console.warn('OneSignal SW no disponible', e);
 }
 
-const CACHE_VERSION = 'tamales-v185';
+const CACHE_VERSION = 'tamales-v186';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const PRECACHE = [
@@ -165,10 +165,13 @@ self.addEventListener('fetch', event => {
   cacheFirst(event, request);
 });
 
-/* Al tocar la notificación: enfocar la app si ya está abierta; si no, abrirla. */
+/* Al tocar una notificación local: enfocar la app si ya está abierta; si no, abrirla.
+   Los push remotos los maneja el worker de OneSignal, para no abrir dos pestañas. */
 self.addEventListener('notificationclick', event => {
+  const d = event.notification.data || {};
+  if (!d.local) return;
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/';
+  const url = d.url || '/';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       for (const c of list) {
