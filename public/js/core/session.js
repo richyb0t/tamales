@@ -56,6 +56,7 @@ function onUser(u) {
       S.pf = true;
       stopSubs();
       stopClaims();
+      if (typeof clearPushTag === 'function') clearPushTag();
     } else {
       S.me = { id: u.uid, ...x };
       if (S.me.role == 'vend') {
@@ -121,6 +122,8 @@ function startSubs() {
     if (typeof initOnesignal === 'function') initOnesignal();
     return;
   } /* el repartidor solo necesita configuración y repartos */
+  /* Si este teléfono fue de repartidor, quita la etiqueta al entrar otro rol. */
+  if (typeof clearPushTag === 'function') clearPushTag();
   if (!rd) {
     render();
     return;

@@ -190,6 +190,9 @@ async function logout() {
     vSig = '';
   } catch (e) {}
   try {
+    if (typeof clearPushTag === 'function') clearPushTag();
+  } catch (e) {}
+  try {
     await FB.logout();
   } catch (e) {
     err(e);
