@@ -1007,9 +1007,9 @@ async function clearPushTag(force) {
         await OneSignal.init({ appId, safari_web_id: OS_SAFARI_ID, serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
         /* Si mientras tanto entró un repartidor, no apagues su suscripción. */
         if (seq !== pushSeq) return resolve();
-        await OneSignal.User.removeTag('role');
+        try { await OneSignal.User.removeTag('role'); } catch (e) { console.warn('[OneSignal] remove tag', e); }
         /* Apagar la suscripción corta el envío de inmediato en este dispositivo. */
-        try { await OneSignal.User.PushSubscription.optOut(); } catch (_) {}
+        try { await OneSignal.User.PushSubscription.optOut(); } catch (e) { console.warn('[OneSignal] optOut', e); }
         try {
           localStorage.removeItem('tm_push_role');
           localStorage.removeItem('tm_push_appid');
