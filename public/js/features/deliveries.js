@@ -1,5 +1,9 @@
 /* Repartos a domicilio: alta (administrador y pedidos) y entrega (repartidor). */
 
+/* Cada inicio o limpieza de push invalida las operaciones anteriores: así un inicio de
+   sesión de repartidor no compite con la limpieza que dejó la pantalla de entrada. */
+let pushSeq = 0;
+
 const DV = {
   pendiente: ['Por tomar', 'low'],
   en_ruta: ['En camino', 'ok'],
@@ -680,8 +684,10 @@ function enableNotif() {
   const appId = (S.cfg && S.cfg.onesignalAppId) || '';
   if (!appId) return toast('Falta el App ID de OneSignal en Ajustes');
   /* El SDK carga con `defer`; OneSignalDeferred espera a que esté listo. */
+  const seq = ++pushSeq;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function (OneSignal) {
+    if (seq !== pushSeq) return;
     try {
       await OneSignal.init({
         appId,
@@ -690,6 +696,7 @@ function enableNotif() {
         serviceWorkerParam: { scope: '/' },
         notifyButton: { enable: false },
       });
+      if (seq !== pushSeq) return;
       hookOneSignalForeground(OneSignal);
       const perm = await OneSignal.Notifications.requestPermission();
       if (!perm) {
@@ -940,6 +947,7 @@ function hookOneSignalForeground(OneSignal) {
 }
 
 async function initOnesignal() {
+  const seq = ++pushSeq;
   /* La configuración llega por un snapshot asíncrono: espera a que esté cargada. */
   for (let i = 0; i < 40 && !S.cfgOk; i++) await new Promise(r => setTimeout(r, 250));
   const appId = (S.cfg && S.cfg.onesignalAppId) || '';
@@ -947,9 +955,11 @@ async function initOnesignal() {
   if (!appId || !('Notification' in window)) { console.log('[OneSignal] skipped: no appId or no Notification API'); return; }
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function (OneSignal) {
+    if (seq !== pushSeq) return;
     try {
       console.log('[OneSignal] SDK loaded, initializing...');
       await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
+      if (seq !== pushSeq) return;
       hookOneSignalForeground(OneSignal);
       console.log('[OneSignal] init OK, permission:', Notification.permission);
       if (S.me && S.me.id) {
@@ -987,11 +997,15 @@ async function clearPushTag() {
   for (let i = 0; i < 40 && !S.cfgOk; i++) await new Promise(r => setTimeout(r, 250));
   appId = appId || (S.cfg && S.cfg.onesignalAppId) || '';
   if (!appId) return;
+  const seq = ++pushSeq;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   await new Promise(resolve => {
     window.OneSignalDeferred.push(async function (OneSignal) {
+      if (seq !== pushSeq) return resolve();
       try {
         await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
+        /* Si mientras tanto entró un repartidor, no apagues su suscripción. */
+        if (seq !== pushSeq) return resolve();
         await OneSignal.User.removeTag('role');
         /* Apagar la suscripción corta el envío de inmediato en este dispositivo. */
         try { await OneSignal.User.PushSubscription.optOut(); } catch (_) {}
