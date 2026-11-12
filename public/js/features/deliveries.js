@@ -456,6 +456,7 @@ function dvDone(id) {
           price: Math.max(0, price(f) - disc),
           descuento: disc * v,
           dv: id,
+          ...(d.preId ? { pre: d.preId } : {}),
           client: d.client,
           by: S.me.user,
           ts: ts + i,
