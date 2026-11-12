@@ -109,12 +109,18 @@ export default {
 
     const title = String(data.title || 'Nuevo reparto').slice(0, 80);
     const body = String(data.body || '').slice(0, 200);
+    const appUrl = env.APP_URL || 'https://tamalescastro-ca1bf.web.app';
 
     const payload = {
       app_id: env.ONESIGNAL_APP_ID,
       headings: { en: title, es: title },
       contents: { en: body, es: body },
-      url: env.APP_URL || 'https://tamalescastro-ca1bf.web.app',
+      url: appUrl,
+      /* Izquierda: scooter (badge). Derecha: logo de tamales (icon). */
+      chrome_web_icon: appUrl + '/icons/icon-192.png',
+      chrome_web_badge: appUrl + '/icons/scooter-192.png',
+      ttl: 3600,
+      priority: 10,
       /* Solo a repartidores (etiqueta puesta por la app al iniciar sesión). */
       filters: [{ field: 'tag', key: 'role', value: 'rep', relation: '=' }],
     };

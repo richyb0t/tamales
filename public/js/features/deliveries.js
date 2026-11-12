@@ -678,45 +678,35 @@ try {
 function enableNotif() {
   if (!('Notification' in window)) return toast('Este navegador no soporta notificaciones');
   const appId = (S.cfg && S.cfg.onesignalAppId) || '';
-  if (appId && window.OneSignal) {
+  if (!appId) return toast('Falta el App ID de OneSignal en Ajustes');
+  /* El SDK carga con `defer`; OneSignalDeferred espera a que esté listo. */
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
     try {
-      window.OneSignal.init({ appId, serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } }).then(() => {
-        window.OneSignal.Notifications.requestPermission().then(perm => {
-          if (perm) {
-            setTimeout(() => {
-              window.OneSignal.User.PushSubscription.id.then(id => {
-                if (id && S.me && S.me.id) {
-                  db.doc('users/' + S.me.id).update({ onesignalId: id });
-                  window.OneSignal.User.addTag('role', S.me.role);
-                }
-                toast('Notificaciones activadas');
-              });
-            }, 2000);
-          } else {
-            toast('No se activaron las notificaciones');
-          }
-          renderNow(true);
-        }).catch(e => {
-          console.warn('OneSignal perm error:', e);
-          toast('Error: ' + (e && e.message ? e.message : e));
-        });
-      }).catch(e => {
-        console.warn('OneSignal init error:', e);
-        Notification.requestPermission().then(pp => {
-          if (pp == 'granted') toast('Notificaciones activadas');
-          else toast('No se activaron las notificaciones');
-          renderNow(true);
-        });
+      await OneSignal.init({
+        appId,
+        safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4',
+        serviceWorkerPath: '/sw.js',
+        serviceWorkerParam: { scope: '/' },
+        notifyButton: { enable: false },
       });
-      return;
+      const perm = await OneSignal.Notifications.requestPermission();
+      if (!perm) {
+        toast('No se activaron las notificaciones');
+        renderNow(true);
+        return;
+      }
+      if (S.me && S.me.id) {
+        OneSignal.User.addTag('role', S.me.role);
+        const id = await OneSignal.User.PushSubscription.id;
+        if (id) await db.doc('users/' + S.me.id).update({ onesignalId: id });
+      }
+      toast('Notificaciones activadas');
+      renderNow(true);
     } catch (e) {
-      console.warn('OneSignal error:', e);
+      console.warn('OneSignal perm error:', e);
+      toast('Error: ' + (e && e.message ? e.message : e));
     }
-  }
-  Notification.requestPermission().then(pp => {
-    if (pp == 'granted') toast('Notificaciones activadas');
-    else toast('No se activaron las notificaciones');
-    renderNow(true);
   });
 }
 
@@ -923,6 +913,8 @@ async function initFcm() {
   }
 }
 async function initOnesignal() {
+  /* La configuración llega por un snapshot asíncrono: espera a que esté cargada. */
+  for (let i = 0; i < 40 && !S.cfgOk; i++) await new Promise(r => setTimeout(r, 250));
   const appId = (S.cfg && S.cfg.onesignalAppId) || '';
   console.log('[OneSignal] initOnesignal called, appId:', appId ? appId.slice(0, 8) + '...' : '(empty)');
   if (!appId || !('Notification' in window)) { console.log('[OneSignal] skipped: no appId or no Notification API'); return; }
