@@ -277,7 +277,7 @@ async function saveAj() {
       },
       { merge: true }
     );
-    if (isAdmin) {
+    if (S.me && S.me.role === 'admin') {
       await db.doc('config/onesignal').set(
         { restKey: ($('#osRestKey') && $('#osRestKey').value || '').trim() },
         { merge: true }
