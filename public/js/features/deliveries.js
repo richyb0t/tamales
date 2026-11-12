@@ -655,7 +655,7 @@ function enableNotif() {
   const appId = (S.cfg && S.cfg.onesignalAppId) || '';
   if (appId && window.OneSignal) {
     try {
-      window.OneSignal.init({ appId, notifyButton: { enable: false } }).then(() => {
+      window.OneSignal.init({ appId, serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } }).then(() => {
         window.OneSignal.Notifications.requestPermission().then(perm => {
           if (perm) {
             setTimeout(() => {
@@ -853,7 +853,7 @@ async function initOnesignal() {
   window.OneSignalDeferred.push(async function (OneSignal) {
     try {
       console.log('[OneSignal] SDK loaded, initializing...');
-      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
+      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
       console.log('[OneSignal] init OK, permission:', Notification.permission);
       if (S.me && S.me.id) {
         OneSignal.User.addTag('role', S.me.role);
@@ -879,7 +879,7 @@ async function onesignalNotify(title, body) {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function (OneSignal) {
     try {
-      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
+      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
       OneSignal.User.trackEvent('new_delivery', { title: title, body: body });
       console.log('[OneSignal] event recorded: new_delivery', title);
     } catch (e) {
