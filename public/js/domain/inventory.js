@@ -74,7 +74,7 @@ const chResv = b =>
 
 const chDvResv = b =>
   (S.dv || [])
-    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado' && !d.large)
+    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado' && d.status != 'fallido' && !d.large)
     .reduce(
       (a, d) =>
         a +
@@ -101,14 +101,14 @@ const resv = (b, f) =>
 /* Tamales comprometidos en repartos del día (pendiente/en camino/entregado): no disponibles para venta en mostrador */
 const dvResv = (b, f) =>
   (S.dv || [])
-    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado' && !d.large)
+    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado' && d.status != 'fallido' && !d.large)
     .reduce((a, d) => a + (+(d.items || {})['f' + f] || 0), 0);
 
 const left = (b, f) => {
   if (f >= 100) {
-    return Math.max(0, Math.floor((chLeft(b) + 1e-9) / CL[f - 100]));
+    return Math.floor((chLeft(b) + 1e-9) / CL[f - 100]);
   }
-  return Math.max(0, load(b, f) - used(b, f) + tx(b, f, 'to') - tx(b, f, 'from') - resv(b, f) - dvResv(b, f));
+  return load(b, f) - used(b, f) + tx(b, f, 'to') - tx(b, f, 'from') - resv(b, f) - dvResv(b, f);
 };
 
 const holdMin = () => (S.cfg.hold == null ? 60 : +S.cfg.hold),

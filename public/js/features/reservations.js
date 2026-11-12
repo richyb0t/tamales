@@ -623,12 +623,14 @@ function editPre(id) {
 function deliverPre(id) {
   const p = S.pre.find(x => x._id == id);
   if (!p) return;
+  if (p.exp && p.exp < Date.now()) return toast('Apartado vencido: ya no se puede entregar');
   if (corteBlk()) return;
   const z0 = noPrice(Object.keys(p.items || {}).map(k => +k.slice(1)));
   if (z0) return toast('Falta el precio de ' + z0 + '. Avísale al administrador');
   payAsk(preTot(p), 'Entregar y cobrar · ' + p.client, preTxt(p), async pg => {
     const q = S.pre.find(x => x._id == id);
     if (!q) return toast('Este apartado ya no está pendiente');
+    if (q.exp && q.exp < Date.now()) return toast('Apartado vencido: ya no se puede entregar');
     const ts = Date.now(),
       it = Object.entries(q.items || {}).filter(([_, v]) => v > 0);
     if (!lock('pre' + id)) return;
