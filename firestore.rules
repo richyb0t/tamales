@@ -13,7 +13,11 @@ function admOrSup() { return adm() || sup(); }
     // Así, si otro vendedor toma la sucursal en un día nuevo, el anterior pierde el acceso aunque su perfil aún la mencione.
     function vend(b) {
       return ok() && prof().role == 'vend' && prof().branch == b
-        && get(/databases/$(database)/documents/claims/$(string(b))).data.uid == request.auth.uid;
+        && get(/databases/$(database)/documents/claims/$(string(b))).data.uid == request.auth.uid
+    && get(/databases/$(database)/documents/claims/$(string(b))).data.ts <= request.time.toMillis()
+    && request.time.toMillis() < get(/databases/$(database)/documents/claims/$(string(b))).data.ts + 86400000
+    && (!exists(/databases/$(database)/documents/config/main) || !(b in get(/databases/$(database)/documents/config/main).data.get('closed', [])));
+
     }
     // IDs seguros (se usan dentro de atributos onclick) y venta con campos válidos
     function okId(id) { return id.matches('^[A-Za-z0-9_-]{1,64}$'); }
@@ -26,11 +30,11 @@ function admOrSup() { return adm() || sup(); }
             ? (d.price > 0 && (d.price == get(/databases/$(database)/documents/config/main).data.prices.get('f' + string(d.f), [20, 30, 50][d.f - 100])
                 || (d.price < get(/databases/$(database)/documents/config/main).data.prices.get('f' + string(d.f), [20, 30, 50][d.f - 100])
                     && d.get('descuento', 0) > 0
-                    && (d.get('pre', null) != null || d.get('dv', null) != null))))
+                    && ((d.get('pre', null) == null || exists(/databases/$(database)/documents/pre/$(d.get('pre', null)))) && (d.get('dv', null) == null || exists(/databases/$(database)/documents/deliveries/$(d.get('dv', null))))))))
             : (d.price > 0 && (d.price == get(/databases/$(database)/documents/config/main).data.prices['f' + string(d.f)]
                 || (d.price < get(/databases/$(database)/documents/config/main).data.prices['f' + string(d.f)]
                     && d.get('descuento', 0) > 0
-                    && (d.get('pre', null) != null || d.get('dv', null) != null)))));
+                    && ((d.get('pre', null) == null || exists(/databases/$(database)/documents/pre/$(d.get('pre', null)))) && (d.get('dv', null) == null || exists(/databases/$(database)/documents/deliveries/$(d.get('dv', null)))))))));
     }
     function validSale(d) {
       return d.qty is int && d.qty > 0 && d.qty < 500
@@ -42,7 +46,7 @@ function admOrSup() { return adm() || sup(); }
         && priceOk(d);
     }
     // Después del corte de caja el vendedor ya no puede mover dinero ese día (solo el administrador, anulando el corte)
-    function noCut(day) { return !exists(/databases/$(database)/documents/cuts/$(day + '_' + prof().user)); }
+    function noCut(day, author) { return author != null && !exists(/databases/$(database)/documents/cuts/$(day + '_' + author)); }
     // Elegir sucursal: un documento claims/<número de sucursal> por sucursal, que solo toma un vendedor por día
     function claimOk(id) {
       return ok() && prof().role == 'vend'
@@ -72,7 +76,10 @@ function admOrSup() { return adm() || sup(); }
       allow create: if request.auth != null
         && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid))
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
+    
+     // Una vez creado, no se puede modificar ni borrar: evita reabrir el bootstrap de admin.
+     allow update, delete: if false;
+}
     match /config/{doc} {
       allow read: if ok();
       allow write: if adm() || sup();
@@ -106,12 +113,12 @@ function admOrSup() { return adm() || sup(); }
     match /sales/{id} {
       allow read: if adm() || sup() || enc() || vend(resource.data.branch);
       allow create: if adm() || (okId(id) && vend(request.resource.data.branch) && validSale(request.resource.data)
-        && (request.resource.data.type == 'apartado' || noCut(request.resource.data.day)))
+        && (request.resource.data.type == 'apartado' || noCut(request.resource.data.day, request.resource.data.by)))
         // El repartidor cobra un reparto que él mismo llevó y cerró
         || (rep() && request.resource.data.type == 'vendido'
             && request.resource.data.get('dv', null) is string
             && validSale(request.resource.data)
-            && noCut(request.resource.data.day)
+            && noCut(request.resource.data.day, request.resource.data.by)
             && getAfter(/databases/$(database)/documents/deliveries/$(request.resource.data.dv)).data.drv == prof().user
             && getAfter(/databases/$(database)/documents/deliveries/$(request.resource.data.dv)).data.status == 'entregado');
       // El vendedor solo puede entregar un apartado (apartado -> vendido) a su nombre, antes del corte; no cambia precio, cantidad ni ventas ya cobradas
@@ -119,12 +126,12 @@ function admOrSup() { return adm() || sup(); }
         && resource.data.type == 'apartado' && request.resource.data.type == 'vendido'
         && request.resource.data.branch == resource.data.branch
         && request.resource.data.by == prof().user
-        && noCut(resource.data.day)
+        && noCut(resource.data.day, resource.data.by)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['type', 'by']));
       // Anular una venta o devolución exige crear en el mismo lote su registro en la bitácora (logs/del_<id>) y no haber hecho el corte
       allow delete: if adm() || (vend(resource.data.branch)
         && (resource.data.type == 'apartado'
-            || (noCut(resource.data.day) && existsAfter(/databases/$(database)/documents/logs/$('del_' + id)))));
+            || (noCut(resource.data.day, resource.data.by) && existsAfter(/databases/$(database)/documents/logs/$('del_' + id)))));
     }
     // Resumen de disponibilidad por sucursal (para apartar en otra sucursal). Cada vendedor solo publica el de su sucursal.
     match /stock/{id} {
@@ -158,7 +165,7 @@ function admOrSup() { return adm() || sup(); }
     // Cortes de caja: el vendedor crea el suyo (uno por día, no puede cambiarlo); solo el administrador lo anula
     match /cuts/{id} {
       allow read: if adm() || sup() || (ok() && resource.data.by == prof().user);
-      allow create: if adm() || (vend(request.resource.data.branch) && request.resource.data.by == prof().user
+      allow create: if adm() || (okId(id) && vend(request.resource.data.branch) && request.resource.data.by == prof().user
         && id == request.resource.data.day + '_' + prof().user);
       allow update, delete: if adm();
     }
@@ -193,7 +200,7 @@ function admOrSup() { return adm() || sup(); }
     match /logs/{id} {
       allow read: if adm() || sup();
       allow create: if adm() || sup()
-        || (ok() && request.resource.data.by == prof().user && (prof().role == 'enc' || vend(request.resource.data.branch)));
+        || (okId(id) && ok() && request.resource.data.by == prof().user && (prof().role == 'enc' || vend(request.resource.data.branch)));
     }
     match /transfers/{id} {
       allow read: if adm() || sup() || enc() || vend(resource.data.from) || vend(resource.data.to);
