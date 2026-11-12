@@ -84,11 +84,6 @@ function admOrSup() { return adm() || sup(); }
       allow read: if ok();
       allow write: if adm() || sup();
     }
-      // Clave REST de OneSignal: solo admin/sup la escriben y admin/sup/enc la leen (no el repartidor).
-      match /config/onesignal {
-        allow read: if adm() || sup() || enc();
-        allow write: if adm() || sup();
-      }
     match /users/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || adm() || sup());
       allow create: if adm() || (request.auth != null && request.auth.uid == uid
