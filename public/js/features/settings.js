@@ -280,6 +280,12 @@ async function saveAj() {
     if (S.ajDisabled) S.ajDisabled = (S.ajDisabled || []).slice();
     toast('Ajustes guardados');
     S.pl = true;
+    S.cfg = S.cfg || {};
+    S.cfg.branchLocs = brs().map((_, i) => {
+      const la = $('#blat' + i), lo = $('#blng' + i);
+      if (!la && !lo) return (S.cfg.branchLocs || [])[i] || null;
+      return { lat: +((la && la.value) || 0) || null, lng: +((lo && lo.value) || 0) || null };
+    });
     renderNow(true);
   } catch (e) {
     err(e);
