@@ -24,10 +24,13 @@
     );
   });
   addEventListener('werr', x => {
-    const m = $('#modal');
+    const m = $('#modal'),
+      e = x.detail || {},
+      op = e.op ? '<br><small style="opacity:.7">' + esc(String(e.op).slice(0, 180)) + '</small>' : '';
     m.innerHTML =
       '<div class="card"><h3>⚠️ No se guardó un movimiento</h3><p>' +
-      esc(fe(x.detail)) +
+      esc(fe(e)) +
+      op +
       '</p><small>Se mostró como guardado, pero el servidor lo rechazó. Revisa el historial y vuelve a registrarlo si falta.</small><div class="form"><button id="mk">Entendido</button></div></div>';
     m.style.display = 'flex';
     $('#mk').onclick = () => (m.style.display = 'none');

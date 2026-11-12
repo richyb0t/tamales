@@ -76,7 +76,7 @@ async function syncStock() {
     if (lastSt[b] === j) continue;
     lastSt[b] = j;
     try {
-      await db.doc('stock/' + b).set({ ...v, at: Date.now() });
+      await db.doc('stock/' + b).setQuiet({ ...v, at: Date.now() });
     } catch (e) {
       console.error(e);
     }

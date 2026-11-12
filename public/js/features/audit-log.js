@@ -10,7 +10,7 @@ const logD = o => {
 function logEv(o) {
   if (!S.me) return;
   try {
-    Promise.resolve(db.collection('logs').add(logD(o))).catch(e => console.warn('logs', e));
+    Promise.resolve(db.collection('logs').add(logD(o), true)).catch(e => console.warn('logs', e));
   } catch (e) {
     console.warn('logs', e);
   }

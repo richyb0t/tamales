@@ -476,10 +476,10 @@ async function savePre() {
       note: n.note.trim(),
       time: n.large ? (n.time || '').trim() : '',
       status: 'pendiente',
-      by: S.me.user,
-      byName: S.me.name,
-      role: S.me.role,
-      ts: Date.now(),
+      by: isEdit && oldP ? oldP.by : S.me.user,
+      byName: isEdit && oldP ? oldP.byName : S.me.name,
+      role: isEdit && oldP ? oldP.role : S.me.role,
+      ts: isEdit && oldP ? oldP.ts : Date.now(),
       large: !!n.large,
       delivery: !!(n.large && n.addr.trim()),
       addr: n.addr.trim(),
@@ -488,10 +488,12 @@ async function savePre() {
       descChamp: +(n.descChamp || 0) || 0,
     };
     if (isEdit) {
-      await db.doc('pre/' + preId).update(preData);
+      /* Se suelta el reparto viejo antes de borrarlo: las reglas no dejan
+         que un pedido apunte a un reparto que ya no existe. */
+      await db.doc('pre/' + preId).update({ ...preData, dvId: null });
       if (oldP && oldP.dvId) {
         try {
-          await db.doc('deliveries/' + oldP.dvId).delete();
+          await db.doc('deliveries/' + oldP.dvId).deleteQuiet();
         } catch (_) {}
       }
     } else {

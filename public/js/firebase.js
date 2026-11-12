@@ -53,7 +53,7 @@ const fs = initializeFirestore(app, {
 /* Sin internet las escrituras quedan en el celular y se suben solas: no esperamos la confirmación del servidor, pero sí vemos errores de permisos */
 let np = 0;
 const pb = () => window.dispatchEvent(new CustomEvent('wp', { detail: np }));
-const W = p => {
+const W = (p, label, quiet) => {
   np++;
   pb();
   let d = 0;
@@ -71,7 +71,12 @@ const W = p => {
       np--;
       pb();
       d = 1;
-      window.dispatchEvent(new CustomEvent('werr', { detail: e }));
+      /* La etiqueta dice qué documento falló (se muestra en el aviso). */
+      try {
+        e.op = label || '';
+      } catch (_) {}
+      /* Las escrituras de fondo (stock, bitácora) fallan sin molestar al usuario. */
+      if (!quiet) window.dispatchEvent(new CustomEvent('werr', { detail: e }));
     }
   );
   return r;
@@ -80,26 +85,30 @@ const C = (p, w = []) => ({
   where: (f, o, v) => C(p, [...w, where(f, o, v)]),
   onSnapshot: (n, e) =>
     onSnapshot(w.length ? query(collection(fs, p), ...w) : collection(fs, p), n, e),
-  add: d => W(addDoc(collection(fs, p), d)),
+  add: (d, quiet) => W(addDoc(collection(fs, p), d), p + ' · nuevo', quiet),
   get: () => getDocs(w.length ? query(collection(fs, p), ...w) : collection(fs, p)),
 });
 const db = {
   collection: p => C(p),
   doc: p => ({
-    set: (d, o) => W(o ? setDoc(doc(fs, p), d, o) : setDoc(doc(fs, p), d)),
-    update: d => W(updateDoc(doc(fs, p), d)),
-    delete: () => W(deleteDoc(doc(fs, p))),
+    set: (d, o) => W(o ? setDoc(doc(fs, p), d, o) : setDoc(doc(fs, p), d), p + ' · guardar'),
+    /* Para escrituras de fondo que no deben abrir el aviso de error. */
+    setQuiet: d => W(setDoc(doc(fs, p), d), p + ' · guardar', true),
+    update: d => W(updateDoc(doc(fs, p), d), p + ' · actualizar'),
+    delete: () => W(deleteDoc(doc(fs, p)), p + ' · borrar'),
+    deleteQuiet: () => W(deleteDoc(doc(fs, p)), p + ' · borrar', true),
     get: () => getDoc(doc(fs, p)),
     onSnapshot: (n, e) => onSnapshot(doc(fs, p), n, e),
   }),
   batch: () => {
     const b = writeBatch(fs),
+      ops = [],
       o = {
-        set: (p, d) => (b.set(doc(fs, p), d), o),
-        delete: p => (b.delete(doc(fs, p)), o),
-        update: (p, d) => (b.update(doc(fs, p), d), o),
-        add: (c, d) => (b.set(doc(collection(fs, c)), d), o),
-        commit: () => W(b.commit()),
+        set: (p, d) => (ops.push('guardar ' + p), b.set(doc(fs, p), d), o),
+        delete: p => (ops.push('borrar ' + p), b.delete(doc(fs, p)), o),
+        update: (p, d) => (ops.push('actualizar ' + p), b.update(doc(fs, p), d), o),
+        add: (c, d) => (ops.push('nuevo ' + c), b.set(doc(collection(fs, c)), d), o),
+        commit: () => W(b.commit(), ops.join(' · ')),
       };
     return o;
   },

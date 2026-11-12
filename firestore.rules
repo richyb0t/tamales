@@ -24,8 +24,9 @@ function admOrSup() { return adm() || sup(); }
     && (!exists(/databases/$(database)/documents/config/main) || !(b in get(/databases/$(database)/documents/config/main).data.get('closed', [])));
 
     }
-    // IDs seguros (se usan dentro de atributos onclick) y venta con campos válidos
-    function okId(id) { return id.matches('^[A-Za-z0-9_-]{1,64}$'); }
+    // IDs seguros (se usan dentro de atributos onclick) y venta con campos válidos.
+    // Se permite el punto porque los usuarios pueden tenerlo (ej. ana.lopez) y el corte usa día_usuario.
+    function okId(id) { return id.matches('^[A-Za-z0-9_.-]{1,128}$'); }
     // Precio: una venta o apartado se cobra al precio vigente en Ajustes (champurrado: precio de Ajustes; si no hay, 20/30/50).
     // Una devolución conserva el precio de la venta original, que pudo cambiar después, así que solo se le exige ser positivo.
     function priceOk(d) {
@@ -95,12 +96,19 @@ function admOrSup() { return adm() || sup(); }
         && request.resource.data.role == 'admin'
         && !exists(/databases/$(database)/documents/config/init)
         && existsAfter(/databases/$(database)/documents/config/init));
-      // El vendedor solo puede anotar en su perfil la sucursal que acaba de tomar (y la tiene que haber tomado en el mismo lote)
-      allow update: if adm() || (ok() && request.auth.uid == uid && prof().role == 'vend'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['branch', 'brDay'])
-        && request.resource.data.branch is int
-        && getAfter(/databases/$(database)/documents/claims/$(string(request.resource.data.branch))).data.uid == request.auth.uid
-        && getAfter(/databases/$(database)/documents/claims/$(string(request.resource.data.branch))).data.day == request.resource.data.brDay);
+      // Cada usuario puede cambiar su nombre y sus identificadores de push; el vendedor además anota la sucursal que tomó
+      allow update: if adm()
+        || (ok() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'onesignalId', 'fcmToken'])
+            && request.resource.data.get('name', '') is string
+            && request.resource.data.get('name', '').size() <= 80
+            && request.resource.data.get('onesignalId', '') is string
+            && request.resource.data.get('fcmToken', '') is string)
+        || (ok() && request.auth.uid == uid && prof().role == 'vend'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['branch', 'brDay'])
+            && request.resource.data.branch is int
+            && getAfter(/databases/$(database)/documents/claims/$(string(request.resource.data.branch))).data.uid == request.auth.uid
+            && getAfter(/databases/$(database)/documents/claims/$(string(request.resource.data.branch))).data.day == request.resource.data.brDay);
       allow delete: if adm();
     }
     // Quién tiene cada sucursal hoy. Un vendedor toma una sucursal libre (o una de un día anterior), solo la suelta él o el administrador.
@@ -188,11 +196,14 @@ function admOrSup() { return adm() || sup(); }
       // Solo se modifica un apartado que sigue pendiente: así dos dispositivos no pueden entregar el mismo apartado
       allow update: if resource.data.status == 'pendiente' && (adm() || sup()
         || (vend(resource.data.branch) && vendPreOk(id))
-        // El rol de pedidos cancela los pedidos grandes pendientes o les quita el reparto (el repartidor cierra al entregar o fallar)
+        // El rol de pedidos administra los pedidos grandes: editarlos, cancelarlos y ligarles o quitarles reparto
         || (enc() && resource.data.get('large', false) == true
+            && request.resource.data.get('large', false) == true
+            && request.resource.data.get('by', null) == resource.data.get('by', null)
             && (request.resource.data.status == 'cancelado'
-                || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['dvId'])
-                    && request.resource.data.dvId == null)))
+                || (request.resource.data.status == 'pendiente'
+                    && (request.resource.data.get('dvId', null) == null
+                        || existsAfter(/databases/$(database)/documents/deliveries/$(request.resource.data.dvId))))))
         // El repartidor cierra el pedido grande cuando entrega o falla el reparto
         || (rep() && resource.data.get('large', false) == true
             && resource.data.get('dvId', null) is string
