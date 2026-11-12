@@ -1008,6 +1008,8 @@ async function clearPushTag(force) {
         /* Si mientras tanto entró un repartidor, no apagues su suscripción. */
         if (seq !== pushSeq) return resolve();
         try { await OneSignal.User.removeTag('role'); } catch (e) { console.warn('[OneSignal] remove tag', e); }
+        /* Si entró un repartidor mientras se quitaba la etiqueta, no lo apagues. */
+        if (seq !== pushSeq) return resolve();
         /* Apagar la suscripción corta el envío de inmediato en este dispositivo. */
         try { await OneSignal.User.PushSubscription.optOut(); } catch (e) { console.warn('[OneSignal] optOut', e); }
         try {
