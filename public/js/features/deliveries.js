@@ -208,10 +208,14 @@ function dvForm() {
       if (ranked.length) nearest = ranked[0].i;
     }
     const has = i => !items.length || items.every(([k, v]) => left(i, +k.slice(1)) >= +v);
-    /* Sucursales con existencia completa: primero las geolocalizadas por cercanía,
+    /* Todas las sucursales abiertas: primero las geolocalizadas por cercanía,
        después las que no tienen coordenadas configuradas. */
     const seen = new Set(ranked.map(r => r.i));
-    const order = [...ranked.map(r => r.i), ...BI().filter(i => !seen.has(i))].filter(has);
+    const list = [
+      ...ranked.map(r => ({ i: r.i, d: r.d })),
+      ...BI().filter(i => !seen.has(i)).map(i => ({ i, d: null })),
+    ];
+    const order = list.map(x => x.i).filter(has);
     /* Al entrar al paso se preselecciona la más cercana CON existencia.
        Si el usuario ya eligió una, se respeta su elección. */
     if (n.branch == null || !BI().includes(n.branch)) {
@@ -232,7 +236,7 @@ function dvForm() {
      }).join('')}</div>
      ${items.length && !order.length ? '<small style="display:block;margin:4px 0 8px;color:var(--bad)">Ninguna sucursal tiene existencia completa. Ajusta cantidades o carga inventario.</small>' : ''}
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !has(nearest) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
-     ${ranked.length ? ranked.map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km${items.length ? (has(r.i) ? ' · <span style="color:#22c55e">con existencia</span>' : ' · <span style="color:var(--bad)">sin existencia</span>') : ''}</div>`).join('') : lat && lng ? '<small style="display:block;margin:4px 0 8px;opacity:.7">No hay ubicaciones configuradas para las sucursales. Revísalas en Ajustes.</small>' : '<small style="display:block;margin:4px 0 8px;opacity:.7">Busca la ubicación de la dirección para ver las sucursales más cercanas.</small>'}
+     ${list.length ? list.map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b>${r.d != null ? ' · ' + r.d.toFixed(1) + ' km' : ''}${items.length ? (has(r.i) ? ' · <span style="color:#22c55e">con existencia</span>' : ' · <span style="color:var(--bad)">sin existencia</span>') : ''}</div>`).join('') : '<small style="display:block;margin:4px 0 8px;opacity:.7">No hay sucursales abiertas.</small>'}
      ${nav(2, 4, 'Siguiente: Datos →')}
     `;
   } else {
