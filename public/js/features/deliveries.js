@@ -824,11 +824,14 @@ async function initOnesignal() {
       await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
       console.log('[OneSignal] init OK, permission:', Notification.permission);
       if (S.me && S.me.id) {
+        // Tag by role regardless of permission (so filters work once subscribed)
         OneSignal.User.addTag('role', S.me.role);
         if (Notification.permission === 'granted') {
           const id = await OneSignal.User.PushSubscription.id;
           console.log('[OneSignal] PushSubscription.id:', id);
           if (id) await db.doc('users/' + S.me.id).update({ onesignalId: id });
+        } else {
+          console.log('[OneSignal] permission not granted yet; user needs to tap Activar notificaciones');
         }
       }
     } catch (e) {
@@ -848,6 +851,8 @@ async function onesignalRequestPermission() {
       const perm = await OneSignal.Notifications.requestPermission();
       console.log('[OneSignal] permission result:', perm);
       if (perm) {
+        // Wait a moment for subscription to register
+        await new Promise(r => setTimeout(r, 2000));
         const id = await OneSignal.User.PushSubscription.id;
         console.log('[OneSignal] PushSubscription.id:', id);
         if (id && S.me && S.me.id) {
@@ -870,31 +875,19 @@ async function onesignalRequestPermission() {
 
 async function onesignalNotify(title, body) {
   const appId = (S.cfg && S.cfg.onesignalAppId) || '';
-  let restKey = (S.cfg && S.cfg.onesignalRestKey) || '';
-  if (!restKey) {
+  if (!appId) { console.warn('[OneSignal] notify skipped: no appId'); return; }
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
     try {
-      const d = await db.doc('config/onesignal').get();
-      if (d.exists) { restKey = (d.data() || {}).restKey || ''; S.cfg = S.cfg || {}; S.cfg.onesignalRestKey = restKey; }
-    } catch (e) { console.warn('OneSignal restKey', e); }
-  }
-  if (!appId || !restKey) { console.warn('[OneSignal] notify skipped: appId or restKey missing'); return; }
-  console.log('[OneSignal] sending notification:', title);
-  try {
-    const res = await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + restKey },
-      body: JSON.stringify({
-        app_id: appId,
-        filters: [{ field: 'tag', key: 'role', relation: '=', value: 'rep' }],
-        headings: { es: title, en: title },
-        contents: { es: body, en: body },
-      }),
-    });
-    const data = await res.json();
-    console.log('[OneSignal] notify response:', data);
-  } catch (e) {
-    console.warn('[OneSignal] notify error:', e);
-  }
+      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
+      // Record a custom event. OneSignal's backend sends the push based on a
+      // Journey configured in the dashboard (trigger: event 'new_delivery').
+      OneSignal.User.trackEvent('new_delivery', { title: title, body: body });
+      console.log('[OneSignal] event recorded: new_delivery', title);
+    } catch (e) {
+      console.warn('[OneSignal] notify error:', e);
+    }
+  });
 }
 
 
