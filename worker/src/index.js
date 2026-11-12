@@ -120,7 +120,6 @@ export default {
       chrome_web_icon: appUrl + '/icons/icon-192.png',
       chrome_web_badge: appUrl + '/icons/scooter-192.png',
       ttl: 3600,
-      priority: 10,
       /* Solo a repartidores (etiqueta puesta por la app al iniciar sesión). */
       filters: [{ field: 'tag', key: 'role', value: 'rep', relation: '=' }],
     };
