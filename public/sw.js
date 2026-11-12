@@ -5,7 +5,7 @@
  * - Resto (íconos, fuentes, SDK de Firebase): CACHÉ PRIMERO y se actualiza en segundo plano.
  *
  * Al cambiar la lista de archivos o la lógica, sube el número de CACHE_VERSION. */
-const CACHE_VERSION = 'tamales-v174';
+const CACHE_VERSION = 'tamales-v175';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const PRECACHE = [
@@ -18,6 +18,7 @@ const PRECACHE = [
   '/icons/icon-512.png',
   '/icons/icon-maskable-192.png',
   '/icons/icon-maskable-512.png',
+  '/icons/scooter-192.png',
   '/css/tokens.css',
   '/css/base.css',
   '/css/controls.css',
