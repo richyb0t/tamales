@@ -695,6 +695,39 @@ function enableNotif() {
   });
 }
 
+/* Muestra una notificación. En Android el constructor `new Notification` está prohibido:
+   hay que usar el service worker. En escritorio se conserva como respaldo. */
+async function notifShow(title, body, tag) {
+  const opts = {
+    body: body || '',
+    tag: tag || 'tamales',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    data: { url: '/' },
+  };
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, rej) => setTimeout(() => rej(new Error('sw-timeout')), 2000)),
+      ]);
+      if (reg && reg.showNotification) {
+        await reg.showNotification(title, opts);
+        return true;
+      }
+    } catch (e) {
+      console.warn('showNotification', e);
+    }
+  }
+  try {
+    new Notification(title, opts);
+    return true;
+  } catch (e) {
+    console.warn('Notification', e);
+    return false;
+  }
+}
+
 function notifyNewDv() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const nw = (S.dv || []).filter(d => d.status == 'pendiente' && !seenDv.has(d._id));
@@ -702,10 +735,11 @@ function notifyNewDv() {
   nw.forEach(d => {
     seenDv.add(d._id);
     try {
-      new Notification(d.large ? 'Nuevo pedido grande' : 'Nuevo reparto', {
-        body: (d.client || 'Cliente') + (d.addr ? ' · ' + d.addr : '') + ' · ' + money(dvDue(d)),
-        tag: d._id,
-      });
+      notifShow(
+        d.large ? 'Nuevo pedido grande' : 'Nuevo reparto',
+        (d.client || 'Cliente') + (d.addr ? ' · ' + d.addr : '') + ' · ' + money(dvDue(d)),
+        d._id
+      );
     } catch (_) {}
     try {
       toast('Nuevo reparto: ' + (d.client || 'Cliente'));
@@ -835,7 +869,7 @@ async function initFcm() {
       const title = (payload.notification && payload.notification.title) || 'Nuevo reparto';
       const body = (payload.notification && payload.notification.body) || '';
       try {
-        new Notification(title, { body });
+        notifShow(title, body, 'fcm');
       } catch (_) {}
       try {
         toast(title + (body ? ' · ' + body : ''));

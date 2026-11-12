@@ -5,7 +5,7 @@
  * - Resto (íconos, fuentes, SDK de Firebase): CACHÉ PRIMERO y se actualiza en segundo plano.
  *
  * Al cambiar la lista de archivos o la lógica, sube el número de CACHE_VERSION. */
-const CACHE_VERSION = 'tamales-v173';
+const CACHE_VERSION = 'tamales-v174';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const PRECACHE = [
@@ -154,4 +154,18 @@ self.addEventListener('fetch', event => {
   if (url.origin === location.origin && isAppFile(url))
     return networkFirst(event, request, request, [request]);
   cacheFirst(event, request);
+});
+
+/* Al tocar la notificación: enfocar la app si ya está abierta; si no, abrirla. */
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (c.url.indexOf(self.location.origin) === 0) return c.focus();
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });
