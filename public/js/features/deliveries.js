@@ -232,7 +232,7 @@ function dvForm() {
      }).join('')}</div>
      ${items.length && !order.length ? '<small style="display:block;margin:4px 0 8px;color:var(--bad)">Ninguna sucursal tiene existencia completa. Ajusta cantidades o carga inventario.</small>' : ''}
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !has(nearest) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
-     ${ranked.length ? ranked.filter(r => has(r.i)).map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km</div>`).join('') : ''}
+     ${ranked.length ? ranked.map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km${items.length ? (has(r.i) ? ' · <span style="color:#22c55e">con existencia</span>' : ' · <span style="color:var(--bad)">sin existencia</span>') : ''}</div>`).join('') : lat && lng ? '<small style="display:block;margin:4px 0 8px;opacity:.7">No hay ubicaciones configuradas para las sucursales. Revísalas en Ajustes.</small>' : '<small style="display:block;margin:4px 0 8px;opacity:.7">Busca la ubicación de la dirección para ver las sucursales más cercanas.</small>'}
      ${nav(2, 4, 'Siguiente: Datos →')}
     `;
   } else {
