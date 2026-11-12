@@ -274,10 +274,15 @@ async function saveAj() {
         low: Math.max(0, +$('#lowIn').value || 0),
         lowl: Math.max(0, +$('#lowlIn').value || 0),
         onesignalAppId: ($('#osAppId') && $('#osAppId').value || '').trim(),
-        onesignalRestKey: ($('#osRestKey') && $('#osRestKey').value || '').trim(),
       },
       { merge: true }
     );
+    if (isAdmin) {
+      await db.doc('config/onesignal').set(
+        { restKey: ($('#osRestKey') && $('#osRestKey').value || '').trim() },
+        { merge: true }
+      );
+    }
     F = flavors.slice();
     if (S.ajFlavors) S.ajFlavors = flavors.slice();
     if (S.ajDisabled) S.ajDisabled = (S.ajDisabled || []).slice();
@@ -290,7 +295,7 @@ async function saveAj() {
       return { lat: +((la && la.value) || 0) || null, lng: +((lo && lo.value) || 0) || null };
     });
     S.cfg.onesignalAppId = ($('#osAppId') && $('#osAppId').value || '').trim();
-    S.cfg.onesignalRestKey = ($('#osRestKey') && $('#osRestKey').value || '').trim();
+    S.cfg.onesignalRestKey = null;
     renderNow(true);
   } catch (e) {
     err(e);

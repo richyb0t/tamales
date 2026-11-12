@@ -119,6 +119,9 @@ function startSubs() {
     render();
     if (typeof initFcm === 'function') initFcm();
     if (typeof initOnesignal === 'function') initOnesignal();
+    if (S.me && (S.me.role == 'admin' || S.me.role == 'sup' || S.me.role == 'enc')) {
+      try { db.doc('config/onesignal').onSnapshot(d => { if (d.exists) { S.cfg = S.cfg || {}; S.cfg.onesignalRestKey = (d.data() || {}).restKey || ''; } }, err); } catch (e) {}
+    }
     return;
   } /* el repartidor solo necesita configuración y repartos */
   if (!rd) {

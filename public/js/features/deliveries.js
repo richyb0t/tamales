@@ -829,7 +829,13 @@ async function initOnesignal() {
 
 async function onesignalNotify(title, body) {
   const appId = (S.cfg && S.cfg.onesignalAppId) || '';
-  const restKey = (S.cfg && S.cfg.onesignalRestKey) || '';
+  let restKey = (S.cfg && S.cfg.onesignalRestKey) || '';
+  if (!restKey) {
+    try {
+      const d = await db.doc('config/onesignal').get();
+      if (d.exists) { restKey = (d.data() || {}).restKey || ''; S.cfg = S.cfg || {}; S.cfg.onesignalRestKey = restKey; }
+    } catch (e) { console.warn('OneSignal restKey', e); }
+  }
   if (!appId || !restKey) return;
   try {
     await fetch('https://onesignal.com/api/v1/notifications', {
