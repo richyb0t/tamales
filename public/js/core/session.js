@@ -278,6 +278,7 @@ function restoreView(u) {
     if (Number.isInteger(x.ib)) S.ib = x.ib;
   if (x.cart && typeof x.cart === 'object') S.cart = x.cart;
   if (typeof x.alHide === 'boolean') S.alHide = x.alHide;
+  if (typeof x.dvOldHide === 'boolean') S.dvOldHide = x.dvOldHide;
     if (S.vt == 'r') stockOn();
   } catch (e) {}
 }

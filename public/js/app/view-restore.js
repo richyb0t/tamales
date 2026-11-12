@@ -17,6 +17,7 @@
           ib: S.ib,
           cart: S.cart,
           alHide: S.alHide,
+           dvOldHide: S.dvOldHide,
         });
         if (j !== vSig) {
           vSig = j;
