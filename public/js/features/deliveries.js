@@ -690,6 +690,7 @@ function enableNotif() {
         serviceWorkerParam: { scope: '/' },
         notifyButton: { enable: false },
       });
+      hookOneSignalForeground(OneSignal);
       const perm = await OneSignal.Notifications.requestPermission();
       if (!perm) {
         toast('No se activaron las notificaciones');
@@ -768,15 +769,20 @@ function notifyNewDv() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const nw = (S.dv || []).filter(d => d.status == 'pendiente' && !seenDv.has(d._id));
   if (!nw.length) return;
+  /* Si la app está a la vista, la notificación local es la única: OneSignal la
+     silencia en primer plano. Si está oculta, OneSignal muestra el push. */
+  const visible = document.visibilityState === 'visible';
   nw.forEach(d => {
     seenDv.add(d._id);
-    try {
-      notifShow(
-        d.large ? 'Nuevo pedido grande' : 'Nuevo reparto',
-        (d.client || 'Cliente') + (d.addr ? ' · ' + d.addr : '') + ' · ' + money(dvDue(d)),
-        d._id
-      );
-    } catch (_) {}
+    if (visible) {
+      try {
+        notifShow(
+          d.large ? 'Nuevo pedido grande' : 'Nuevo reparto',
+          (d.client || 'Cliente') + (d.addr ? ' · ' + d.addr : '') + ' · ' + money(dvDue(d)),
+          d._id
+        );
+      } catch (_) {}
+    }
     try {
       toast('Nuevo reparto: ' + (d.client || 'Cliente'));
     } catch (_) {}
@@ -785,7 +791,6 @@ function notifyNewDv() {
     localStorage.setItem('tm_seen_dv', JSON.stringify([...seenDv]));
   } catch (_) {}
 }
-  (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
 
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */
 function dvToday() {
@@ -915,6 +920,20 @@ async function initFcm() {
     console.warn('FCM init', e);
   }
 }
+let osFgHooked = false;
+function hookOneSignalForeground(OneSignal) {
+  if (osFgHooked) return;
+  osFgHooked = true;
+  try {
+    OneSignal.Notifications.addEventListener('foregroundWillDisplay', event => {
+      /* La app ya muestra su propia notificación local: evita la duplicada. */
+      event.preventDefault();
+    });
+  } catch (e) {
+    console.warn('[OneSignal] foreground hook', e);
+  }
+}
+
 async function initOnesignal() {
   /* La configuración llega por un snapshot asíncrono: espera a que esté cargada. */
   for (let i = 0; i < 40 && !S.cfgOk; i++) await new Promise(r => setTimeout(r, 250));
@@ -926,6 +945,7 @@ async function initOnesignal() {
     try {
       console.log('[OneSignal] SDK loaded, initializing...');
       await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
+      hookOneSignalForeground(OneSignal);
       console.log('[OneSignal] init OK, permission:', Notification.permission);
       if (S.me && S.me.id) {
         OneSignal.User.addTag('role', S.me.role);
