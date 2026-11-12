@@ -368,7 +368,7 @@ async function saveDv() {
     S.dvn = null;
     S.dvf = false;
     toast('Reparto guardado');
-    if (typeof onesignalNotify === 'function') onesignalNotify('Nuevo reparto', n.client.trim() + ' · ' + n.addr.trim());
+    if (typeof pushNotify === 'function') pushNotify('Nuevo reparto', n.client.trim() + ' · ' + n.addr.trim());
     renderNow(true);
   } catch (e) {
     delete lock.s.dv;
@@ -455,7 +455,7 @@ async function dvAddFromPre(preId) {
     });
     await db.doc('pre/' + preId).update({ dvId: dvId });
     toast('Reparto agregado');
-    if (typeof onesignalNotify === 'function') onesignalNotify('Nuevo pedido grande', p.client + ' · ' + (p.addr || ''));
+    if (typeof pushNotify === 'function') pushNotify('Nuevo pedido grande', p.client + ' · ' + (p.addr || ''));
   } catch (e) {
     err(e);
   }
@@ -755,6 +755,22 @@ async function notifShow(title, body, tag) {
   }
 }
 
+/* Envía el push real a los repartidores a través del Worker de Cloudflare.
+   No bloquea el guardado: si falla, solo se avisa en consola. */
+async function pushNotify(title, body) {
+  if (!PUSH_URL || !S.fu || typeof S.fu.getIdToken !== 'function') return;
+  try {
+    const token = await S.fu.getIdToken();
+    await fetch(PUSH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ title: title, body: body }),
+    });
+  } catch (e) {
+    console.warn('push', e);
+  }
+}
+
 function notifyNewDv() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const nw = (S.dv || []).filter(d => d.status == 'pendiente' && !seenDv.has(d._id));
@@ -933,21 +949,6 @@ async function initOnesignal() {
 }
 
 
-
-async function onesignalNotify(title, body) {
-  const appId = (S.cfg && S.cfg.onesignalAppId) || '';
-  if (!appId) { console.warn('[OneSignal] notify skipped: no appId'); return; }
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  window.OneSignalDeferred.push(async function (OneSignal) {
-    try {
-      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', serviceWorkerPath: '/sw.js', serviceWorkerParam: { scope: '/' }, notifyButton: { enable: false } });
-      OneSignal.User.trackEvent('new_delivery', { title: title, body: body });
-      console.log('[OneSignal] event recorded: new_delivery', title);
-    } catch (e) {
-      console.warn('[OneSignal] notify error:', e);
-    }
-  });
-}
 
 const dvOpenN = () => (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
 

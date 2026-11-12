@@ -5,7 +5,10 @@
  * - Resto (íconos, fuentes, SDK de Firebase): CACHÉ PRIMERO y se actualiza en segundo plano.
  *
  * Al cambiar la lista de archivos o la lógica, sube el número de CACHE_VERSION. */
-const CACHE_VERSION = 'tamales-v180';
+/* OneSignal: su worker se importa aquí para que conviva con el nuestro. */
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+
+const CACHE_VERSION = 'tamales-v181';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const PRECACHE = [

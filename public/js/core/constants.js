@@ -29,6 +29,9 @@ const nm = f =>
 
 const ROLE = { admin: 'Administrador', sup: 'Supervisor', vend: 'Vendedor', enc: 'Pedidos', rep: 'Repartidor' };
 
+/* URL del Worker de Cloudflare que envía los push. Se llena después de desplegarlo. */
+const PUSH_URL = '';
+
 const TL = {
   vendido: 'Vendido',
   apartado: '<b class="low">Apartado</b>',

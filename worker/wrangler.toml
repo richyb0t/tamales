@@ -1,0 +1,11 @@
+name = "tamales-push"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# La REST key de OneSignal y el App ID se guardan como secretos:
+#   wrangler secret put ONESIGNAL_APP_ID
+#   wrangler secret put ONESIGNAL_REST_KEY
+[vars]
+FIREBASE_PROJECT_ID = "tamalescastro-ca1bf"
+ALLOWED_ORIGIN = "https://tamalescastro-ca1bf.web.app"
+APP_URL = "https://tamalescastro-ca1bf.web.app"
