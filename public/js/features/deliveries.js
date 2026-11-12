@@ -751,11 +751,14 @@ async function pushNotify(title, body) {
   if (!PUSH_URL || !S.fu || typeof S.fu.getIdToken !== 'function') return;
   try {
     const token = await S.fu.getIdToken();
-    await fetch(PUSH_URL, {
+    const r = await fetch(PUSH_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({ title: title, body: body }),
     });
+    const txt = await r.text();
+    if (r.ok) console.log('[push] enviado', txt);
+    else console.warn('[push] error', r.status, txt);
   } catch (e) {
     console.warn('push', e);
   }
