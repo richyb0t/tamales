@@ -5,10 +5,15 @@
  * - Resto (íconos, fuentes, SDK de Firebase): CACHÉ PRIMERO y se actualiza en segundo plano.
  *
  * Al cambiar la lista de archivos o la lógica, sube el número de CACHE_VERSION. */
-/* OneSignal: su worker se importa aquí para que conviva con el nuestro. */
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+/* OneSignal: su worker se importa aquí para que conviva con el nuestro.
+   Si el CDN falla, el SW igual se instala (la app sigue funcionando sin push). */
+try {
+  importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+} catch (e) {
+  console.warn('OneSignal SW no disponible', e);
+}
 
-const CACHE_VERSION = 'tamales-v181';
+const CACHE_VERSION = 'tamales-v182';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const PRECACHE = [
