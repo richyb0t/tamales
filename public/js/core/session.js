@@ -238,18 +238,54 @@ function startSubs() {
 function subDv() {
   S.dv = [];
   const m = S.me;
-  let q = db.collection('deliveries').where('day', '==', D);
-  if (m && m.role == 'vend' && m.branch != null) q = q.where('branch', '==', m.branch);
-  subs.push(
-    q.onSnapshot(
-      qq => {
-        S.dv = qq.docs.map(d => ({ _id: d.id, ...d.data() }));
-        if (S.me && S.me.role == 'rep' && typeof notifyNewDv === 'function') notifyNewDv();
-        render();
-      },
-      err
-    )
-  );
+  if (m && m.role == 'vend' && m.branch != null) {
+    /* El vendedor ve los repartos que salen de su sucursal y también aquellos
+       donde su sucursal es una parada secundaria. Se unen por _id. */
+    const part = { main: [], extra: [] };
+    const merge = () => {
+      const by = new Map();
+      part.main.concat(part.extra).forEach(d => by.set(d._id, d));
+      S.dv = [...by.values()];
+      render();
+    };
+    subs.push(
+      db
+        .collection('deliveries')
+        .where('day', '==', D)
+        .where('branch', '==', m.branch)
+        .onSnapshot(
+          qq => {
+            part.main = qq.docs.map(d => ({ _id: d.id, ...d.data() }));
+            merge();
+          },
+          err
+        )
+    );
+    subs.push(
+      db
+        .collection('deliveries')
+        .where('day', '==', D)
+        .where('branches', 'array-contains', m.branch)
+        .onSnapshot(
+          qq => {
+            part.extra = qq.docs.map(d => ({ _id: d.id, ...d.data() }));
+            merge();
+          },
+          e => console.warn('deliveries sucursales', e)
+        )
+    );
+  } else {
+    subs.push(
+      db.collection('deliveries').where('day', '==', D).onSnapshot(
+        qq => {
+          S.dv = qq.docs.map(d => ({ _id: d.id, ...d.data() }));
+          if (S.me && S.me.role == 'rep' && typeof notifyNewDv === 'function') notifyNewDv();
+          render();
+        },
+        err
+      )
+    );
+  }
   /* Repartos de AYER sin cumplir: siguen pendientes o en ruta y su día ya pasó.
      Solo se muestra el día anterior para no acumular historial. */
   if (m && (m.role == 'admin' || m.role == 'sup' || m.role == 'enc')) {

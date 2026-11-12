@@ -24,6 +24,15 @@ function admOrSup() { return adm() || sup(); }
     && (!exists(/databases/$(database)/documents/config/main) || !(b in get(/databases/$(database)/documents/config/main).data.get('closed', [])));
 
     }
+    // La sucursal del vendedor está abierta y su claims sigue vigente. Se usa para
+    // consultar repartos donde su sucursal es una parada secundaria.
+    function vendHere() {
+      return ok() && prof().role == 'vend' && prof().branch is int
+        && get(/databases/$(database)/documents/claims/$(string(prof().branch))).data.uid == request.auth.uid
+        && get(/databases/$(database)/documents/claims/$(string(prof().branch))).data.ts <= request.time.toMillis()
+        && request.time.toMillis() < get(/databases/$(database)/documents/claims/$(string(prof().branch))).data.ts + 86400000
+        && (!exists(/databases/$(database)/documents/config/main) || !(prof().branch in get(/databases/$(database)/documents/config/main).data.get('closed', [])));
+    }
     // IDs seguros (se usan dentro de atributos onclick) y venta con campos válidos.
     // Se permite el punto porque los usuarios pueden tenerlo (ej. ana.lopez) y el corte usa día_usuario.
     function okId(id) { return id.matches('^[A-Za-z0-9_.-]{1,128}$'); }
@@ -225,7 +234,8 @@ function admOrSup() { return adm() || sup(); }
     }
     // Repartos a domicilio: los crea el administrador o Pedidos; el repartidor los toma y cierra
     match /deliveries/{id} {
-      allow read: if adm() || sup() || enc() || rep() || vend(resource.data.branch);
+      allow read: if adm() || sup() || enc() || rep() || vend(resource.data.branch)
+        || (vendHere() && prof().branch in resource.data.get('branches', []));
       allow create: if adm() || sup() || (enc() && request.resource.data.by == prof().user
         && request.resource.data.status == 'pendiente');
       allow update: if adm() || sup()

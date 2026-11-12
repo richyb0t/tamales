@@ -22,6 +22,12 @@ const dvTxt = d =>
     .map(([k, v]) => v + '× ' + nm(+k.slice(1)))
     .join(', ');
 
+const dvStopTxt = s =>
+  Object.entries(s.items || {})
+    .filter(([, v]) => +v > 0)
+    .map(([k, v]) => v + '× ' + nm(+k.slice(1)))
+    .join(', ');
+
 const dvDue = d => nz(d.total) + nz(d.fee);
 
 const dvSum = n => Object.entries(n.items).reduce((a, [f, v]) => a + v * price(+f), 0);
@@ -162,6 +168,52 @@ function dvToggle() {
   });
 }
 
+/* Reparte los productos entre sucursales: primero la elegida y luego las más cercanas.
+   Devuelve las paradas con lo que sale de cada una y lo que no alcanza en ninguna. */
+function dvPlan(n) {
+  const items = Object.entries(n.items || {}).filter(([, v]) => +v > 0);
+  if (!items.length) return { stops: [], missing: [], branches: [] };
+  const need = {};
+  items.forEach(([f, v]) => (need[+f] = (need[+f] || 0) + (+v || 0)));
+  const lat = +n.lat,
+    lng = +n.lng;
+  const dist = i => {
+    const l = (S.cfg.branchLocs || [])[i];
+    return lat && lng && l ? distKm({ lat, lng }, l) : null;
+  };
+  const base = n.branch != null && BI().includes(n.branch) ? n.branch : null;
+  const rest = BI()
+    .filter(i => i != base)
+    .sort((a, b) => {
+      const da = dist(a),
+        db = dist(b);
+      if (da == null && db == null) return a - b;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return da - db;
+    });
+  const order = base == null ? rest : [base, ...rest];
+  const stops = [];
+  for (const b of order) {
+    const s = { branch: b, items: {} };
+    for (const f of Object.keys(need)) {
+      const q = need[f];
+      if (q <= 0) continue;
+      const avail = Math.max(0, left(b, +f));
+      const take = Math.min(q, Math.floor(avail));
+      if (take > 0) {
+        s.items['f' + f] = take;
+        need[f] -= take;
+      }
+    }
+    if (Object.keys(s.items).length) stops.push(s);
+  }
+  const missing = Object.entries(need)
+    .filter(([, v]) => v > 0)
+    .map(([f, v]) => ({ f: +f, qty: v }));
+  return { stops, missing, branches: stops.map(s => s.branch) };
+}
+
 function dvForm() {
   const n = dvn(),
     sel = n.items,
@@ -212,7 +264,7 @@ function dvForm() {
      ${nav(1, 3, 'Siguiente: Sucursal →')}
     `;
   } else if (step === 3) {
-    const items = Object.entries(sel).filter(([k, v]) => v > 0);
+    const items = Object.entries(sel).filter(([k, v]) => +v > 0);
     const lat = +n.lat, lng = +n.lng;
     const addr = (n.addr || '').trim();
     /* Si no se tocó "Buscar ubicación", se geocodifica sola al entrar al paso. */
@@ -232,7 +284,18 @@ function dvForm() {
       }).filter(x => x.d != null).sort((a, b) => a.d - b.d);
       if (ranked.length) nearest = ranked[0].i;
     }
-    const has = i => !items.length || items.every(([k, v]) => left(i, +k.slice(1)) >= +v);
+    /* Cobertura de cada sucursal: completa, parcial o nula. */
+    const cov = i => {
+      const out = { full: items.length > 0, any: false };
+      items.forEach(([k, v]) => {
+        const f = +k.slice(1);
+        const have = Math.max(0, left(i, f));
+        const take = Math.min(+v, Math.floor(have));
+        if (take > 0) out.any = true;
+        if (take < +v) out.full = false;
+      });
+      return out;
+    };
     /* Todas las sucursales abiertas: primero las geolocalizadas por cercanía,
        después las que no tienen coordenadas configuradas. */
     const seen = new Set(ranked.map(r => r.i));
@@ -240,32 +303,56 @@ function dvForm() {
       ...ranked.map(r => ({ i: r.i, d: r.d })),
       ...BI().filter(i => !seen.has(i)).map(i => ({ i, d: null })),
     ];
-    const order = list.map(x => x.i).filter(has);
-    /* Al entrar al paso se preselecciona la más cercana CON existencia.
-       Si el usuario ya eligió una, se respeta su elección. */
+    /* Al entrar se preselecciona la más cercana que tenga todo; si ninguna lo tiene,
+       la más cercana con algo. El resto se completa con las siguientes. */
     if (n.branch == null || !BI().includes(n.branch)) {
-      n.branch = order.length ? order[0] : null;
-      n.autoBr = n.branch;
+      let auto = null;
+      if (items.length) {
+        const full = list.map(x => x.i).filter(i => cov(i).full);
+        const some = list.map(x => x.i).filter(i => cov(i).any);
+        auto = full.length ? full[0] : some.length ? some[0] : null;
+      } else auto = nearest != null ? nearest : list.length ? list[0].i : null;
+      n.branch = auto;
+      n.autoBr = auto;
     }
     const autoBr = n.autoBr;
+    const plan = dvPlan(n);
+    const multi = plan.stops.length > 1;
+    const kmOf = i => {
+      const r = list.find(x => x.i == i);
+      return r && r.d != null ? ' · ' + r.d.toFixed(1) + ' km' : '';
+    };
     body = `
      <small style="display:block;margin-bottom:6px">¿De qué sucursal sale?</small>
      <div class="seg" style="flex-wrap:wrap;overflow:visible;padding-top:8px">${BI().map(i => {
-       const ok = items.length ? has(i) : null;
+       const c = cov(i);
+       const ok = items.length ? c.full : null;
+       const color = ok === null ? '' : ok ? '#22c55e' : c.any ? '#f59e0b' : '#ef4444';
        const isNear = i === nearest;
-       const dot = ok === null ? '' : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${ok ? '#22c55e' : '#ef4444'};box-shadow:0 0 6px ${ok ? 'rgba(34,197,94,.6)' : 'rgba(239,68,68,.6)'};margin-left:6px;vertical-align:middle"></span>`;
-               const badgeA = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">MÁS CERCANA</span>`;
-        const badgeB = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">INDICADA</span>`;
-        const badge = isNear ? badgeA : autoBr != null && i === autoBr ? badgeB : '';
+       const dot = ok === null ? '' : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};box-shadow:0 0 6px ${ok ? 'rgba(34,197,94,.6)' : c.any ? 'rgba(245,158,11,.6)' : 'rgba(239,68,68,.6)'};margin-left:6px;vertical-align:middle"></span>`;
+       const badgeA = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">MÁS CERCANA</span>`;
+       const badgeB = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">INDICADA</span>`;
+       const badge = isNear ? badgeA : autoBr != null && i === autoBr ? badgeB : '';
        return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative;padding:8px 12px;overflow:visible">${badge}${esc(brs()[i])}${dot}</button>`;
      }).join('')}</div>
-     ${items.length && !order.length ? '<small style="display:block;margin:4px 0 8px;color:var(--bad)">Ninguna sucursal tiene existencia completa. Ajusta cantidades o carga inventario.</small>' : ''}
-     ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !has(nearest) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
+     ${items.length && !plan.stops.length ? '<small style="display:block;margin:4px 0 8px;color:var(--bad)">Ninguna sucursal tiene existencia. Ajusta cantidades o carga inventario.</small>' : ''}
+     ${plan.stops.length ? `<div style="border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0">
+       <small style="display:block;margin-bottom:2px"><b>${multi ? 'Se recoge en ' + plan.stops.length + ' sucursales' : 'Sale de ' + esc(brs()[plan.stops[0].branch])}</b></small>
+       ${plan.stops.map((s, idx) => `<div class="row" style="border:0;padding:3px 0"><div><b>${idx + 1}. ${esc(brs()[s.branch])}</b>${kmOf(s.branch)}<br><small>${esc(dvStopTxt(s))}</small></div></div>`).join('')}
+       ${multi ? '<small style="display:block;margin-top:4px;opacity:.75">El repartidor pasa por estas sucursales y al final al domicilio.</small>' : ''}
+       ${plan.missing.length ? `<small class="bad" style="display:block;margin-top:4px">Falta en todas: ${plan.missing.map(x => x.qty + '× ' + esc(nm(x.f))).join(', ')}</small>` : ''}
+     </div>` : ''}
+     ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !cov(nearest).full ? ' <span style="color:var(--bad)">(no tiene todo; se completa con otra sucursal)</span>' : ''}</small>` : ''}
      ${!ranked.length ? `<small style="display:block;margin:4px 0 8px;opacity:.7">${n.geoBusy ? 'Calculando distancias…' : lat && lng ? 'Las sucursales no tienen ubicación configurada. Revísalas en Ajustes.' : addr ? 'No se pudo ubicar la dirección. Revísala o usa GPS.' : 'Escribe la dirección para calcular los km.'}</small>` : ''}
-     ${list.length ? list.map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b>${r.d != null ? ' · ' + r.d.toFixed(1) + ' km' : ' · sin ubicación'}${items.length ? (has(r.i) ? ' · <span style="color:#22c55e">con existencia</span>' : ' · <span style="color:var(--bad)">sin existencia</span>') : ''}</div>`).join('') : '<small style="display:block;margin:4px 0 8px;opacity:.7">No hay sucursales abiertas.</small>'}
+     ${list.length ? list.map((r, idx) => {
+       const c = cov(r.i);
+       const est = !items.length ? '' : c.full ? ' · <span style="color:#22c55e">tiene todo</span>' : c.any ? ' · <span style="color:#f59e0b">tiene parte</span>' : ' · <span style="color:var(--bad)">sin existencia</span>';
+       return `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b>${r.d != null ? ' · ' + r.d.toFixed(1) + ' km' : ' · sin ubicación'}${est}</div>`;
+     }).join('') : '<small style="display:block;margin:4px 0 8px;opacity:.7">No hay sucursales abiertas.</small>'}
      ${nav(2, 4, 'Siguiente: Datos →')}
     `;
   } else {
+    const plan = dvPlan(n);
     body = `
      <div class="form"><input id="dvc" placeholder="Cliente" value="${esc(n.client)}" oninput="dvn().client=this.value" style="flex:1"><input placeholder="Teléfono" inputmode="tel" value="${esc(n.phone)}" oninput="dvn().phone=this.value" style="flex:1"></div>
      <div class="form"><input id="dva" placeholder="Dirección" value="${esc(n.addr)}" oninput="dvn().addr=this.value" style="flex:1 1 100%"></div>
@@ -274,6 +361,11 @@ function dvForm() {
      <details style="margin:4px 0"><summary style="cursor:pointer;opacity:.7;font-size:12px">Ingresar coordenadas manualmente</summary><div class="form"><input type="number" step="0.0001" placeholder="Latitud" aria-label="Latitud del pedido" value="${esc(n.lat ?? '')}" oninput="dvn().lat=this.value" style="flex:1"><input type="number" step="0.0001" placeholder="Longitud" aria-label="Longitud del pedido" value="${esc(n.lng ?? '')}" oninput="dvn().lng=this.value" style="flex:1"></div></details>
      <div class="form"><input type="number" min="0" inputmode="decimal" placeholder="Envío $" aria-label="Costo de envío" value="${esc(n.fee)}" oninput="dvn().fee=this.value" style="flex:1"></div>
      <div class="form"><input placeholder="Nota" value="${esc(n.note)}" oninput="dvn().note=this.value" style="flex:1"></div>
+     ${plan.stops.length ? `<div style="border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:4px 0 8px">
+       <small style="display:block;margin-bottom:2px"><b>${plan.stops.length > 1 ? 'Recoger en ' + plan.stops.length + ' sucursales' : 'Recoger en ' + esc(brs()[plan.stops[0].branch])}</b></small>
+       ${plan.stops.map((s, idx) => `<div class="row" style="border:0;padding:3px 0"><div><b>${idx + 1}. ${esc(brs()[s.branch])}</b><br><small>${esc(dvStopTxt(s))}</small></div></div>`).join('')}
+       ${plan.missing.length ? `<small class="bad" style="display:block;margin-top:4px">Falta en todas: ${plan.missing.map(x => x.qty + '× ' + esc(nm(x.f))).join(', ')}</small>` : ''}
+     </div>` : ''}
      <small style="display:block;margin:8px 0;opacity:.7">Productos: <b>${money(tot)}</b>${pcs ? ' · ' + pcs + (pcs == 1 ? ' tamal' : ' tamales') : ''}${n.fee ? ' · Envío ' + money(+n.fee || 0) : ''}</small>
      <div class="form"><button class="go" style="flex:1" onclick="saveDv()">Guardar reparto</button></div>
      ${nav(3, false, '')}
@@ -285,40 +377,26 @@ function dvForm() {
 function dvStep(s) {
   const n = dvn();
   if (s === 4 && n.step === 3) {
-    if (n.branch == null) {
-      toast('Elige una sucursal con existencia para este reparto');
+    const items = Object.entries(n.items || {}).filter(([_, v]) => +v > 0);
+    if (!items.length) {
+      toast('Elige los tamales del reparto');
       return;
     }
-    const items = Object.entries(n.items || {}).filter(([_, v]) => +v > 0);
-    if (items.length) {
-      const b = n.branch;
-      const ok = items.every(([k, v]) => left(b, +k.slice(1)) >= +v);
-      if (!ok) {
-        let cand = BI().filter(i => items.every(([k, v]) => left(i, +k.slice(1)) >= +v));
-        if (!cand.length) {
-          toast('Ninguna sucursal tiene suficiente stock para este reparto');
-          return;
-        }
-        const lat = +n.lat,
-          lng = +n.lng;
-        if (lat && lng) {
-          const ranked = cand
-            .map(i => {
-              const l = (S.cfg.branchLocs || [])[i];
-              const d = l ? distKm({ lat, lng }, l) : null;
-              return { i, d };
-            })
-            .filter(x => x.d != null)
-            .sort((a, b) => a.d - b.d);
-          if (ranked.length) cand = [ranked[0].i];
-        }
-        const nb = cand[0];
-        if (nb !== b) {
-          n.branch = nb;
-          n.autoBr = nb;
-          toast('La sucursal seleccionada no tiene suficiente. Se cambió a ' + brs()[nb]);
-        }
-      }
+    if (n.branch == null) {
+      toast('Elige de qué sucursal sale el reparto');
+      return;
+    }
+    const plan = dvPlan(n);
+    if (!plan.stops.length) {
+      toast('Ninguna sucursal tiene existencia para este reparto');
+      return;
+    }
+    if (plan.missing.length) {
+      toast(
+        'Falta en todas las sucursales: ' +
+          plan.missing.map(x => x.qty + '× ' + nm(x.f)).join(', ')
+      );
+      return;
     }
   }
   n.step = Math.min(4, Math.max(1, +s || 1));
@@ -341,22 +419,20 @@ async function saveDv() {
   if (!n.addr.trim()) return toast('Escribe la dirección de entrega');
   const b = n.branch;
   if (b == null) return toast('Elige de qué sucursal sale el reparto');
-  const sh = Object.entries(items).find(([k, v]) => v > left(b, +k.slice(1)));
-  if (sh)
+  const plan = dvPlan(n);
+  if (!plan.stops.length) return toast('Ninguna sucursal tiene existencia para este reparto');
+  if (plan.missing.length)
     return toast(
-      'En ' +
-        brs()[b] +
-        ' solo quedan ' +
-        Math.max(0, left(b, +sh[0].slice(1))) +
-        ' de ' +
-        F[+sh[0].slice(1)] +
-        '. Elige otra sucursal o menos'
+      'Falta en todas las sucursales: ' +
+        plan.missing.map(x => x.qty + '× ' + nm(x.f)).join(', ')
     );
   if (!lock('dv')) return;
   try {
     await db.collection('deliveries').add({
       day: D,
-      branch: n.branch,
+      branch: plan.stops[0].branch,
+      branches: plan.branches,
+      pickups: plan.stops,
       items,
       client: n.client.trim(),
       phone: n.phone.trim(),
@@ -377,7 +453,17 @@ async function saveDv() {
     S.dvn = null;
     S.dvf = false;
     toast('Reparto guardado');
-    if (typeof pushNotify === 'function') pushNotify('Nuevo reparto', n.client.trim() + ' · ' + n.addr.trim());
+    if (typeof pushNotify === 'function')
+      pushNotify(
+        'Nuevo reparto',
+        n.client.trim() +
+          ' · ' +
+          (plan.stops.length > 1
+            ? plan.stops.length + ' sucursales'
+            : brs()[plan.stops[0].branch]) +
+          ' · ' +
+          n.addr.trim()
+      );
     renderNow(true);
   } catch (e) {
     delete lock.s.dv;
@@ -496,29 +582,36 @@ function dvDone(id) {
     if (p < due) return toast('El pago no alcanza');
     m.style.display = 'none';
     const ts = Date.now();
-    const it = Object.entries(d.items || {}).filter(([_, v]) => v > 0);
+    const stops = dvPickups(d);
+    const multi = stops.length > 1;
     if (!lock('dv' + id)) return;
     try {
       const bt = db.batch();
       bt.update('deliveries/' + id, { status: 'entregado', cobrado: due, tsDone: ts });
       if (d.large && d.preId) bt.update('pre/' + d.preId, { status: 'entregado', doneAt: ts });
-      it.forEach(([k, v], i) => {
-        const f = +k.slice(1);
-        const disc = f >= 100 ? (+(d.descChamp) || 0) : (+(d.descTamal) || 0);
-        bt.set('sales/dv' + id + '_' + i, {
-          day: D,
-          branch: d.branch,
-          f: f,
-          qty: v,
-          type: 'vendido',
-          price: Math.max(0, price(f) - disc),
-          descuento: disc * v,
-          dv: id,
-          ...(d.preId ? { pre: d.preId } : {}),
-          client: d.client,
-          by: S.me.user,
-          ts: ts + i,
-        });
+      let n = 0;
+      stops.forEach((s, si) => {
+        Object.entries(s.items || {})
+          .filter(([, v]) => +v > 0)
+          .forEach(([k, v], i) => {
+            const f = +k.slice(1);
+            const disc = f >= 100 ? (+(d.descChamp) || 0) : (+(d.descTamal) || 0);
+            bt.set('sales/' + (multi ? 'dv' + id + '_' + si + '_' + i : 'dv' + id + '_' + n), {
+              day: D,
+              branch: s.branch,
+              f: f,
+              qty: v,
+              type: 'vendido',
+              price: Math.max(0, price(f) - disc),
+              descuento: disc * v,
+              dv: id,
+              ...(d.preId ? { pre: d.preId } : {}),
+              client: d.client,
+              by: S.me.user,
+              ts: ts + n,
+            });
+            n++;
+          });
       });
       await bt.commit();
       try {
@@ -560,6 +653,8 @@ function dvFail(id) {
 function dvCard(d, rep) {
   const t = DV[d.status] || ['', ''],
     me = S.me,
+    picks = dvPickups(d).filter(s => Object.keys(s.items || {}).length),
+    multi = picks.length > 1,
     ph = (d.phone || '').trim(),
     q = (d.addr || '').trim() || (d.lat != null && d.lng != null ? d.lat + ',' + d.lng : ''),
     mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q),
@@ -572,8 +667,8 @@ function dvCard(d, rep) {
       bt = `<button class="go p" onclick="dvDone('${d._id}')">Entregar y cobrar ${money(dvDue(d))}</button><button class="alt" onclick="dvFail('${d._id}')">No se pudo</button><button class="gh" onclick="dvRelease('${d._id}')">Soltar</button>`;
   } else if ((A || me.role == 'enc' || me.role == 'sup') && d.status == 'pendiente')
     bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
-  return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b>${d.large ? ' <span class="chip ok">📦 Grande</span>' : ''}<div class="apm">${d.large ? '📦 Pedido grande' : esc(brs()[d.branch] || '')} · ${d.time ? '🕒 ' + ftime(d.time) + ' · ' : ''}${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
- <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}</div>
+  return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b>${d.large ? ' <span class="chip ok">📦 Grande</span>' : ''}<div class="apm">${d.large ? '📦 Pedido grande' : multi ? '🚏 ' + picks.length + ' sucursales' : esc(brs()[d.branch] || '')} · ${d.time ? '🕒 ' + ftime(d.time) + ' · ' : ''}${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
+ <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}${multi ? '<br><small style="display:block;margin-top:4px"><b>Recoger en:</b></small>' + picks.map((s, i) => `<small style="display:block">${i + 1}. <b>${esc(brs()[s.branch])}</b>: ${esc(dvStopTxt(s))}</small>`).join('') : ''}</div>
  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${q ? `<div style="margin:4px 0"><iframe src="https://www.google.com/maps?q=${encodeURIComponent(q)}&z=16&output=embed" width="100%" height="180" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div style="margin-top:4px"><a href="https://www.google.com/maps?q=${encodeURIComponent(q)}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div></div>` : ''}${(() => {
     if (d.lat == null || d.lng == null) return '';
     const near = brs().map((nm, i) => {
@@ -618,20 +713,35 @@ function dvRouteMap(d) {
   if (!S.dvLoc || S.dvRoute != d._id) return '';
   const dest = (d.addr || '').trim() || (d.lat != null && d.lng != null ? d.lat + ',' + d.lng : '');
   if (!dest) return '<div class="card"><small>Este reparto no tiene dirección para trazar el recorrido.</small></div>';
-  const b = (S.cfg.branchLocs || [])[d.branch],
-    bq = b && b.lat != null && b.lng != null ? b.lat + ',' + b.lng : '',
-    origin = S.dvLoc.lat + ',' + S.dvLoc.lng,
-    bn = brs()[d.branch] || 'sucursal',
-    leg = (a, z, label) =>
-      `<small style="display:block;margin-top:6px"><b>${label}</b></small><iframe src="https://www.google.com/maps?saddr=${encodeURIComponent(a)}&daddr=${encodeURIComponent(z)}&output=embed" width="100%" height="190" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`,
-    dir =
-      'https://www.google.com/maps/dir/?api=1&origin=' +
-      encodeURIComponent(origin) +
-      '&destination=' +
-      encodeURIComponent(dest) +
-      (bq ? '&waypoints=' + encodeURIComponent(bq) : '') +
-      '&travelmode=driving';
-  return `<div class="dvroute">${bq ? leg(origin, bq, '1. Tu ubicación → ' + esc(bn)) : ''}${leg(bq || origin, dest, (bq ? '2. ' + esc(bn) + ' → ' : 'Tu ubicación → ') + 'domicilio')}<div class="dvacts"><button class="dvnav" onclick="dvRoute('${d._id}')">🔄 Actualizar</button><a class="dvnav" href="${dir}" target="_blank" rel="noopener">🧭 Navegar</a></div></div>`;
+  const origin = S.dvLoc.lat + ',' + S.dvLoc.lng;
+  const stops = dvPickups(d)
+    .filter(s => s.branch != null)
+    .map(s => {
+      const l = (S.cfg.branchLocs || [])[s.branch];
+      return l && l.lat != null && l.lng != null
+        ? { name: brs()[s.branch] || 'sucursal', q: l.lat + ',' + l.lng }
+        : null;
+    })
+    .filter(Boolean);
+  const leg = (a, z, label) =>
+    `<small style="display:block;margin-top:6px"><b>${label}</b></small><iframe src="https://www.google.com/maps?saddr=${encodeURIComponent(a)}&daddr=${encodeURIComponent(z)}&output=embed" width="100%" height="190" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+  const legs = [];
+  let prev = origin,
+    prevName = 'Tu ubicación';
+  stops.forEach((s, i) => {
+    legs.push(leg(prev, s.q, i + 1 + '. ' + esc(prevName) + ' → ' + esc(s.name)));
+    prev = s.q;
+    prevName = s.name;
+  });
+  legs.push(leg(prev, dest, stops.length + 1 + '. ' + esc(prevName) + ' → domicilio'));
+  const dir =
+    'https://www.google.com/maps/dir/?api=1&origin=' +
+    encodeURIComponent(origin) +
+    '&destination=' +
+    encodeURIComponent(dest) +
+    (stops.length ? '&waypoints=' + encodeURIComponent(stops.map(s => s.q).join('|')) : '') +
+    '&travelmode=driving';
+  return `<div class="dvroute">${legs.join('')}<div class="dvacts"><button class="dvnav" onclick="dvRoute('${d._id}')">🔄 Actualizar</button><a class="dvnav" href="${dir}" target="_blank" rel="noopener">🧭 Navegar</a></div></div>`;
 }
 
 
@@ -653,15 +763,25 @@ function dvPanel() {
 /* Tarjeta mínima para el vendedor: solo el pedido y cuánto apartar (sin dirección ni mapa) */
 function dvVendCard(d) {
   const t = DV[d.status] || ['', ''],
-    items = Object.entries(d.items || {}).filter(([, v]) => v > 0),
-    tam = items.reduce((a, [k, v]) => a + (+k.slice(1) < 100 ? v : 0), 0),
-    ch = items.reduce((a, [k, v]) => a + (+k.slice(1) >= 100 ? v : 0), 0),
-    list = items.map(([k, v]) => v + '× ' + esc(nm(+k.slice(1)))).join(' · ');
-  return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
+    picks = dvPickups(d).filter(s => Object.keys(s.items || {}).length),
+    items = Object.entries(d.items || {}).filter(([, v]) => +v > 0),
+    mine = picks.find(s => s.branch == (S.me && S.me.branch)),
+    myItems = mine
+      ? Object.entries(mine.items || {}).filter(([, v]) => +v > 0)
+      : d.large
+        ? items
+        : [],
+    tam = myItems.reduce((a, [k, v]) => a + (+k.slice(1) < 100 ? +v : 0), 0),
+    ch = myItems.reduce((a, [k, v]) => a + (+k.slice(1) >= 100 ? +v : 0), 0),
+    list = items.map(([k, v]) => v + '× ' + esc(nm(+k.slice(1)))).join(' · '),
+    others = mine ? picks.filter(s => s.branch != mine.branch) : [],
+    primary = d.branch == (S.me && S.me.branch);
+  return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio${picks.length > 1 ? ' · 🚏 ' + picks.length + ' sucursales' : ''}</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${list}</div>
- <div><b>Apartar: ${tam} ${tam == 1 ? 'tamal' : 'tamales'}${ch ? ' + ' + ch + ' ' + (ch == 1 ? 'champurrado' : 'champurrados') : ''}</b></div>
+ <div><b>${myItems.length ? 'Apartar aquí: ' + tam + ' ' + (tam == 1 ? 'tamal' : 'tamales') + (ch ? ' + ' + ch + ' ' + (ch == 1 ? 'champurrado' : 'champurrados') : '') : 'No te toca surtir este reparto'}</b></div>
+ ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
- ${d.out ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}</b></div>` : d.status == 'pendiente' || d.status == 'en_ruta' ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : ''}</div>`;
+ ${primary ? (d.out ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}</b></div>` : d.status == 'pendiente' || d.status == 'en_ruta' ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '') : ''}</div>`;
 }
 
 /* El vendedor confirma que el pedido salió de la sucursal */
@@ -794,7 +914,11 @@ function notifyNewDv() {
       try {
         notifShow(
           d.large ? 'Nuevo pedido grande' : 'Nuevo reparto',
-          (d.client || 'Cliente') + (d.addr ? ' · ' + d.addr : '') + ' · ' + money(dvDue(d)),
+          (d.client || 'Cliente') +
+            (d.addr ? ' · ' + d.addr : '') +
+            (d.pickups && d.pickups.length > 1 ? ' · ' + d.pickups.length + ' sucursales' : '') +
+            ' · ' +
+            money(dvDue(d)),
           d._id
         );
       } catch (_) {}

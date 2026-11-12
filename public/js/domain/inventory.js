@@ -45,6 +45,12 @@ const net = (b, f) =>
 const tx = (b, f, k) =>
   S.tr.filter(t => t[k] == b).reduce((a, t) => a + (+(t.q || {})['f' + f] || 0), 0);
 
+/* Repartos con una o varias sucursales de origen. Los documentos viejos solo tienen branch/items. */
+const dvPickups = d =>
+  Array.isArray(d.pickups) && d.pickups.length
+    ? d.pickups
+    : [{ branch: d.branch, items: d.items || {} }];
+
 const CL = [0.25, 0.5, 1],
   r2 = x => Math.round(x * 100) / 100;
 
@@ -74,13 +80,20 @@ const chResv = b =>
 
 const chDvResv = b =>
   (S.dv || [])
-    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado' && d.status != 'fallido' && !d.large)
+    .filter(d => d.day == D && d.status != 'cancelado' && d.status != 'fallido' && !d.large)
     .reduce(
       (a, d) =>
         a +
-        Object.entries(d.items || {})
-          .filter(([k]) => +k.slice(1) >= 100)
-          .reduce((x, [k, v]) => x + (+v || 0) * CL[+k.slice(1) - 100], 0),
+        dvPickups(d)
+          .filter(s => s.branch == b)
+          .reduce(
+            (x, s) =>
+              x +
+              Object.entries(s.items || {})
+                .filter(([k]) => +k.slice(1) >= 100)
+                .reduce((y, [k, v]) => y + (+v || 0) * CL[+k.slice(1) - 100], 0),
+            0
+          ),
       0
     );
 
@@ -101,8 +114,15 @@ const resv = (b, f) =>
 /* Tamales comprometidos en repartos del día (pendiente/en camino/entregado): no disponibles para venta en mostrador */
 const dvResv = (b, f) =>
   (S.dv || [])
-    .filter(d => d.branch == b && d.day == D && d.status != 'cancelado' && d.status != 'fallido' && !d.large)
-    .reduce((a, d) => a + (+(d.items || {})['f' + f] || 0), 0);
+    .filter(d => d.day == D && d.status != 'cancelado' && d.status != 'fallido' && !d.large)
+    .reduce(
+      (a, d) =>
+        a +
+        dvPickups(d)
+          .filter(s => s.branch == b)
+          .reduce((x, s) => x + (+(s.items || {})['f' + f] || 0), 0),
+      0
+    );
 
 const left = (b, f) => {
   if (f >= 100) {
