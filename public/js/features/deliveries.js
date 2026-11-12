@@ -19,13 +19,15 @@ const dvSum = n => Object.entries(n.items).reduce((a, [f, v]) => a + v * price(+
 
 function dvn() {
   if (!S.dvn)
-    S.dvn = { branch: BI()[0], items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1 };
-  if (!BI().includes(S.dvn.branch)) S.dvn.branch = BI()[0];
+    S.dvn = { branch: null, autoBr: null, items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1 };
+  if (S.dvn.branch != null && !BI().includes(S.dvn.branch)) S.dvn.branch = null;
   return S.dvn;
 }
 
 function dvBr(i) {
-  dvn().branch = i;
+  const n = dvn();
+  n.branch = i;
+  n.autoBr = null;
   renderNow(true);
 }
 
@@ -111,12 +113,6 @@ async function dvGeocode() {
     }
     n.lat = lat;
     n.lng = lng;
-    const ranked = BI().map(i => {
-      const l = (S.cfg.branchLocs || [])[i];
-      const d = l ? distKm({ lat: n.lat, lng: n.lng }, l) : null;
-      return { i, d };
-    }).filter(x => x.d != null).sort((a, c) => a.d - c.d);
-    if (ranked.length) n.branch = ranked[0].i;
     toast('Ubicación encontrada: ' + (label || '').slice(0, 60));
     renderNow(true);
   } catch (e) {
@@ -203,7 +199,6 @@ function dvForm() {
     const lat = +n.lat, lng = +n.lng;
     let ranked = [];
     let nearest = null;
-    let autoBr = null;
     if (lat && lng) {
       ranked = BI().map(i => {
         const l = (S.cfg.branchLocs || [])[i];
@@ -212,29 +207,32 @@ function dvForm() {
       }).filter(x => x.d != null).sort((a, b) => a.d - b.d);
       if (ranked.length) nearest = ranked[0].i;
     }
-    if (items.length) {
-      const has = i => items.every(([k, v]) => left(i, +k.slice(1)) >= v);
-      if (!has(n.branch)) {
-        const cand = ranked.filter(r => has(r.i)).sort((a, b) => a.d - b.d)[0];
-        if (cand) {
-          n.branch = cand.i;
-          autoBr = cand.i;
-        }
-      }
+    const has = i => !items.length || items.every(([k, v]) => left(i, +k.slice(1)) >= +v);
+    /* Sucursales con existencia completa: primero las geolocalizadas por cercanía,
+       después las que no tienen coordenadas configuradas. */
+    const seen = new Set(ranked.map(r => r.i));
+    const order = [...ranked.map(r => r.i), ...BI().filter(i => !seen.has(i))].filter(has);
+    /* Al entrar al paso se preselecciona la más cercana CON existencia.
+       Si el usuario ya eligió una, se respeta su elección. */
+    if (n.branch == null || !BI().includes(n.branch)) {
+      n.branch = order.length ? order[0] : null;
+      n.autoBr = n.branch;
     }
+    const autoBr = n.autoBr;
     body = `
      <small style="display:block;margin-bottom:6px">¿De qué sucursal sale?</small>
      <div class="seg" style="flex-wrap:wrap;overflow:visible;padding-top:8px">${BI().map(i => {
-       const ok = items.length ? items.every(([k, v]) => left(i, +k.slice(1)) >= v) : null;
+       const ok = items.length ? has(i) : null;
        const isNear = i === nearest;
        const dot = ok === null ? '' : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${ok ? '#22c55e' : '#ef4444'};box-shadow:0 0 6px ${ok ? 'rgba(34,197,94,.6)' : 'rgba(239,68,68,.6)'};margin-left:6px;vertical-align:middle"></span>`;
                const badgeA = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">MÁS CERCANA</span>`;
         const badgeB = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">INDICADA</span>`;
-        const badge = i === nearest ? badgeA : autoBr && i === autoBr ? badgeB : '';
+        const badge = isNear ? badgeA : autoBr != null && i === autoBr ? badgeB : '';
        return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative;padding:8px 12px;overflow:visible">${badge}${esc(brs()[i])}${dot}</button>`;
      }).join('')}</div>
-     ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !items.every(([k, v]) => left(nearest, +k.slice(1)) >= v) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
-     ${ranked.length ? ranked.filter(r => items.every(([k, v]) => left(r.i, +k.slice(1)) >= v)).map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km</div>`).join('') : ''}
+     ${items.length && !order.length ? '<small style="display:block;margin:4px 0 8px;color:var(--bad)">Ninguna sucursal tiene existencia completa. Ajusta cantidades o carga inventario.</small>' : ''}
+     ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !has(nearest) ? ' <span style="color:var(--bad)">(sin disponibilidad completa, elige otra)</span>' : ''}</small>` : ''}
+     ${ranked.length ? ranked.filter(r => has(r.i)).map((r, idx) => `<div class="row"><b>${idx + 1}. ${esc(brs()[r.i])}</b> · ${r.d.toFixed(1)} km</div>`).join('') : ''}
      ${nav(2, 4, 'Siguiente: Datos →')}
     `;
   } else {
@@ -257,6 +255,10 @@ function dvForm() {
 function dvStep(s) {
   const n = dvn();
   if (s === 4 && n.step === 3) {
+    if (n.branch == null) {
+      toast('Elige una sucursal con existencia para este reparto');
+      return;
+    }
     const items = Object.entries(n.items || {}).filter(([_, v]) => +v > 0);
     if (items.length) {
       const b = n.branch;
@@ -283,6 +285,7 @@ function dvStep(s) {
         const nb = cand[0];
         if (nb !== b) {
           n.branch = nb;
+          n.autoBr = nb;
           toast('La sucursal seleccionada no tiene suficiente. Se cambió a ' + brs()[nb]);
         }
       }
@@ -307,6 +310,7 @@ async function saveDv() {
   if (!n.client.trim()) return toast('Escribe el nombre del cliente');
   if (!n.addr.trim()) return toast('Escribe la dirección de entrega');
   const b = n.branch;
+  if (b == null) return toast('Elige de qué sucursal sale el reparto');
   const sh = Object.entries(items).find(([k, v]) => v > left(b, +k.slice(1)));
   if (sh)
     return toast(
