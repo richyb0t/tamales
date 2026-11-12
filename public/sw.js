@@ -6,7 +6,7 @@
  *
  * Al cambiar la lista de archivos o la lógica, sube el número de CACHE_VERSION. */
 
-const CACHE_VERSION = 'tamales-v164';
+const CACHE_VERSION = 'tamales-v165';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const PRECACHE = [
@@ -78,6 +78,7 @@ const PRECACHE = [
   '/js/ui/theme-toggle.js',
   '/js/app/boot.js',
   '/js/firebase.js',
+  '/OneSignalSDKWorker.js',
 ];
 
 const isExternalAsset = host => /(^|\.)gstatic\.com$/.test(host) || host === 'fonts.googleapis.com';

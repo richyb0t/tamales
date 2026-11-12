@@ -821,7 +821,7 @@ async function initOnesignal() {
   window.OneSignalDeferred.push(async function (OneSignal) {
     try {
       console.log('[OneSignal] SDK loaded, initializing...');
-      await OneSignal.init({ appId, notifyButton: { enable: false } });
+      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
       console.log('[OneSignal] init OK, permission:', Notification.permission);
       if (S.me && S.me.id) {
         OneSignal.User.addTag('role', S.me.role);
@@ -844,7 +844,7 @@ async function onesignalRequestPermission() {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function (OneSignal) {
     try {
-      await OneSignal.init({ appId, notifyButton: { enable: false } });
+      await OneSignal.init({ appId, safari_web_id: 'web.onesignal.auto.52db6e33-5c43-4c7e-8893-c04dfe7146e4', notifyButton: { enable: false } });
       const perm = await OneSignal.Notifications.requestPermission();
       console.log('[OneSignal] permission result:', perm);
       if (perm) {
