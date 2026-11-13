@@ -707,10 +707,16 @@ function apView() {
 }
 
 function preBanner() {
-  const n = preN() + dvOpenN();
-  return n
-    ? `<div class="card" style="border:2px solid var(--ac)" onclick="S.apt='h';setVt('r')"><b>📌 ${n} apartado${n > 1 ? 's' : ''} para entregar hoy</b><br><small>Toca para ver</small></div>`
-    : '';
+  const np = preN(),
+    nd = dvOpenN();
+  return (
+    (np
+      ? `<div class="card" style="border:2px solid var(--ac)" onclick="S.apt='h';setVt('r')"><b>📌 ${np} apartado${np > 1 ? 's' : ''} para entregar hoy</b><br><small>Toca para ver</small></div>`
+      : '') +
+    (nd
+      ? `<div class="card" style="border:2px solid var(--ac)" onclick="S.apt='h';setVt('r')"><b>🛵 ${nd} reparto${nd > 1 ? 's' : ''} a domicilio por recoger</b><br><small>Toca para ver</small></div>`
+      : '')
+  );
 }
 
 function preInvCard(b) {
