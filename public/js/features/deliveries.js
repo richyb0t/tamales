@@ -301,7 +301,7 @@ function dvForm() {
       const out = { full: items.length > 0, any: false };
       items.forEach(([k, v]) => {
         const f = +k.slice(1);
-        const have = Math.max(0, left(i, f));
+        const have = Math.max(0, left(i, f) || 0);
         const take = Math.min(+v, Math.floor(have));
         if (take > 0) out.any = true;
         if (take < +v) out.full = false;
@@ -320,9 +320,72 @@ function dvForm() {
     if (n.branch == null || !BI().includes(n.branch)) {
       let auto = null;
       if (items.length) {
-        const full = list.map(x => x.i).filter(i => cov(i).full);
-        const some = list.map(x => x.i).filter(i => cov(i).any);
-        auto = full.length ? full[0] : some.length ? some[0] : null;
+        /* Elige la combinación de sucursales que cubra todo el pedido con el menor
+           recorrido (de la más lejana a la más cercana al domicilio). Así se
+           prioriza una sucursal cercana con todo; si no hay ninguna, se prefieren
+           dos cercanas antes que una lejana que tenga todo. */
+        const branches = BI();
+        const distToCust = i => {
+          const l = (S.cfg.branchLocs || [])[i];
+          if (lat && lng && l && l.lat != null && l.lng != null) return distKm({ lat, lng }, l);
+          return null;
+        };
+        const distBC = (a, b) => {
+          const la = (S.cfg.branchLocs || [])[a],
+            lb = (S.cfg.branchLocs || [])[b];
+          if (la && lb && la.lat != null && la.lng != null && lb.lat != null && lb.lng != null)
+            return distKm(la, lb);
+          return Math.abs(a - b);
+        };
+        const coversAll = subset =>
+          items.every(([k, v]) => {
+            const f = +k.slice(1);
+            const total = subset.reduce((s, i) => s + Math.max(0, Math.floor(left(i, f) || 0)), 0);
+            return total >= +v;
+          });
+        const routeCost = subset => {
+          const sorted = subset.slice().sort((a, b) => {
+            const da = distToCust(a),
+              db = distToCust(b);
+            if (da == null && db == null) return b - a;
+            if (da == null) return 1;
+            if (db == null) return -1;
+            return db - da;
+          });
+          let cost = 0;
+          for (let i = 0; i < sorted.length - 1; i++) cost += distBC(sorted[i], sorted[i + 1]);
+          const dc = distToCust(sorted[sorted.length - 1]);
+          cost += dc != null ? dc : 1000;
+          if (sorted.length === 1) cost = dc != null ? dc : 1000;
+          cost += (sorted.length - 1) * 0.001;
+          return cost;
+        };
+        let bestSubset = null,
+          bestCost = Infinity;
+        const nBr = branches.length;
+        for (let mask = 1; mask < 1 << nBr; mask++) {
+          const subset = branches.filter((_, i) => mask & (1 << i));
+          if (!coversAll(subset)) continue;
+          const c = routeCost(subset);
+          if (c < bestCost) {
+            bestCost = c;
+            bestSubset = subset;
+          }
+        }
+        if (bestSubset) {
+          const sorted = bestSubset.slice().sort((a, b) => {
+            const da = distToCust(a),
+              db = distToCust(b);
+            if (da == null && db == null) return b - a;
+            if (da == null) return 1;
+            if (db == null) return -1;
+            return db - da;
+          });
+          auto = sorted[0];
+        } else {
+          const some = list.map(x => x.i).filter(i => cov(i).any);
+          auto = some.length ? some[0] : null;
+        }
       } else auto = nearest != null ? nearest : list.length ? list[0].i : null;
       n.branch = auto;
       n.autoBr = auto;
@@ -351,7 +414,7 @@ function dvForm() {
      ${plan.stops.length ? `<div style="border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0">
        <small style="display:block;margin-bottom:2px"><b>${multi ? 'Se recoge en ' + plan.stops.length + ' sucursales' : 'Sale de ' + esc(brs()[plan.stops[0].branch])}</b></small>
        ${plan.stops.map((s, idx) => `<div class="row" style="border:0;padding:3px 0"><div><b>${idx + 1}. ${esc(brs()[s.branch])}</b>${kmOf(s.branch)}<br><small>${esc(dvStopTxt(s))}</small></div></div>`).join('')}
-       ${multi ? '<small style="display:block;margin-top:4px;opacity:.75">Ruta: primero la sucursal más lejana y al final la más cercana al domicilio.</small>' : ''}
+       ${multi ? '<small style="display:block;margin-top:4px;opacity:.75">Ruta: primero la sucursal más lejana y al final la más cercana al domicilio. Se eligió la combinación con menor recorrido.</small>' : ''}
        ${plan.missing.length ? `<small class="bad" style="display:block;margin-top:4px">Falta en todas: ${plan.missing.map(x => x.qty + '× ' + esc(nm(x.f))).join(', ')}</small>` : ''}
      </div>` : ''}
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !cov(nearest).full ? ' <span style="color:var(--bad)">(no tiene todo; se completa con otra sucursal)</span>' : ''}</small>` : ''}
