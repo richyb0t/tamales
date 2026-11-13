@@ -815,7 +815,19 @@ function dvFail(id) {
 function dvCard(d, rep) {
   const t = DV[d.status] || ['', ''],
     me = S.me,
-    picks = dvPickups(d).filter(s => Object.keys(s.items || {}).length),
+    picks = dvPickups(d)
+      .filter(s => Object.keys(s.items || {}).length)
+      .slice()
+      .sort((a, b) => {
+        const la = (S.cfg.branchLocs || [])[a.branch],
+          lb = (S.cfg.branchLocs || [])[b.branch];
+        const da = d.lat != null && d.lng != null && la && la.lat != null ? distKm({ lat: d.lat, lng: d.lng }, la) : null;
+        const db = d.lat != null && d.lng != null && lb && lb.lat != null ? distKm({ lat: d.lat, lng: d.lng }, lb) : null;
+        if (da == null && db == null) return 0;
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return db - da;
+      }),
     multi = picks.length > 1,
     preparedCount = picks.filter(s => d.prepared && d.prepared[s.branch]).length,
     ready = picks.length > 0 && preparedCount === picks.length,
@@ -885,11 +897,12 @@ function dvRouteMap(d) {
     .filter(s => s.branch != null)
     .map(s => {
       const l = (S.cfg.branchLocs || [])[s.branch];
-      return l && l.lat != null && l.lng != null
-        ? { name: brs()[s.branch] || 'sucursal', q: l.lat + ',' + l.lng }
-        : null;
+      if (!l || l.lat == null || l.lng == null) return null;
+      const dc = d.lat != null && d.lng != null ? distKm({ lat: d.lat, lng: d.lng }, l) : null;
+      return { name: brs()[s.branch] || 'sucursal', q: l.lat + ',' + l.lng, dist: dc };
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a, b) => (b.dist != null ? b.dist : -1) - (a.dist != null ? a.dist : -1));
   const leg = (a, z, label) =>
     `<small style="display:block;margin-top:6px"><b>${label}</b></small><iframe src="https://www.google.com/maps?saddr=${encodeURIComponent(a)}&daddr=${encodeURIComponent(z)}&output=embed" width="100%" height="190" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
   const legs = [];
