@@ -399,13 +399,31 @@ function dvForm() {
         let bestSubset = null,
           bestCost = Infinity;
         const nBr = branches.length;
-        for (let mask = 1; mask < 1 << nBr; mask++) {
-          const subset = branches.filter((_, i) => mask & (1 << i));
-          if (!coversAll(subset)) continue;
-          const c = routeCost(subset);
-          if (c < bestCost) {
-            bestCost = c;
-            bestSubset = subset;
+        // Primero: una sola sucursal que tenga todo el pedido (siempre preferida si existe).
+        const fullSingles = branches.filter(i => cov(i).full);
+        if (fullSingles.length) {
+          let bestSingle = fullSingles[0],
+            bestSingleCost = Infinity;
+          fullSingles.forEach(i => {
+            const c = routeCost([i]);
+            if (c < bestSingleCost) {
+              bestSingleCost = c;
+              bestSingle = i;
+            }
+          });
+          bestSubset = [bestSingle];
+          bestCost = bestSingleCost;
+        } else {
+          // Si ninguna tiene todo, busca la mejor combinación de 2+ sucursales.
+          for (let mask = 1; mask < 1 << nBr; mask++) {
+            const subset = branches.filter((_, i) => mask & (1 << i));
+            if (subset.length < 2) continue;
+            if (!coversAll(subset)) continue;
+            const c = routeCost(subset);
+            if (c < bestCost) {
+              bestCost = c;
+              bestSubset = subset;
+            }
           }
         }
         if (bestSubset) {
