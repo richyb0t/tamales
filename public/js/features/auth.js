@@ -181,6 +181,9 @@ async function login() {
 async function logout() {
   S.cart = {};
   try {
+    toast('Saliendo…');
+  } catch (e) {}
+  try {
     localStorage.removeItem('tm_v');
   } catch (e) {}
   try {
@@ -190,9 +193,10 @@ async function logout() {
     vSig = '';
   } catch (e) {}
   try {
-    /* Espera a apagar la suscripción, pero sin dejar la pantalla trabada si no hay internet. */
-    if (typeof clearPushTag === 'function')
-      await Promise.race([clearPushTag(true), new Promise(r => setTimeout(r, 4000))]);
+    /* Se apaga en segundo plano; la pantalla de entrada termina de limpiar si hace falta. */
+    if (typeof clearPushTag === 'function') {
+      clearPushTag(true).catch(e => console.warn('[push] clear', e));
+    }
   } catch (e) {}
   try {
     await FB.logout();

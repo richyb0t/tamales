@@ -169,10 +169,11 @@ function dvToggle() {
 }
 
 /* Reparte los productos entre sucursales: primero la elegida y luego las más cercanas.
-   Devuelve las paradas con lo que sale de cada una y lo que no alcanza en ninguna. */
+   Las paradas se ordenan de la más lejana a la más cercana al domicilio, para que el
+   repartidor termine en la sucursal más próxima al cliente antes de entregar. */
 function dvPlan(n) {
   const items = Object.entries(n.items || {}).filter(([, v]) => +v > 0);
-  if (!items.length) return { stops: [], missing: [], branches: [] };
+  if (!items.length) return { stops: [], missing: [], branches: [], primary: null };
   const need = {};
   items.forEach(([f, v]) => (need[+f] = (need[+f] || 0) + (+v || 0)));
   const lat = +n.lat,
@@ -211,7 +212,18 @@ function dvPlan(n) {
   const missing = Object.entries(need)
     .filter(([, v]) => v > 0)
     .map(([f, v]) => ({ f: +f, qty: v }));
-  return { stops, missing, branches: stops.map(s => s.branch) };
+  /* La sucursal principal (la que arma el pedido) es la primera de la asignación,
+     no la primera de la ruta. La ruta va de la más lejana a la más cercana. */
+  const primary = stops.length ? stops[0].branch : null;
+  const route = stops.slice().sort((a, b) => {
+    const da = dist(a.branch),
+      db = dist(b.branch);
+    if (da == null && db == null) return 0;
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return db - da;
+  });
+  return { stops: route, missing, branches: route.map(s => s.branch), primary };
 }
 
 function dvForm() {
@@ -339,7 +351,7 @@ function dvForm() {
      ${plan.stops.length ? `<div style="border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0">
        <small style="display:block;margin-bottom:2px"><b>${multi ? 'Se recoge en ' + plan.stops.length + ' sucursales' : 'Sale de ' + esc(brs()[plan.stops[0].branch])}</b></small>
        ${plan.stops.map((s, idx) => `<div class="row" style="border:0;padding:3px 0"><div><b>${idx + 1}. ${esc(brs()[s.branch])}</b>${kmOf(s.branch)}<br><small>${esc(dvStopTxt(s))}</small></div></div>`).join('')}
-       ${multi ? '<small style="display:block;margin-top:4px;opacity:.75">El repartidor pasa por estas sucursales y al final al domicilio.</small>' : ''}
+       ${multi ? '<small style="display:block;margin-top:4px;opacity:.75">Ruta: primero la sucursal más lejana y al final la más cercana al domicilio.</small>' : ''}
        ${plan.missing.length ? `<small class="bad" style="display:block;margin-top:4px">Falta en todas: ${plan.missing.map(x => x.qty + '× ' + esc(nm(x.f))).join(', ')}</small>` : ''}
      </div>` : ''}
      ${nearest !== null ? `<small style="display:block;margin:4px 0 8px;opacity:.75">Más cercana: <b>${esc(brs()[nearest])}</b>${items.length && !cov(nearest).full ? ' <span style="color:var(--bad)">(no tiene todo; se completa con otra sucursal)</span>' : ''}</small>` : ''}
@@ -430,7 +442,7 @@ async function saveDv() {
   try {
     await db.collection('deliveries').add({
       day: D,
-      branch: plan.stops[0].branch,
+      branch: plan.primary,
       branches: plan.branches,
       pickups: plan.stops,
       items,
