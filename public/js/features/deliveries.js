@@ -413,7 +413,7 @@ function dvForm() {
      ${items.length && !plan.stops.length ? '<small style="display:block;margin:4px 0 8px;color:var(--bad)">Ninguna sucursal tiene existencia. Ajusta cantidades o carga inventario.</small>' : ''}
      ${plan.stops.length ? `<div style="border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0">
        <small style="display:block;margin-bottom:2px"><b>${multi ? 'Se recoge en ' + plan.stops.length + ' sucursales' : 'Sale de ' + esc(brs()[plan.stops[0].branch])}</b></small>
-       ${plan.stops.map((s, idx) => `<div class="row" style="border:0;padding:3px 0"><div><b>${idx + 1}. ${esc(brs()[s.branch])}</b>${kmOf(s.branch)}<br><small>${esc(dvStopTxt(s))}</small></div></div>`).join('')}
+       ${plan.stops.map((s, idx) => `<div class="row" style="border:0;padding:3px 0"><div><b>${idx + 1}. ${esc(brs()[s.branch])}</b>${s.branch == n.branch ? ' <span style="font-size:9px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:1px 6px;border-radius:999px;margin-left:4px">INDICADA</span>' : ''}${kmOf(s.branch)}<br><small>${esc(dvStopTxt(s))}</small></div></div>`).join('')}
        ${multi ? '<small style="display:block;margin-top:4px;opacity:.75">Ruta: primero la sucursal más lejana y al final la más cercana al domicilio. Se eligió la combinación con menor recorrido.</small>' : ''}
        ${plan.missing.length ? `<small class="bad" style="display:block;margin-top:4px">Falta en todas: ${plan.missing.map(x => x.qty + '× ' + esc(nm(x.f))).join(', ')}</small>` : ''}
      </div>` : ''}
