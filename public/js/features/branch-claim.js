@@ -175,19 +175,17 @@ function resetIfNewDay() {
   _lastDay = today;
   try { D = today; } catch (e) {}
   const m = S.me;
-  if (m && m.role == 'vend') {
+  if (!m) return;
+  if (m.role == 'vend') {
     m.placed = false;
     m.branch = null;
-    try { stopSubs(); } catch (e) {}
-    try { stopClaims(); } catch (e) {}
-    subClaims();
-    try { startSubs(); } catch (e) {}
-    renderNow(true);
-  } else {
-    try { stopClaims(); } catch (e) {}
-    subClaims();
-    renderNow(true);
+    S.cart = {};
   }
+  try { stopSubs(); } catch (e) {}
+  try { stopClaims(); } catch (e) {}
+  if (m.role == 'vend') subClaims();
+  try { startSubs(); } catch (e) {}
+  renderNow(true);
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') resetIfNewDay();

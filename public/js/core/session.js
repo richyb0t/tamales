@@ -53,7 +53,8 @@ function onUser(u) {
   }
   pu = db.doc('users/' + u.uid).onSnapshot(d => {
     const x = d.data();
-    if (!d.exists() || x.active === false) {
+    const ROLES = ['admin', 'sup', 'vend', 'enc', 'rep'];
+    if (!d.exists() || x.active === false || !ROLES.includes(x.role)) {
       S.me = null;
       S.pf = true;
       stopSubs();
@@ -291,9 +292,11 @@ function subDv() {
   if (m && (m.role == 'admin' || m.role == 'sup' || m.role == 'enc')) {
     S.dvOld = [];
     subs.push(
-      db.collection('deliveries').where('status', 'in', ['pendiente', 'en_ruta']).onSnapshot(
+      db.collection('deliveries').where('day', '==', tmr(-1)).onSnapshot(
         qq => {
-          S.dvOld = qq.docs.map(d => ({ _id: d.id, ...d.data() })).filter(d => d.day == tmr(-1));
+          S.dvOld = qq.docs
+            .map(d => ({ _id: d.id, ...d.data() }))
+            .filter(d => d.status == 'pendiente' || d.status == 'en_ruta');
           render();
         },
         err
