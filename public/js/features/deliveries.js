@@ -949,8 +949,7 @@ function dvVendCard(d) {
     myOut = (d.outs && d.outs[S.me && S.me.branch]) || (primary && d.out ? { by: d.outBy, name: d.outName, at: d.outAt } : null),
     myPrepared = (d.prepared && d.prepared[S.me && S.me.branch]) || null;
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio${picks.length > 1 ? ' · 🚏 ' + picks.length + ' sucursales' : ''}</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
- <div class="apt"><ul style="margin:0;padding-left:18px">${list}</ul></div>
- <div><b>Apartar aquí:</b>${myItems.length ? `<ul style="margin:4px 0 0;padding-left:18px">${myItems.map(([k, v]) => `<li>${v} ${esc(nm(+k.slice(1)))}</li>`).join('')}</ul>` : ' <span style="opacity:.7">No te toca surtir este reparto</span>'}</div>
+  <div class="apt" style="margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--low-t);border:1px solid var(--low)"><div style="font-weight:700;margin-bottom:4px;color:var(--low)">📦 Apartar aquí:</div>${myItems.length ? `<ul style="margin:0;padding-left:18px">${myItems.map(([k, v]) => `<li>${v} ${esc(nm(+k.slice(1)))}</li>`).join('')}</ul>` : ' <span style="opacity:.7">No te toca surtir este reparto</span>'}</div>
  ${!myPrepared && myItems.length ? '<small style="display:block;margin-top:4px;color:var(--bad)">⚠️ El stock se reserva al confirmar el apartado</small>' : ''}
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
@@ -1203,15 +1202,29 @@ function notifyNewDv() {
 
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */
 function dvToday() {
-  const L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
-    pend = L.filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
+  const all = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
+    active = all.filter(d => {
+      const outs = d.outs || {};
+      const myOut = outs[S.me && S.me.branch] || (d.branch == (S.me && S.me.branch) && d.out);
+      return !myOut;
+    }),
+    done = all.filter(d => {
+      const outs = d.outs || {};
+      const myOut = outs[S.me && S.me.branch] || (d.branch == (S.me && S.me.branch) && d.out);
+      return !!myOut;
+    }),
+    pend = active.filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
   return (
     '<h3 style="margin:16px 4px 6px">🛵 Repartos a domicilio de hoy' +
     (pend ? ' <span class="chip low">' + pend + ' por recoger</span>' : '') +
     '</h3>' +
-    (L.length
-      ? L.map(d => dvVendCard(d)).join('')
-      : '<div class="card"><small>No hay repartos a domicilio hoy.</small></div>')
+    (active.length
+      ? active.map(d => dvVendCard(d)).join('')
+      : '<div class="card"><small>No hay repartos pendientes de salida.</small></div>') +
+    (done.length
+      ? '<h3 style="margin:16px 4px 6px;opacity:.7">✅ Salida confirmada hoy</h3>' +
+        done.map(d => dvVendCard(d)).join('')
+      : '')
   );
 }
 
