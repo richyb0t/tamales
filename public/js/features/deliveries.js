@@ -692,7 +692,8 @@ function dvCard(d, rep) {
     const best = near[0];
     return '<small style="display:block;margin-top:2px">Sucursal mas cercana: <b>' + esc(brs()[best.i]) + '</b> (' + best.dd.toFixed(1) + ' km)' + (near.length > 1 ? ' · ' + near.slice(1).map(x => esc(brs()[x.i]) + ' ' + x.dd.toFixed(1) + 'km').join(' · ') : '') + '</small>';
   })()}
- ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}${rt ? (S.dvRoute == d._id ? dvRouteMap(d) : `<div class="form" style="margin-top:8px"><button class="dvnav" style="flex:1" onclick="dvRoute('${d._id}')">🧭 Ver recorrido</button></div>`) : ''}${bt ? `<div class="apa"${rt ? ' style="margin-top:20px"' : ''}>${bt}</div>` : ''}</div>`;
+ ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada (principal)${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}
+${d.outs ? Object.keys(d.outs).map(br => `<small class="ok" style="display:block">✅ Salida confirmada en ${esc(brs()[+br])}${d.outs[br].at ? ' · ' + hm(d.outs[br].at) : ''}${d.outs[br].name ? ' por ' + esc(d.outs[br].name) : ''}</small>`).join('') : ''}${rt ? (S.dvRoute == d._id ? dvRouteMap(d) : `<div class="form" style="margin-top:8px"><button class="dvnav" style="flex:1" onclick="dvRoute('${d._id}')">🧭 Ver recorrido</button></div>`) : ''}${bt ? `<div class="apa"${rt ? ' style="margin-top:20px"' : ''}>${bt}</div>` : ''}</div>`;
 }
 
 /* Ubicación actual del repartidor (GPS del celular) */
@@ -792,24 +793,33 @@ function dvVendCard(d) {
     ch = myItems.reduce((a, [k, v]) => a + (+k.slice(1) >= 100 ? +v : 0), 0),
     list = items.map(([k, v]) => v + '× ' + esc(nm(+k.slice(1)))).join(' · '),
     others = mine ? picks.filter(s => s.branch != mine.branch) : [],
-    primary = d.branch == (S.me && S.me.branch);
+    primary = d.branch == (S.me && S.me.branch),
+    myOut = (d.outs && d.outs[S.me && S.me.branch]) || (primary && d.out ? { by: d.outBy, name: d.outName, at: d.outAt } : null);
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio${picks.length > 1 ? ' · 🚏 ' + picks.length + ' sucursales' : ''}</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${list}</div>
  <div><b>${myItems.length ? 'Apartar aquí: ' + tam + ' ' + (tam == 1 ? 'tamal' : 'tamales') + (ch ? ' + ' + ch + ' ' + (ch == 1 ? 'champurrado' : 'champurrados') : '') : 'No te toca surtir este reparto'}</b></div>
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
- ${primary ? (d.out ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${d.outAt ? ' · ' + hm(d.outAt) : ''}</b></div>` : d.status == 'pendiente' || d.status == 'en_ruta' ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '') : ''}</div>`;
+ ${myOut ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${myOut.at ? ' · ' + hm(myOut.at) : ''}${myOut.name ? ' por ' + esc(myOut.name) : ''}</b></div>` : (d.status == 'pendiente' || d.status == 'en_ruta' ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '')}</div>`;
 }
 
-/* El vendedor confirma que el pedido salió de la sucursal */
+/* El vendedor confirma que el pedido salió de su sucursal */
 async function dvOut(id) {
+  const d = (S.dv || []).find(x => x._id == id);
+  if (!d) return;
+  const b = S.me && S.me.branch;
+  if (b == null) return;
   try {
-    await db.doc('deliveries/' + id).update({
-      out: true,
-      outBy: S.me.user,
-      outName: S.me.name,
-      outAt: Date.now(),
-    });
+    const patch = {};
+    patch['outs.' + b] = { by: S.me.user, name: S.me.name, at: Date.now() };
+    /* Compatibilidad con repartos viejos: la sucursal principal también deja la bandera simple. */
+    if (b === d.branch) {
+      patch.out = true;
+      patch.outBy = S.me.user;
+      patch.outName = S.me.name;
+      patch.outAt = Date.now();
+    }
+    await db.doc('deliveries/' + id).update(patch);
     toast('Salida confirmada');
   } catch (e) {
     err(e);

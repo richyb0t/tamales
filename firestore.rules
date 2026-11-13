@@ -278,7 +278,11 @@ function admOrSup() { return adm() || sup(); }
             && request.resource.data.out == true
             && request.resource.data.outBy == prof().user
             && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['out', 'outBy', 'outName', 'outAt']));
+                 .hasOnly(['out', 'outBy', 'outName', 'outAt']))
+        || ((vend(resource.data.branch) || (vendHere() && prof().branch in resource.data.get('branches', [])))
+            && resource.data.status in ['pendiente', 'en_ruta']
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['outs']));
       allow delete: if (adm() || sup() || enc()) && resource.data.status == 'pendiente';
     }
   }
