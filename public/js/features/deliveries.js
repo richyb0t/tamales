@@ -1203,9 +1203,12 @@ function notifyNewDv() {
 
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */
 function dvToday() {
-  const L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts);
+  const L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
+    pend = L.filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
   return (
-    '<h3 style="margin:16px 4px 6px">🛵 Repartos a domicilio de hoy</h3>' +
+    '<h3 style="margin:16px 4px 6px">🛵 Repartos a domicilio de hoy' +
+    (pend ? ' <span class="chip low">' + pend + ' por recoger</span>' : '') +
+    '</h3>' +
     (L.length
       ? L.map(d => dvVendCard(d)).join('')
       : '<div class="card"><small>No hay repartos a domicilio hoy.</small></div>')

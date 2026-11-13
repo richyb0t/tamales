@@ -206,15 +206,17 @@ function preToday(l) {
     return newBtn + '<div class="card"><small>No hay apartados para entregar hoy.</small></div>';
   const g = {};
   l.forEach(p => (g[p.date] = g[p.date] || []).push(p));
+  const pend = l.filter(p => !p.ok && !(p.exp && p.exp < Date.now())).length;
   return (
     newBtn +
+    (pend ? `<h3 style="margin:12px 4px 6px">📌 Apartados por entregar hoy <span class="chip low">${pend}</span></h3>` : '<h3 style="margin:6px 4px">Para hoy</h3>') +
     Object.keys(g)
       .sort()
       .map(
         d =>
           (d < D
             ? `<h3 style="margin:12px 4px 6px;text-transform:capitalize">Sin entregar · ${esc(fdate(d))}</h3>`
-            : `<h3 style="margin:6px 4px">Para hoy</h3>`) +
+            : '') +
           g[d]
             .sort((a, c) => a.ts - c.ts)
             .map(preCard)
