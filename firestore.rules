@@ -44,18 +44,26 @@ function admOrSup() { return adm() || sup(); }
     function okId(id) { return id.matches('^[A-Za-z0-9_.-]{1,128}$'); }
     // Precio: una venta o apartado se cobra al precio vigente en Ajustes (champurrado: precio de Ajustes; si no hay, 20/30/50).
     // Una devolución conserva el precio de la venta original, que pudo cambiar después, así que solo se le exige ser positivo.
+    // El precio con descuento no puede bajar de la mitad del precio de lista, y solo si existe un pre/dv que lo respalde.
+    function listPrice(f) {
+      return f >= 100
+        ? get(/databases/$(database)/documents/config/main).data.prices.get('f' + string(f), [20, 30, 50][f - 100])
+        : get(/databases/$(database)/documents/config/main).data.prices['f' + string(f)];
+    }
     function priceOk(d) {
       return d.type == 'devolucion'
         ? d.price > 0
-        : (d.f >= 100
-            ? (d.price > 0 && (d.price == get(/databases/$(database)/documents/config/main).data.prices.get('f' + string(d.f), [20, 30, 50][d.f - 100])
-                || (d.price < get(/databases/$(database)/documents/config/main).data.prices.get('f' + string(d.f), [20, 30, 50][d.f - 100])
+        : (listPrice(d.f) <= 0 || listPrice(d.f) == null
+            ? (d.price > 0 && d.price < 10000)
+            : (d.price == listPrice(d.f)
+                || (d.price < listPrice(d.f)
+                    && d.price >= listPrice(d.f) * 0.5
                     && d.get('descuento', 0) > 0
-                    && ((d.get('pre', null) == null || exists(/databases/$(database)/documents/pre/$(d.get('pre', null)))) && (d.get('dv', null) == null || exists(/databases/$(database)/documents/deliveries/$(d.get('dv', null))))))))
-            : (d.price > 0 && (d.price == get(/databases/$(database)/documents/config/main).data.prices['f' + string(d.f)]
-                || (d.price < get(/databases/$(database)/documents/config/main).data.prices['f' + string(d.f)]
-                    && d.get('descuento', 0) > 0
-                    && ((d.get('pre', null) == null || exists(/databases/$(database)/documents/pre/$(d.get('pre', null)))) && (d.get('dv', null) == null || exists(/databases/$(database)/documents/deliveries/$(d.get('dv', null)))))))));
+                    && (d.get('pre', null) != null
+                        ? exists(/databases/$(database)/documents/pre/$(d.get('pre', null)))
+                        : (d.get('dv', null) != null
+                            ? exists(/databases/$(database)/documents/deliveries/$(d.get('dv', null)))
+                            : false)))));
     }
     function validSale(d) {
       return d.qty is int && d.qty > 0 && d.qty < 500
@@ -65,7 +73,14 @@ function admOrSup() { return adm() || sup(); }
         && d.by == prof().user
         && d.day is string && d.day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && d.day == today()
-        && priceOk(d);
+        && priceOk(d)
+        && (d.type != 'devolucion' || (
+              d.orig is string
+              && exists(/databases/$(database)/documents/sales/$(d.orig))
+              && get(/databases/$(database)/documents/sales/$(d.orig)).data.f == d.f
+              && get(/databases/$(database)/documents/sales/$(d.orig)).data.branch == d.branch
+              && get(/databases/$(database)/documents/sales/$(d.orig)).data.qty >= d.qty
+              && get(/databases/$(database)/documents/sales/$(d.orig)).data.price == d.price));
     }
     // Después del corte de caja el vendedor ya no puede mover dinero ese día (solo el administrador, anulando el corte)
     function noCut(day, author) { return author != null && !exists(/databases/$(database)/documents/cuts/$(day + '_' + author)); }
@@ -104,7 +119,7 @@ function admOrSup() { return adm() || sup(); }
      allow update, delete: if false;
 }
     match /config/{doc} {
-      allow read: if ok();
+      allow read: if doc != 'onesignal' && ok();
       allow write: if adm() || sup();
     }
     match /users/{uid} {

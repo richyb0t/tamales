@@ -205,7 +205,8 @@ async function saveDevPed() {
   if (kb) kb.disabled = true;
   try {
     const bt = db.batch();
-    it.forEach(([f, q], i) =>
+    it.forEach(([f, q], i) => {
+      const origSale = (S.gg[k] || []).find(s => s.type == 'vendido' && s.f == f);
       bt.add('sales', {
         day: D,
         branch: b,
@@ -217,10 +218,11 @@ async function saveDevPed() {
         restock: rs,
         order: k,
         ret: rid,
+        orig: origSale ? origSale._id : null,
         by: S.me.user,
         ts: ts + i,
-      })
-    );
+      });
+    });
     await bt.commit();
     $('#modal').style.display = 'none';
     toast('Devolución registrada');

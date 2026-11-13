@@ -1056,7 +1056,7 @@ function initMinimaps() {
 async function initFcm() {
   if (!('Notification' in window) || !window.FB || !FB.messaging) return;
   if (Notification.permission !== 'granted') return;
-  if (!window.VAPID_PUBLIC_KEY) return;
+  if (!window.VAPID_PUBLIC_KEY || window.VAPID_PUBLIC_KEY.indexOf('REEMPLAZA') !== -1) return;
   try {
     const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
     const token = await FB.getToken(reg);
