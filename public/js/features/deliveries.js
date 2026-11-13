@@ -494,6 +494,14 @@ async function dvSet(id, patch, msg) {
 }
 
 async function dvTake(id) {
+  const d = (S.dv || []).find(x => x._id == id);
+  if (d) {
+    const picks = dvPickups(d).filter(s => Object.keys(s.items || {}).length);
+    const preparedCount = picks.filter(s => d.prepared && d.prepared[s.branch]).length;
+    if (picks.length > 0 && preparedCount < picks.length) {
+      toast('⚠️ Aún falta que aparten en ' + (picks.length - preparedCount) + ' sucursal(es)');
+    }
+  }
   try {
     await db.takeDelivery(id, S.me.user, S.me.name);
     toast('Reparto tomado');
@@ -816,15 +824,27 @@ async function dvReady(id) {
   if (!d) return;
   const b = S.me && S.me.branch;
   if (b == null) return;
+  const mine = (dvPickups(d) || []).find(s => s.branch == b);
+  const myItems = mine ? Object.entries(mine.items || {}).filter(([, v]) => +v > 0) : [];
+  // Verifica que todavía haya stock para lo que se va a apartar.
+  const short = myItems.find(([k, v]) => +v > left(b, +k.slice(1)));
+  if (short) {
+    const f = +short[0].slice(1);
+    toast(
+      'No hay suficiente stock en ' + brs()[b] + ': quedan ' +
+        Math.max(0, left(b, f)) + ' de ' + nm(f) +
+        ' (se necesitan ' + short[1] + '). Avisa al administrador.'
+    );
+    return;
+  }
   try {
     const patch = {};
     patch['prepared.' + b] = { by: S.me.user, name: S.me.name, at: Date.now() };
     await db.doc('deliveries/' + id).update(patch);
     toast('Apartado confirmado');
     if (typeof pushNotify === 'function') {
-      const d2 = (S.dv || []).find(x => x._id == id);
-      const client = d2 ? d2.client : 'Cliente';
-      const total = d2 ? dvDue(d2) : 0;
+      const client = d.client || 'Cliente';
+      const total = dvDue(d);
       pushNotify('Reparto listo para recoger', client + ' · ' + brs()[b] + ' · ' + money(total));
     }
   } catch (e) {
