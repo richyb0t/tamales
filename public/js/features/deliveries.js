@@ -34,7 +34,7 @@ const dvSum = n => Object.entries(n.items).reduce((a, [f, v]) => a + v * price(+
 
 function dvn() {
   if (!S.dvn)
-    S.dvn = { branch: null, autoBr: null, selBranches: null, items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1, geoAddr: '', geoBusy: false };
+    S.dvn = { branch: null, autoBr: null, selBranches: null, recBranches: null, items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1, geoAddr: '', geoBusy: false };
   if (S.dvn.branch != null && !BI().includes(S.dvn.branch)) S.dvn.branch = null;
   return S.dvn;
 }
@@ -43,6 +43,13 @@ function dvBr(i) {
   const n = dvn();
   if (!Array.isArray(n.selBranches)) {
     n.selBranches = n.autoBr != null ? [n.autoBr] : (n.branch != null ? [n.branch] : []);
+  }
+  // Si se toca la sucursal indicada (recomendada), se restaura la combinación original.
+  if (i === n.autoBr && n.recBranches && n.recBranches.length) {
+    n.selBranches = n.recBranches.slice();
+    n.branch = n.selBranches[0] || null;
+    renderNow(true);
+    return;
   }
   const idx = n.selBranches.indexOf(i);
   if (idx >= 0) n.selBranches.splice(idx, 1);
@@ -402,6 +409,7 @@ function dvForm() {
           }
         }
         if (bestSubset) {
+          n.recBranches = bestSubset.slice();
           n.selBranches = bestSubset.slice();
           const sorted = bestSubset.slice().sort((a, b) => {
             const da = distToCust(a),
@@ -416,6 +424,7 @@ function dvForm() {
         } else {
           const some = list.map(x => x.i).filter(i => cov(i).any);
           auto = some.length ? some[0] : null;
+          n.recBranches = auto != null ? [auto] : null;
           n.selBranches = auto != null ? [auto] : null;
           n.autoBr = auto;
         }
