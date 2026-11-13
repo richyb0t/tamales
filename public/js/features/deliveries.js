@@ -47,6 +47,21 @@ function dvBr(i) {
   const idx = n.selBranches.indexOf(i);
   if (idx >= 0) n.selBranches.splice(idx, 1);
   else n.selBranches.push(i);
+  // Máximo 2 sucursales: si se seleccionan más, se quita la más lejana al domicilio.
+  if (n.selBranches.length > 2) {
+    const lat = +n.lat, lng = +n.lng;
+    const dist = x => {
+      const l = (S.cfg.branchLocs || [])[x];
+      return lat && lng && l ? distKm({ lat, lng }, l) : (l ? 0 : Infinity);
+    };
+    // encuentra el índice del más lejano
+    let farIdx = 0, farDist = -1;
+    n.selBranches.forEach((b, k) => {
+      const d = dist(b);
+      if (d > farDist) { farDist = d; farIdx = k; }
+    });
+    n.selBranches.splice(farIdx, 1);
+  }
   if (!n.selBranches.length) n.selBranches = null;
   if (n.selBranches && n.selBranches.length) n.branch = n.selBranches[0];
   else n.branch = null;
