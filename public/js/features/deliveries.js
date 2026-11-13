@@ -34,7 +34,7 @@ const dvSum = n => Object.entries(n.items).reduce((a, [f, v]) => a + v * price(+
 
 function dvn() {
   if (!S.dvn)
-    S.dvn = { branch: null, autoBr: null, selBranches: null, recBranches: null, items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1, geoAddr: '', geoBusy: false };
+    S.dvn = { branch: null, autoBr: null, selBranches: null, recBranches: null, _itemsSig: null, items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1, geoAddr: '', geoBusy: false };
   if (S.dvn.branch != null && !BI().includes(S.dvn.branch)) S.dvn.branch = null;
   return S.dvn;
 }
@@ -313,6 +313,14 @@ function dvForm() {
     `;
   } else if (step === 3) {
     const items = Object.entries(sel).filter(([k, v]) => +v > 0);
+    const itemsSig = items.map(([k, v]) => k + ':' + v).join('|');
+    if (n._itemsSig !== itemsSig) {
+      n._itemsSig = itemsSig;
+      n.branch = null;
+      n.selBranches = null;
+      n.autoBr = null;
+      n.recBranches = null;
+    }
     const lat = +n.lat, lng = +n.lng;
     const addr = (n.addr || '').trim();
     /* Si no se tocó "Buscar ubicación", se geocodifica sola al entrar al paso. */
