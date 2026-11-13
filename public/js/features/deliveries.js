@@ -693,7 +693,8 @@ function dvCard(d, rep) {
     return '<small style="display:block;margin-top:2px">Sucursal mas cercana: <b>' + esc(brs()[best.i]) + '</b> (' + best.dd.toFixed(1) + ' km)' + (near.length > 1 ? ' · ' + near.slice(1).map(x => esc(brs()[x.i]) + ' ' + x.dd.toFixed(1) + 'km').join(' · ') : '') + '</small>';
   })()}
  ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada (principal)${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}
-${d.outs ? Object.keys(d.outs).map(br => `<small class="ok" style="display:block">✅ Salida confirmada en ${esc(brs()[+br])}${d.outs[br].at ? ' · ' + hm(d.outs[br].at) : ''}${d.outs[br].name ? ' por ' + esc(d.outs[br].name) : ''}</small>`).join('') : ''}${rt ? (S.dvRoute == d._id ? dvRouteMap(d) : `<div class="form" style="margin-top:8px"><button class="dvnav" style="flex:1" onclick="dvRoute('${d._id}')">🧭 Ver recorrido</button></div>`) : ''}${bt ? `<div class="apa"${rt ? ' style="margin-top:20px"' : ''}>${bt}</div>` : ''}</div>`;
+${d.outs ? Object.keys(d.outs).map(br => `<small class="ok" style="display:block">✅ Salida confirmada en ${esc(brs()[+br])}${d.outs[br].at ? ' · ' + hm(d.outs[br].at) : ''}${d.outs[br].name ? ' por ' + esc(d.outs[br].name) : ''}</small>`).join('') : ''}
+${d.prepared ? Object.keys(d.prepared).map(br => `<small class="ok" style="display:block">📦 Apartado confirmado en ${esc(brs()[+br])}${d.prepared[br].at ? ' · ' + hm(d.prepared[br].at) : ''}${d.prepared[br].name ? ' por ' + esc(d.prepared[br].name) : ''}</small>`).join('') : ''}${rt ? (S.dvRoute == d._id ? dvRouteMap(d) : `<div class="form" style="margin-top:8px"><button class="dvnav" style="flex:1" onclick="dvRoute('${d._id}')">🧭 Ver recorrido</button></div>`) : ''}${bt ? `<div class="apa"${rt ? ' style="margin-top:20px"' : ''}>${bt}</div>` : ''}</div>`;
 }
 
 /* Ubicación actual del repartidor (GPS del celular) */
@@ -792,16 +793,34 @@ function dvVendCard(d) {
     list = items.map(([k, v]) => `<li>${v} ${esc(nm(+k.slice(1)))}</li>`).join(''),
     others = mine ? picks.filter(s => s.branch != mine.branch) : [],
     primary = d.branch == (S.me && S.me.branch),
-    myOut = (d.outs && d.outs[S.me && S.me.branch]) || (primary && d.out ? { by: d.outBy, name: d.outName, at: d.outAt } : null);
+    myOut = (d.outs && d.outs[S.me && S.me.branch]) || (primary && d.out ? { by: d.outBy, name: d.outName, at: d.outAt } : null),
+    myPrepared = (d.prepared && d.prepared[S.me && S.me.branch]) || null;
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio${picks.length > 1 ? ' · 🚏 ' + picks.length + ' sucursales' : ''}</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt"><ul style="margin:0;padding-left:18px">${list}</ul></div>
  <div><b>Apartar aquí:</b>${myItems.length ? `<ul style="margin:4px 0 0;padding-left:18px">${myItems.map(([k, v]) => `<li>${v} ${esc(nm(+k.slice(1)))}</li>`).join('')}</ul>` : ' <span style="opacity:.7">No te toca surtir este reparto</span>'}</div>
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
- ${myOut ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${myOut.at ? ' · ' + hm(myOut.at) : ''}${myOut.name ? ' por ' + esc(myOut.name) : ''}</b></div>` : (d.status == 'pendiente' || d.status == 'en_ruta' ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '')}</div>`;
+ ${myPrepared ? `<div class="ok" style="margin-top:6px"><b>✅ Apartado confirmado${myPrepared.at ? ' · ' + hm(myPrepared.at) : ''}${myPrepared.name ? ' por ' + esc(myPrepared.name) : ''}</b></div>` : (myItems.length && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvReady('${d._id}')">✅ Confirmar apartado</button></div>` : '')}
+ ${myOut ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${myOut.at ? ' · ' + hm(myOut.at) : ''}${myOut.name ? ' por ' + esc(myOut.name) : ''}</b></div>` : (myPrepared && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '')}</div>`;
 }
 
-/* El vendedor confirma que el pedido salió de su sucursal */
+/* El vendedor confirma que apartó los productos de su sucursal */
+async function dvReady(id) {
+  const d = (S.dv || []).find(x => x._id == id);
+  if (!d) return;
+  const b = S.me && S.me.branch;
+  if (b == null) return;
+  try {
+    const patch = {};
+    patch['prepared.' + b] = { by: S.me.user, name: S.me.name, at: Date.now() };
+    await db.doc('deliveries/' + id).update(patch);
+    toast('Apartado confirmado');
+  } catch (e) {
+    err(e);
+  }
+}
+
+/* El vendedor confirma que el pedido sali� de su sucursal */
 async function dvOut(id) {
   const d = (S.dv || []).find(x => x._id == id);
   if (!d) return;
@@ -810,7 +829,6 @@ async function dvOut(id) {
   try {
     const patch = {};
     patch['outs.' + b] = { by: S.me.user, name: S.me.name, at: Date.now() };
-    /* Compatibilidad con repartos viejos: la sucursal principal también deja la bandera simple. */
     if (b === d.branch) {
       patch.out = true;
       patch.outBy = S.me.user;
