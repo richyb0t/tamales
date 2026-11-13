@@ -48,9 +48,18 @@ function dvBr(i) {
   if (idx >= 0) n.selBranches.splice(idx, 1);
   else {
     if (n.selBranches.length >= 2) {
-      toast('Máximo 2 sucursales para recoger');
-      renderNow(true);
-      return;
+      const items = Object.entries(n.items || {}).filter(([, v]) => +v > 0);
+      let worstIdx = 0, worstScore = Infinity;
+      n.selBranches.forEach((b, k) => {
+        let score = 0;
+        items.forEach(([kk, v]) => {
+          const f = +kk;
+          const have = Math.max(0, left(b, f) || 0);
+          score += Math.min(+v, Math.floor(have));
+        });
+        if (score < worstScore) { worstScore = score; worstIdx = k; }
+      });
+      n.selBranches.splice(worstIdx, 1);
     }
     n.selBranches.push(i);
   }
