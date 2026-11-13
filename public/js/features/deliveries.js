@@ -42,7 +42,7 @@ function dvn() {
 function dvBr(i) {
   const n = dvn();
   n.branch = i;
-  n.autoBr = null;
+  n.autoBr = i;
   renderNow(true);
 }
 
