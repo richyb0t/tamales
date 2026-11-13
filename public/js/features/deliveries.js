@@ -445,6 +445,7 @@ async function saveDv() {
       branch: plan.primary,
       branches: plan.branches,
       pickups: plan.stops,
+      prepared: {},
       items,
       client: n.client.trim(),
       phone: n.phone.trim(),
@@ -559,6 +560,7 @@ async function dvAddFromPre(preId) {
       ts: Date.now(),
       large: true,
       preId: preId,
+      prepared: {},
     });
     await db.doc('pre/' + preId).update({ dvId: dvId });
     toast('Reparto agregado');
@@ -798,6 +800,7 @@ function dvVendCard(d) {
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio${picks.length > 1 ? ' · 🚏 ' + picks.length + ' sucursales' : ''}</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt"><ul style="margin:0;padding-left:18px">${list}</ul></div>
  <div><b>Apartar aquí:</b>${myItems.length ? `<ul style="margin:4px 0 0;padding-left:18px">${myItems.map(([k, v]) => `<li>${v} ${esc(nm(+k.slice(1)))}</li>`).join('')}</ul>` : ' <span style="opacity:.7">No te toca surtir este reparto</span>'}</div>
+ ${!myPrepared && myItems.length ? '<small style="display:block;margin-top:4px;color:var(--bad)">⚠️ El stock se reserva al confirmar el apartado</small>' : ''}
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
  ${myPrepared ? `<div class="ok" style="margin-top:6px"><b>✅ Apartado confirmado${myPrepared.at ? ' · ' + hm(myPrepared.at) : ''}${myPrepared.name ? ' por ' + esc(myPrepared.name) : ''}</b></div>` : (myItems.length && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvReady('${d._id}')">✅ Confirmar apartado</button></div>` : '')}

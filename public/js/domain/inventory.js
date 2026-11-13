@@ -82,18 +82,24 @@ const chDvResv = b =>
   (S.dv || [])
     .filter(d => d.day == D && d.status != 'cancelado' && d.status != 'fallido' && !d.large)
     .reduce(
-      (a, d) =>
-        a +
-        dvPickups(d)
-          .filter(s => s.branch == b)
-          .reduce(
-            (x, s) =>
-              x +
-              Object.entries(s.items || {})
-                .filter(([k]) => +k.slice(1) >= 100)
-                .reduce((y, [k, v]) => y + (+v || 0) * CL[+k.slice(1) - 100], 0),
-            0
-          ),
+      (a, d) => {
+        // Solo se reserva stock cuando la sucursal confirmó el apartado (o es un reparto legacy sin campo prepared).
+        const hasPreparedField = d.prepared !== undefined;
+        if (hasPreparedField && !(d.prepared && d.prepared[b])) return a;
+        return (
+          a +
+          dvPickups(d)
+            .filter(s => s.branch == b)
+            .reduce(
+              (x, s) =>
+                x +
+                Object.entries(s.items || {})
+                  .filter(([k]) => +k.slice(1) >= 100)
+                  .reduce((y, [k, v]) => y + (+v || 0) * CL[+k.slice(1) - 100], 0),
+              0
+            )
+        );
+      },
       0
     );
 
@@ -115,14 +121,16 @@ const resv = (b, f) =>
 const dvResv = (b, f) =>
   (S.dv || [])
     .filter(d => d.day == D && d.status != 'cancelado' && d.status != 'fallido' && !d.large)
-    .reduce(
-      (a, d) =>
+    .reduce((a, d) => {
+      const hasPreparedField = d.prepared !== undefined;
+      if (hasPreparedField && !(d.prepared && d.prepared[b])) return a;
+      return (
         a +
         dvPickups(d)
           .filter(s => s.branch == b)
-          .reduce((x, s) => x + (+(s.items || {})['f' + f] || 0), 0),
-      0
-    );
+          .reduce((x, s) => x + (+(s.items || {})['f' + f] || 0), 0)
+      );
+    }, 0);
 
 const left = (b, f) => {
   if (f >= 100) {
