@@ -826,17 +826,71 @@ async function dvReady(id) {
   if (b == null) return;
   const mine = (dvPickups(d) || []).find(s => s.branch == b);
   const myItems = mine ? Object.entries(mine.items || {}).filter(([, v]) => +v > 0) : [];
-  // Verifica que todavía haya stock para lo que se va a apartar.
-  const short = myItems.find(([k, v]) => +v > left(b, +k.slice(1)));
-  if (short) {
-    const f = +short[0].slice(1);
-    toast(
-      'No hay suficiente stock en ' + brs()[b] + ': quedan ' +
-        Math.max(0, left(b, f)) + ' de ' + nm(f) +
-        ' (se necesitan ' + short[1] + '). Avisa al administrador.'
-    );
+  // Verifica stock disponible para cada producto de esta sucursal.
+  const short = [];
+  for (const [k, v] of myItems) {
+    const f = +k.slice(1);
+    const avail = Math.max(0, left(b, f));
+    if (+v > avail) short.push({ f, needed: +v, avail });
+  }
+  // Si falta stock, intenta reasignar lo faltante a la sucursal más cercana que sí lo tenga.
+  if (short.length) {
+    const custLat = d.lat, custLng = d.lng;
+    const dist = i => {
+      const l = (S.cfg.branchLocs || [])[i];
+      return custLat && custLng && l ? distKm({ lat: custLat, lng: custLng }, l) : null;
+    };
+    const realloc = [];
+    let failed = false;
+    for (const s of short) {
+      const need = s.needed - s.avail;
+      const candidates = BI().filter(i => i !== b && left(i, s.f) >= need);
+      if (!candidates.length) { failed = true; break; }
+      candidates.sort((a, c) => {
+        const da = dist(a), dc = dist(c);
+        if (da == null && dc == null) return a - c;
+        if (da == null) return 1;
+        if (dc == null) return -1;
+        return da - dc;
+      });
+      realloc.push({ f: s.f, qty: need, toBranch: candidates[0] });
+    }
+    if (failed) {
+      toast('No hay suficiente stock en ' + brs()[b] + ' ni en otra sucursal. Avisa al administrador.');
+      return;
+    }
+    // Aplica la reasignación al documento del reparto.
+    const pickups = dvPickups(d).map(s => ({ branch: s.branch, items: { ...s.items } }));
+    for (const r of realloc) {
+      const fromStop = pickups.find(s => s.branch == b);
+      if (fromStop) {
+        const key = 'f' + r.f;
+        fromStop.items[key] = (fromStop.items[key] || 0) - r.qty;
+        if (fromStop.items[key] <= 0) delete fromStop.items[key];
+      }
+      let toStop = pickups.find(s => s.branch == r.toBranch);
+      if (!toStop) { toStop = { branch: r.toBranch, items: {} }; pickups.push(toStop); }
+      const key = 'f' + r.f;
+      toStop.items[key] = (toStop.items[key] || 0) + r.qty;
+    }
+    const newPickups = pickups.filter(s => Object.keys(s.items).length > 0);
+    const newBranch = newPickups.some(s => s.branch == d.branch)
+      ? d.branch
+      : (newPickups.length ? newPickups[0].branch : d.branch);
+    const patch = {
+      pickups: newPickups,
+      branches: newPickups.map(s => s.branch),
+      branch: newBranch,
+    };
+    patch['prepared.' + b] = { by: S.me.user, name: S.me.name, at: Date.now() };
+    await db.doc('deliveries/' + id).update(patch);
+    toast('Apartado confirmado. Se reasignaron: ' + realloc.map(r => r.qty + ' ' + nm(r.f)).join(', ') + '.');
+    if (typeof pushNotify === 'function') {
+      pushNotify('Reparto reasignado', (d.client || 'Cliente') + ' · faltante movido a otra sucursal');
+    }
     return;
   }
+  // Stock suficiente: confirmación normal.
   try {
     const patch = {};
     patch['prepared.' + b] = { by: S.me.user, name: S.me.name, at: Date.now() };
