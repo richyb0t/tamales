@@ -1423,5 +1423,13 @@ async function clearPushTag(force) {
 
 
 
-const dvOpenN = () => (S.dv || []).filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
+const dvOpenN = () => (S.dv || []).filter(d => {
+  if (d.status != 'pendiente' && d.status != 'en_ruta') return false;
+  if (S.me && S.me.role == 'vend' && S.me.branch != null) {
+    const outs = d.outs || {};
+    if (outs[S.me.branch]) return false;
+    if (d.branch == S.me.branch && d.out) return false;
+  }
+  return true;
+}).length;
 

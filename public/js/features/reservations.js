@@ -707,8 +707,16 @@ function apView() {
 }
 
 function preBanner() {
-  const np = preN(),
-    nd = dvOpenN();
+  const np = preN();
+  const nd = (S.dv || []).filter(d => {
+    if (d.status != 'pendiente' && d.status != 'en_ruta') return false;
+    if (S.me && S.me.role == 'vend' && S.me.branch != null) {
+      const outs = d.outs || {};
+      if (outs[S.me.branch]) return false;
+      if (d.branch == S.me.branch && d.out) return false;
+    }
+    return true;
+  }).length;
   return (
     (np
       ? `<div class="card" style="border:2px solid var(--ac)" onclick="S.apt='h';setVt('r')"><b>📌 ${np} apartado${np > 1 ? 's' : ''} para entregar hoy</b><br><small>Toca para ver</small></div>`
