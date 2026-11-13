@@ -669,6 +669,8 @@ function dvCard(d, rep) {
     me = S.me,
     picks = dvPickups(d).filter(s => Object.keys(s.items || {}).length),
     multi = picks.length > 1,
+    preparedCount = picks.filter(s => d.prepared && d.prepared[s.branch]).length,
+    ready = picks.length > 0 && preparedCount === picks.length,
     ph = (d.phone || '').trim(),
     q = (d.addr || '').trim() || (d.lat != null && d.lng != null ? d.lat + ',' + d.lng : ''),
     mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q),
@@ -683,6 +685,7 @@ function dvCard(d, rep) {
     bt = `<button class="gh" style="color:var(--bad)" onclick="dvCancel('${d._id}')">Cancelar</button>`;
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b>${d.large ? ' <span class="chip ok">📦 Grande</span>' : ''}<div class="apm">${d.large ? '📦 Pedido grande' : multi ? '🚏 ' + picks.length + ' sucursales' : esc(brs()[d.branch] || '')} · ${d.time ? '🕒 ' + ftime(d.time) + ' · ' : ''}${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}${multi ? '<br><small style="display:block;margin-top:4px"><b>Recoger en:</b></small>' + picks.map((s, i) => `<small style="display:block">${i + 1}. <b>${esc(brs()[s.branch])}</b>: ${esc(dvStopTxt(s))}</small>`).join('') : ''}</div>
+ ${d.status == 'pendiente' || d.status == 'en_ruta' ? `<div style="margin:6px 0;padding:6px 8px;border-radius:8px;background:${ready ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.12)'};border:1px solid ${ready ? 'rgba(34,197,94,.4)' : 'rgba(245,158,11,.4)'}"><b style="color:${ready ? '#22c55e' : '#f59e0b'}">${ready ? '✅ Listo para recoger' : '⏳ Esperando apartado (' + preparedCount + '/' + picks.length + ')'}</b></div>` : ''}
  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${q ? `<div style="margin:4px 0"><iframe src="https://www.google.com/maps?q=${encodeURIComponent(q)}&z=16&output=embed" width="100%" height="180" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div style="margin-top:4px"><a href="https://www.google.com/maps?q=${encodeURIComponent(q)}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div></div>` : ''}${(() => {
     if (d.lat == null || d.lng == null) return '';
     const near = brs().map((nm, i) => {
@@ -818,6 +821,12 @@ async function dvReady(id) {
     patch['prepared.' + b] = { by: S.me.user, name: S.me.name, at: Date.now() };
     await db.doc('deliveries/' + id).update(patch);
     toast('Apartado confirmado');
+    if (typeof pushNotify === 'function') {
+      const d2 = (S.dv || []).find(x => x._id == id);
+      const client = d2 ? d2.client : 'Cliente';
+      const total = d2 ? dvDue(d2) : 0;
+      pushNotify('Reparto listo para recoger', client + ' · ' + brs()[b] + ' · ' + money(total));
+    }
   } catch (e) {
     err(e);
   }
