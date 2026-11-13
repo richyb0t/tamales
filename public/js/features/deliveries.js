@@ -34,15 +34,22 @@ const dvSum = n => Object.entries(n.items).reduce((a, [f, v]) => a + v * price(+
 
 function dvn() {
   if (!S.dvn)
-    S.dvn = { branch: null, autoBr: null, items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1, geoAddr: '', geoBusy: false };
+    S.dvn = { branch: null, autoBr: null, selBranches: null, items: {}, client: '', phone: '', addr: '', time: '', note: '', fee: '', lat: '', lng: '', step: 1, geoAddr: '', geoBusy: false };
   if (S.dvn.branch != null && !BI().includes(S.dvn.branch)) S.dvn.branch = null;
   return S.dvn;
 }
 
 function dvBr(i) {
   const n = dvn();
-  n.branch = i;
-  n.autoBr = i;
+  if (!Array.isArray(n.selBranches)) {
+    n.selBranches = n.autoBr != null ? [n.autoBr] : (n.branch != null ? [n.branch] : []);
+  }
+  const idx = n.selBranches.indexOf(i);
+  if (idx >= 0) n.selBranches.splice(idx, 1);
+  else n.selBranches.push(i);
+  if (!n.selBranches.length) n.selBranches = null;
+  if (n.selBranches && n.selBranches.length) n.branch = n.selBranches[0];
+  else n.branch = null;
   renderNow(true);
 }
 
@@ -182,18 +189,24 @@ function dvPlan(n) {
     const l = (S.cfg.branchLocs || [])[i];
     return lat && lng && l ? distKm({ lat, lng }, l) : null;
   };
-  const base = n.branch != null && BI().includes(n.branch) ? n.branch : null;
-  const rest = BI()
-    .filter(i => i != base)
-    .sort((a, b) => {
-      const da = dist(a),
-        db = dist(b);
-      if (da == null && db == null) return a - b;
-      if (da == null) return 1;
-      if (db == null) return -1;
-      return da - db;
-    });
-  const order = base == null ? rest : [base, ...rest];
+  const base = null;
+  let branchSet;
+  if (Array.isArray(n.selBranches) && n.selBranches.length) {
+    branchSet = n.selBranches.filter(i => BI().includes(i));
+  } else if (n.branch != null && BI().includes(n.branch)) {
+    branchSet = [n.branch];
+  } else {
+    branchSet = BI();
+  }
+  const allocOrder = branchSet.slice().sort((a, b) => {
+    const da = dist(a),
+      db = dist(b);
+    if (da == null && db == null) return a - b;
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return da - db;
+  });
+  const order = allocOrder;
   const stops = [];
   for (const b of order) {
     const s = { branch: b, items: {} };
@@ -373,6 +386,7 @@ function dvForm() {
           }
         }
         if (bestSubset) {
+          n.selBranches = bestSubset.slice();
           const sorted = bestSubset.slice().sort((a, b) => {
             const da = distToCust(a),
               db = distToCust(b);
@@ -382,15 +396,17 @@ function dvForm() {
             return db - da;
           });
           auto = sorted[0];
+          n.autoBr = auto;
         } else {
           const some = list.map(x => x.i).filter(i => cov(i).any);
           auto = some.length ? some[0] : null;
+          n.selBranches = auto != null ? [auto] : null;
+          n.autoBr = auto;
         }
       } else auto = nearest != null ? nearest : list.length ? list[0].i : null;
       n.branch = auto;
       n.autoBr = auto;
     }
-    const autoBr = n.autoBr;
     const plan = dvPlan(n);
     const multi = plan.stops.length > 1;
     const kmOf = i => {
@@ -407,8 +423,11 @@ function dvForm() {
        const dot = ok === null ? '' : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};box-shadow:0 0 6px ${ok ? 'rgba(34,197,94,.6)' : c.any ? 'rgba(245,158,11,.6)' : 'rgba(239,68,68,.6)'};margin-left:6px;vertical-align:middle"></span>`;
        const badgeA = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">MÁS CERCANA</span>`;
        const badgeB = `<span style="position:absolute;top:-8px;right:-4px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);letter-spacing:.3px;white-space:nowrap;z-index:2">INDICADA</span>`;
-       const badge = isNear ? badgeA : autoBr != null && i === autoBr ? badgeB : '';
-       return `<button class="${i == n.branch ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative;padding:8px 12px;overflow:visible">${badge}${esc(brs()[i])}${dot}</button>`;
+       const isSelected = Array.isArray(n.selBranches) && n.selBranches.length
+         ? n.selBranches.includes(i)
+         : i == n.branch;
+       const badge = isNear ? badgeA : (n.autoBr != null && i === n.autoBr ? badgeB : '');
+       return `<button class="${isSelected ? 'on' : ''}" onclick="dvBr(${i})" style="position:relative;padding:8px 12px;overflow:visible">${badge}${esc(brs()[i])}${dot}</button>`;
      }).join('')}</div>
      ${items.length && !plan.stops.length ? '<small style="display:block;margin:4px 0 8px;color:var(--bad)">Ninguna sucursal tiene existencia. Ajusta cantidades o carga inventario.</small>' : ''}
      ${plan.stops.length ? `<div style="border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0">
