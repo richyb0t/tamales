@@ -52,23 +52,30 @@ function dvBr(i) {
     return;
   }
   const idx = n.selBranches.indexOf(i);
-  if (idx >= 0) n.selBranches.splice(idx, 1);
-  else {
-    if (n.selBranches.length >= 2) {
-      const items = Object.entries(n.items || {}).filter(([, v]) => +v > 0);
-      let worstIdx = 0, worstScore = Infinity;
-      n.selBranches.forEach((b, k) => {
-        let score = 0;
-        items.forEach(([kk, v]) => {
-          const f = +kk;
-          const have = Math.max(0, left(b, f) || 0);
-          score += Math.min(+v, Math.floor(have));
+  if (idx >= 0) {
+    n.selBranches.splice(idx, 1);
+  } else {
+    const items = Object.entries(n.items || {}).filter(([, v]) => +v > 0);
+    const hasFullSingle = items.length > 0 && BI().some(b => items.every(([k, v]) => Math.floor(Math.max(0, left(b, +k) || 0)) >= +v));
+    if (hasFullSingle) {
+      // Una sola sucursal basta: reemplaza la seleccion.
+      n.selBranches = [i];
+    } else {
+      if (n.selBranches.length >= 2) {
+        let worstIdx = 0, worstScore = Infinity;
+        n.selBranches.forEach((b, k) => {
+          let score = 0;
+          items.forEach(([kk, v]) => {
+            const f = +kk;
+            const have = Math.max(0, left(b, f) || 0);
+            score += Math.min(+v, Math.floor(have));
+          });
+          if (score < worstScore) { worstScore = score; worstIdx = k; }
         });
-        if (score < worstScore) { worstScore = score; worstIdx = k; }
-      });
-      n.selBranches.splice(worstIdx, 1);
+        n.selBranches.splice(worstIdx, 1);
+      }
+      n.selBranches.push(i);
     }
-    n.selBranches.push(i);
   }
   if (!n.selBranches.length) n.selBranches = null;
   if (n.selBranches && n.selBranches.length) n.branch = n.selBranches[0];
