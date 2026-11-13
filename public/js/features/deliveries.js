@@ -789,12 +789,12 @@ function dvVendCard(d) {
       : d.large
         ? items
         : [],
-    list = items.map(([k, v]) => v + '× ' + esc(nm(+k.slice(1)))).join(' · '),
+    list = items.map(([k, v]) => `<li>${v} ${esc(nm(+k.slice(1)))}</li>`).join(''),
     others = mine ? picks.filter(s => s.branch != mine.branch) : [],
     primary = d.branch == (S.me && S.me.branch),
     myOut = (d.outs && d.outs[S.me && S.me.branch]) || (primary && d.out ? { by: d.outBy, name: d.outName, at: d.outAt } : null);
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio${picks.length > 1 ? ' · 🚏 ' + picks.length + ' sucursales' : ''}</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
- <div class="apt">${list}</div>
+ <div class="apt"><ul style="margin:0;padding-left:18px">${list}</ul></div>
  <div><b>Apartar aquí:</b>${myItems.length ? `<ul style="margin:4px 0 0;padding-left:18px">${myItems.map(([k, v]) => `<li>${v} ${esc(nm(+k.slice(1)))}</li>`).join('')}</ul>` : ' <span style="opacity:.7">No te toca surtir este reparto</span>'}</div>
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
