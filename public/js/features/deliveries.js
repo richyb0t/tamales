@@ -300,7 +300,7 @@ function dvForm() {
     const cov = i => {
       const out = { full: items.length > 0, any: false };
       items.forEach(([k, v]) => {
-        const f = +k.slice(1);
+        const f = +k;
         const have = Math.max(0, left(i, f) || 0);
         const take = Math.min(+v, Math.floor(have));
         if (take > 0) out.any = true;
@@ -339,7 +339,7 @@ function dvForm() {
         };
         const coversAll = subset =>
           items.every(([k, v]) => {
-            const f = +k.slice(1);
+            const f = +k;
             const total = subset.reduce((s, i) => s + Math.max(0, Math.floor(left(i, f) || 0)), 0);
             return total >= +v;
           });
