@@ -789,15 +789,13 @@ function dvVendCard(d) {
       : d.large
         ? items
         : [],
-    tam = myItems.reduce((a, [k, v]) => a + (+k.slice(1) < 100 ? +v : 0), 0),
-    ch = myItems.reduce((a, [k, v]) => a + (+k.slice(1) >= 100 ? +v : 0), 0),
     list = items.map(([k, v]) => v + '× ' + esc(nm(+k.slice(1)))).join(' · '),
     others = mine ? picks.filter(s => s.branch != mine.branch) : [],
     primary = d.branch == (S.me && S.me.branch),
     myOut = (d.outs && d.outs[S.me && S.me.branch]) || (primary && d.out ? { by: d.outBy, name: d.outName, at: d.outAt } : null);
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client || 'Pedido a domicilio')}</b><div class="apm">${hm(d.ts)} · 🛵 A domicilio${picks.length > 1 ? ' · 🚏 ' + picks.length + ' sucursales' : ''}</div></div><div style="text-align:right;flex:none"><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${list}</div>
- <div><b>${myItems.length ? 'Apartar aquí: ' + tam + ' ' + (tam == 1 ? 'tamal' : 'tamales') + (ch ? ' + ' + ch + ' ' + (ch == 1 ? 'champurrado' : 'champurrados') : '') : 'No te toca surtir este reparto'}</b></div>
+ <div><b>${myItems.length ? 'Apartar aquí: ' + myItems.map(([k, v]) => v + '× ' + esc(nm(+k.slice(1)))).join(', ') : 'No te toca surtir este reparto'}</b></div>
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
  ${myOut ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${myOut.at ? ' · ' + hm(myOut.at) : ''}${myOut.name ? ' por ' + esc(myOut.name) : ''}</b></div>` : (d.status == 'pendiente' || d.status == 'en_ruta' ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '')}</div>`;
