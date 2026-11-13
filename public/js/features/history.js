@@ -132,7 +132,12 @@ function grpHtml(i) {
   return `<div class="hx hx-${st[0]}"><div class="hxh"><span class="chip ${st[0]}">${st[1]}</span><small>${hm(sl.length ? sl[0].ts : rl[0].ts)}${sl.length > 1 ? ' · ' + sl.length + ' artículos' : ''}</small><b class="hxm">${tot < 0 ? '−' : ''}${money(Math.abs(tot))}</b></div>${sl.map(line).join('')}${rb}${ft ? `<div class="hxa">${ft}</div>` : ''}</div>`;
 }
 
-function histView(mine) {
+function histView(mine, dvList) {
+  const dvDone = (dvList || S.dv || []).filter(d => {
+    const outs = d.outs || {};
+    const myOut = outs[S.me && S.me.branch] || (d.branch == (S.me && S.me.branch) && d.out);
+    return myOut && (d.status == 'pendiente' || d.status == 'en_ruta' || d.status == 'entregado');
+  });
   S.ar = [];
   const g = {},
     ord = [];
@@ -149,16 +154,29 @@ function histView(mine) {
   S.gk = keys;
   S.gg = g;
   const np = keys.filter(ap).length;
-  if (!keys.length)
+  const dvSection = dvDone.length
+    ? '<div class="hxs" style="margin-top:16px">Repartos con salida confirmada hoy</div>' +
+      dvDone
+        .map(
+          d =>
+            `<div class="card"><div class="row"><div><b>${esc(d.client || 'Pedido a domicilio')}</b><br><small>${esc(dvTxt(d))}${d.fee ? ' · Envío ' + money(d.fee) : ''}</small></div><b>${money(dvDue(d))}</b></div><small class="ok">✅ Salida confirmada${d.outs && d.outs[S.me.branch] && d.outs[S.me.branch].at ? ' · ' + hm(d.outs[S.me.branch].at) : ''}</small></div>`
+        )
+        .join('')
+    : '';
+  if (!keys.length && !dvSection)
     return '<div class="card hxe"><b>Todavía no hay movimientos</b><small>Cuando cobres o apartes algo, aparece aquí.</small></div>';
-  return keys
-    .map(
-      (_, i) =>
-        (np && i == 0 ? `<div class="hxs">Por entregar · ${np}</div>` : '') +
-        (np && i == np ? '<div class="hxs">Del día</div>' : '') +
-        grpHtml(i)
-    )
-    .join('');
+  return (
+    (keys.length
+      ? keys
+          .map(
+            (_, i) =>
+              (np && i == 0 ? `<div class="hxs">Por entregar · ${np}</div>` : '') +
+              (np && i == np ? '<div class="hxs">Del día</div>' : '') +
+              grpHtml(i)
+          )
+          .join('')
+      : '') + dvSection
+  );
 }
 
 function devPed(i) {

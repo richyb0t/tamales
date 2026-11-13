@@ -1220,11 +1220,7 @@ function dvToday() {
     '</h3>' +
     (active.length
       ? active.map(d => dvVendCard(d)).join('')
-      : '<div class="card"><small>No hay repartos pendientes de salida.</small></div>') +
-    (done.length
-      ? '<h3 style="margin:16px 4px 6px;opacity:.7">✅ Salida confirmada hoy</h3>' +
-        done.map(d => dvVendCard(d)).join('')
-      : '')
+      : '<div class="card"><small>No hay repartos pendientes de salida.</small></div>')
   );
 }
 
