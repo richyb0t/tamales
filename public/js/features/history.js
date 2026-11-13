@@ -156,12 +156,7 @@ function histView(mine, dvList) {
   const np = keys.filter(ap).length;
   const dvSection = dvDone.length
     ? '<div class="hxs" style="margin-top:16px">Repartos con salida confirmada hoy</div>' +
-      dvDone
-        .map(
-          d =>
-            `<div class="card"><div class="row"><div><b>${esc(d.client || 'Pedido a domicilio')}</b><br><small>${esc(dvTxt(d))}${d.fee ? ' · Envío ' + money(d.fee) : ''}</small></div><b>${money(dvDue(d))}</b></div><small class="ok">✅ Salida confirmada${d.outs && d.outs[S.me.branch] && d.outs[S.me.branch].at ? ' · ' + hm(d.outs[S.me.branch].at) : ''}</small></div>`
-        )
-        .join('')
+      dvDone.map(d => dvVendCard(d)).join('')
     : '';
   if (!keys.length && !dvSection)
     return '<div class="card hxe"><b>Todavía no hay movimientos</b><small>Cuando cobres o apartes algo, aparece aquí.</small></div>';
