@@ -132,12 +132,7 @@ function grpHtml(i) {
   return `<div class="hx hx-${st[0]}"><div class="hxh"><span class="chip ${st[0]}">${st[1]}</span><small>${hm(sl.length ? sl[0].ts : rl[0].ts)}${sl.length > 1 ? ' · ' + sl.length + ' artículos' : ''}</small><b class="hxm">${tot < 0 ? '−' : ''}${money(Math.abs(tot))}</b></div>${sl.map(line).join('')}${rb}${ft ? `<div class="hxa">${ft}</div>` : ''}</div>`;
 }
 
-function histView(mine, dvList) {
-  const dvDone = (dvList || S.dv || []).filter(d => {
-    const outs = d.outs || {};
-    const myOut = outs[S.me && S.me.branch] || (d.branch == (S.me && S.me.branch) && d.out);
-    return myOut && (d.status == 'pendiente' || d.status == 'en_ruta' || d.status == 'entregado');
-  });
+function histView(mine) {
   S.ar = [];
   const g = {},
     ord = [];
@@ -154,24 +149,16 @@ function histView(mine, dvList) {
   S.gk = keys;
   S.gg = g;
   const np = keys.filter(ap).length;
-  const dvSection = dvDone.length
-    ? '<div class="hxs" style="margin-top:16px">Repartos con salida confirmada hoy</div>' +
-      dvDone.map(d => dvVendCard(d)).join('')
-    : '';
-  if (!keys.length && !dvSection)
+  if (!keys.length)
     return '<div class="card hxe"><b>Todavía no hay movimientos</b><small>Cuando cobres o apartes algo, aparece aquí.</small></div>';
-  return (
-    (keys.length
-      ? keys
-          .map(
-            (_, i) =>
-              (np && i == 0 ? `<div class="hxs">Por entregar · ${np}</div>` : '') +
-              (np && i == np ? '<div class="hxs">Del día</div>' : '') +
-              grpHtml(i)
-          )
-          .join('')
-      : '') + dvSection
-  );
+  return keys
+    .map(
+      (_, i) =>
+        (np && i == 0 ? `<div class="hxs">Por entregar · ${np}</div>` : '') +
+        (np && i == np ? '<div class="hxs">Del día</div>' : '') +
+        grpHtml(i)
+    )
+    .join('');
 }
 
 function devPed(i) {

@@ -47,7 +47,7 @@ body =
 seg() +
 srch() +
 `<div id="fls">${flList(b)}</div>`;
-else if (vt == 'h') body = histView(mine, S.dv);
+else if (vt == 'h') body = histView(mine);
 else if (vt == 'r') body = apView();
 else body = corteCard() + trForm(b, false) + trList(b);
 return (
