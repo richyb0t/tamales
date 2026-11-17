@@ -995,7 +995,7 @@ function dvVendCard(d) {
 
 /* Deslizar hacia la derecha para confirmar: un gesto deliberado evita apartados por accidente. */
 function dvSlideHTML(id) {
-  return `<div class="dvslide" data-id="${id}" role="slider" tabindex="0" aria-label="Desliza hacia la derecha para confirmar el apartado" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" onpointerdown="dvSlideDown(event)" onpointermove="dvSlideMove(event)" onpointerup="dvSlideEnd(event)" onpointercancel="dvSlideEnd(event)" onkeydown="dvSlideKey(event)"><span class="dvslide-fill" aria-hidden="true"></span><span class="dvslide-label">Desliza para confirmar</span><span class="dvslide-thumb" aria-hidden="true"><svg class="dvslide-arrow" viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m12 5 7 7-7 7"/></svg><svg class="dvslide-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></div>`;
+  return `<div class="dvslide" data-id="${id}" role="slider" tabindex="0" aria-label="Desliza hacia la derecha para confirmar el apartado" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" onpointerdown="dvSlideDown(event)" onpointermove="dvSlideMove(event)" onpointerup="dvSlideEnd(event)" onpointercancel="dvSlideEnd(event)" onkeydown="dvSlideKey(event)"><span class="dvslide-fill" aria-hidden="true"></span><span class="dvslide-trail" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span><span class="dvslide-label">Desliza para confirmar</span><span class="dvslide-thumb" aria-hidden="true"><svg class="dvslide-arrow" viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m12 5 7 7-7 7"/></svg><svg class="dvslide-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></div>`;
 }
 
 const dvSlide = { el: null, x0: 0, pos: 0, max: 0, busy: false };
@@ -1218,7 +1218,7 @@ async function dvReady(id) {
   return true;
 }
 
-/* El vendedor confirma que el pedido sali� de su sucursal */
+/* El vendedor confirma que el pedido salió de su sucursal */
 async function dvOut(id) {
   const d = (S.dv || []).find(x => x._id == id);
   if (!d) return;
@@ -1696,16 +1696,16 @@ function repView() {
     head() +
     alertSpace() +
     (typeof Notification !== 'undefined' && Notification.permission !== 'granted'
-      ? `<div class="card"><button class="go" style="width:100%" onclick="enableNotif()">���� Activar notificaciones</button><small>Para recibir pedidos grandes aunque la app est+� en segundo plano.</small></div>`
+      ? `<div class="card"><button class="go" style="width:100%" onclick="enableNotif()">🔔 Activar notificaciones</button><small>Para recibir pedidos grandes aunque la app esté en segundo plano.</small></div>`
       : '') +
     kp +
     body +
     nav(
       [
-        ['e', '����', 'Repartos', free.length || ''],
-        ['c', '����', 'En camino', mine.length || ''],
-        ['t', 'ԣ�', 'Terminados'],
-        ['more', '��', 'M+�s'],
+        ['e', '🛵', 'Repartos', free.length || ''],
+        ['c', '🚚', 'En camino', mine.length || ''],
+        ['t', '✅', 'Terminados'],
+        ['more', '⋯', 'Más'],
       ],
       t,
       'repNav'

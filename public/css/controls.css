@@ -71,7 +71,7 @@ button.gh.bad {
 /* Confirmar apartado / avisar sin stock: jerarquía clara, tipografía legible y objetivos táctiles grandes */
 .dvprep {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   margin-top: 12px;
 }
 .dvprep button {
@@ -85,17 +85,19 @@ button.gh.bad {
   font: inherit;
   touch-action: manipulation;
 }
-/* Deslizar para confirmar: pista con relleno, pulgar con degradado y estados armado/hecho */
+/* Deslizar para confirmar: cápsula con pulgar circular, pista de chevrones y estados armado/hecho */
 .dvslide {
   position: relative;
-  height: 66px;
-  padding: 5px;
-  border: 1.5px solid var(--ok-t);
-  border-radius: 18px;
+  height: 62px;
+  padding: 4px;
+  border: 1px solid var(--ok-t);
+  border-radius: 999px;
   background:
-    linear-gradient(180deg, var(--ok-t), transparent 78%),
+    linear-gradient(100deg, var(--ok-t), transparent 58%),
     var(--card);
-  box-shadow: inset 0 1px 2px #00000012;
+  box-shadow:
+    inset 0 1px 2px #0000000f,
+    0 1px 0 #ffffff12;
   overflow: hidden;
   touch-action: pan-y;
   user-select: none;
@@ -113,11 +115,11 @@ button.gh.bad {
 }
 .dvslide-fill {
   position: absolute;
-  left: 5px;
-  top: 5px;
-  bottom: 5px;
-  width: 56px;
-  border-radius: 13px;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: 52px;
+  border-radius: 999px;
   background: linear-gradient(90deg, var(--ok-btn), var(--ok-btn2));
   opacity: 0.16;
   transition: opacity 0.18s ease;
@@ -129,6 +131,32 @@ button.gh.bad {
 .dvslide.done .dvslide-fill {
   opacity: 1;
 }
+.dvslide-trail {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  color: var(--ok);
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 1;
+}
+.dvslide-trail svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dvslide.drag .dvslide-trail,
+.dvslide.armed .dvslide-trail,
+.dvslide.done .dvslide-trail {
+  opacity: 0;
+}
 .dvslide-label {
   position: absolute;
   inset: 0 10px;
@@ -136,7 +164,7 @@ button.gh.bad {
   align-items: center;
   justify-content: center;
   color: var(--ok);
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.005em;
   line-height: 1.2;
@@ -153,13 +181,13 @@ button.gh.bad {
 }
 .dvslide-thumb {
   position: absolute;
-  left: 5px;
-  top: 5px;
-  bottom: 5px;
-  width: 56px;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: 52px;
   display: grid;
   place-items: center;
-  border-radius: 13px;
+  border-radius: 50%;
   background: linear-gradient(180deg, var(--ok-btn), var(--ok-btn2));
   color: var(--on-ok-btn);
   box-shadow:
@@ -194,6 +222,16 @@ button.gh.bad {
 .dvslide.done .dvslide-check {
   display: block;
 }
+.dvslide.done .dvslide-thumb {
+  background: var(--card);
+  color: var(--ok-btn);
+  box-shadow:
+    0 0 0 1px #ffffff33,
+    0 6px 16px -8px #00000080;
+}
+.dvslide.done .dvslide-thumb::after {
+  display: none;
+}
 .dvslide.snap .dvslide-thumb,
 .dvslide.snap .dvslide-fill {
   transition:
@@ -206,17 +244,25 @@ button.gh.bad {
     0 10px 22px -8px #000000a6,
     inset 0 1px 0 #ffffff38;
 }
-@keyframes dvslide-nudge {
+@keyframes dvslide-chev {
   0%,
   100% {
+    opacity: 0.2;
     transform: translateX(0);
   }
   50% {
-    transform: translateX(3px);
+    opacity: 0.85;
+    transform: translateX(2px);
   }
 }
-.dvslide:not(.drag):not(.armed):not(.done) .dvslide-arrow {
-  animation: dvslide-nudge 1.8s ease-in-out 0.6s infinite;
+.dvslide:not(.drag):not(.armed):not(.done) .dvslide-trail svg {
+  animation: dvslide-chev 2.4s ease-in-out infinite;
+}
+.dvslide:not(.drag):not(.armed):not(.done) .dvslide-trail svg:nth-child(2) {
+  animation-delay: 0.22s;
+}
+.dvslide:not(.drag):not(.armed):not(.done) .dvslide-trail svg:nth-child(3) {
+  animation-delay: 0.44s;
 }
 @media (prefers-reduced-motion: reduce) {
   .dvslide-thumb,
@@ -224,24 +270,27 @@ button.gh.bad {
   .dvslide-label {
     transition: none !important;
   }
-  .dvslide-arrow {
+  .dvslide-trail svg {
     animation: none !important;
+    opacity: 0.55;
   }
 }
 .dvprep-warn {
   justify-content: center;
-  min-height: 52px;
-  gap: 9px;
-  border: 1.5px solid var(--bad);
-  background: transparent;
+  min-height: 46px;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid var(--bad);
+  border-radius: 999px;
+  background: var(--bad-t);
   color: var(--bad);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 650;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
 }
 .dvprep-warn svg {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
   flex: none;
   fill: none;
   stroke: currentColor;
