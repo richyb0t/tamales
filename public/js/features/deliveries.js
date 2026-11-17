@@ -837,7 +837,12 @@ function dvCard(d, rep) {
     A = me.role == 'admin',
     rt = rep && d.status == 'en_ruta' && d.drv == me.user;
   let bt = '';
-  if (rep) {
+  if (rep && S.repMulti && d.status == 'pendiente') {
+    const checked = (S.repSel || []).includes(d._id) ? 'checked' : '';
+    bt =
+      `<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><input type="checkbox" ${checked} onchange="repSelToggle('${d._id}', this.checked)" style="width:18px;height:18px"> <span style="font-size:12px">Seleccionar</span></label>` +
+      `<button class="go p" onclick="dvTake('${d._id}')">Tomar</button>`;
+  } else if (rep) {
     if (d.status == 'pendiente') bt = `<button class="go p" onclick="dvTake('${d._id}')">Tomar reparto</button>`;
     else if (d.status == 'en_ruta' && d.drv == me.user)
       bt = `<button class="go p" onclick="dvDone('${d._id}')">Entregar y cobrar ${money(dvDue(d))}</button><button class="alt" onclick="dvFail('${d._id}')">No se pudo</button><button class="gh" onclick="dvRelease('${d._id}')">Soltar</button>`;
@@ -1242,6 +1247,163 @@ function dvToday() {
 }
 
 /* Repartidor */
+function repSelToggle(id, checked) {
+  S.repSel = S.repSel || [];
+  if (checked) {
+    if (!S.repSel.includes(id)) S.repSel.push(id);
+  } else {
+    S.repSel = S.repSel.filter(x => x !== id);
+  }
+  S.repRoute = null;
+  renderNow(true);
+}
+
+function repRouteBuild() {
+  const sel = (S.repSel || []).map(id => (S.dv || []).find(d => d._id === id)).filter(Boolean);
+  if (sel.length < 2) return;
+  // Collect stops: pickups (dedup by branch) + customer addresses.
+  const pickupMap = {};
+  sel.forEach(d => {
+    (dvPickups(d) || []).forEach(s => {
+      if (s.branch != null && !pickupMap[s.branch]) pickupMap[s.branch] = { branch: s.branch, deliveries: [] };
+      if (pickupMap[s.branch]) pickupMap[s.branch].deliveries.push(d._id);
+    });
+  });
+  const pickups = Object.values(pickupMap);
+  const deliveries = sel.map(d => ({ id: d._id, lat: d.lat, lng: d.lng, addr: d.addr, client: d.client }));
+  // Get rep location (try GPS, fallback to first pickup)
+  const build = (origin) => {
+    // Nearest-neighbor for pickups
+    const unvisited = pickups.map(p => ({ ...p, kind: 'pickup' }));
+    const ordered = [];
+    let cur = origin;
+    while (unvisited.length) {
+      let best = 0, bestD = Infinity;
+      unvisited.forEach((p, i) => {
+        const l = (S.cfg.branchLocs || [])[p.branch];
+        const d = l && cur ? distKm(cur, l) : (cur ? 0 : 0);
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      const p = unvisited.splice(best, 1)[0];
+      const l = (S.cfg.branchLocs || [])[p.branch];
+      ordered.push({ kind: 'pickup', label: (brs()[p.branch] || 'Sucursal'), q: l ? l.lat + ',' + l.lng : (brs()[p.branch] || ''), branch: p.branch });
+      cur = l || cur;
+    }
+    // Then deliveries (nearest-neighbor from last pickup)
+    const unDel = deliveries.map(d => ({ ...d, kind: 'delivery' }));
+    while (unDel.length) {
+      let best = 0, bestD = Infinity;
+      unDel.forEach((d, i) => {
+        const dest = d.lat != null && d.lng != null ? { lat: d.lat, lng: d.lng } : null;
+        const d2 = dest && cur ? distKm(cur, dest) : (cur ? 0 : 0);
+        if (d2 < bestD) { bestD = d2; best = i; }
+      });
+      const d = unDel.splice(best, 1)[0];
+      const q = d.lat != null && d.lng != null ? d.lat + ',' + d.lng : (d.addr || '');
+      ordered.push({ kind: 'delivery', label: d.client || 'Cliente', q, deliveryId: d.id });
+      cur = d.lat != null && d.lng != null ? { lat: d.lat, lng: d.lng } : cur;
+    }
+    S.repRoute = ordered;
+    S.repRouteOrder = null;
+    renderNow(true);
+  };
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      p => build({ lat: +p.coords.latitude, lng: +p.coords.longitude }),
+      () => build(null),
+      { timeout: 8000 }
+    );
+  } else {
+    build(null);
+  }
+}
+
+function repRouteView() {
+  if (!S.repRoute || !S.repRoute.length) return '';
+  const stops = S.repRoute;
+  // total km
+  let totalKm = 0;
+  const coords = stops.map(s => {
+    const parts = String(s.q).split(',');
+    if (parts.length === 2 && !isNaN(+parts[0]) && !isNaN(+parts[1])) return { lat: +parts[0], lng: +parts[1] };
+    return null;
+  });
+  for (let i = 0; i < coords.length - 1; i++) {
+    if (coords[i] && coords[i+1]) totalKm += distKm(coords[i], coords[i+1]);
+  }
+  const origin = (S.dvLoc && S.dvLoc.lat) ? S.dvLoc.lat + ',' + S.dvLoc.lng : '';
+  if (origin && coords[0]) {
+    const op = origin.split(',');
+    totalKm += distKm({ lat: +op[0], lng: +op[1] }, coords[0]);
+  }
+  const estMin = Math.round(stops.length * 5 + (totalKm / 30) * 60);
+  const dest = stops[stops.length - 1].q;
+  const wps = stops.slice(0, -1).map(s => s.q).join('|');
+  const dir = 'https://www.google.com/maps/dir/?api=1' +
+    (origin ? '&origin=' + encodeURIComponent(origin) : '') +
+    '&destination=' + encodeURIComponent(dest) +
+    (wps ? '&waypoints=' + encodeURIComponent(wps) : '') +
+    '&travelmode=driving';
+  return `<div class="card" style="margin:10px 0;border:2px solid var(--ac)">
+    <h3 style="margin:0 0 8px">🗺️ Ruta combinada (${stops.length} paradas)</h3>
+    <small style="display:block;margin-bottom:8px;opacity:.7">≈ ${stops.length} paradas · ${totalKm.toFixed(1)} km · tiempo estimado ${estMin} min</small>
+    ${stops.map((s, i) => `
+      <div class="row" style="border:0;padding:4px 0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="gh" onclick="repRouteMove(${i},-1)" ${i===0?'disabled':''} style="padding:2px 6px">↑</button>
+          <button class="gh" onclick="repRouteMove(${i},1)" ${i===stops.length-1?'disabled':''} style="padding:2px 6px">↓</button>
+          <span><b>${i+1}. ${esc(s.label)}</b> <small style="opacity:.7">(${s.kind === 'pickup' ? 'Recoger' : 'Entregar'})</small></span>
+        </div>
+      </div>`).join('')}
+    <div class="form" style="margin-top:10px">
+      <button class="alt" style="flex:1" onclick="S.repRoute=null;renderNow(true)">Cerrar</button>
+      <a class="dvnav" href="${dir}" target="_blank" rel="noopener" style="flex:1;text-align:center">🧭 Navegar</a>
+    </div>
+  </div>`;
+}
+
+function repRouteMove(i, dir) {
+  if (!S.repRoute) return;
+  const j = i + dir;
+  if (j < 0 || j >= S.repRoute.length) return;
+  const tmp = S.repRoute[i];
+  S.repRoute[i] = S.repRoute[j];
+  S.repRoute[j] = tmp;
+  renderNow(true);
+}
+  const me = S.me.user,
+    t = ['e', 'c', 't'].includes(S.rt) ? S.rt : 'e',
+    L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
+    free = L.filter(d => d.status == 'pendiente'),
+    mine = L.filter(d => d.drv == me && d.status == 'en_ruta'),
+    ok = L.filter(d => d.drv == me && d.status == 'entregado'),
+    bad = L.filter(d => d.drv == me && d.status == 'fallido'),
+    done = [...ok, ...bad].sort((a, b) => (b.tsDone || b.ts) - (a.tsDone || a.ts)),
+    cash = ok.reduce((a, d) => a + nz(d.cobrado), 0),
+    due = mine.reduce((a, d) => a + dvDue(d), 0);
+  const kp =
+    t == 't'
+      ? `<div class="kp kv"><div><small>Entregados</small><b>${ok.length}</b></div><div><small>No entregados</small><b>${bad.length}</b></div><div><small>Efectivo cobrado</small><b>${money(cash)}</b></div></div>`
+      : t == 'c'
+        ? `<div class="kp kv"><div><small>En camino</small><b>${mine.length}</b></div><div><small>Por cobrar</small><b>${money(due)}</b></div><div><small>Efectivo a rendir</small><b>${money(cash)}</b></div></div>`
+        : `<div class="kp kv"><div><small>Disponibles</small><b>${free.length}</b></div><div><small>En camino</small><b>${mine.length}</b></div><div><small>Entregados</small><b>${ok.length}</b></div></div>`;
+  const body =
+    t == 't'
+      ? '<h3 style="margin:12px 4px 6px">Terminados hoy</h3>' +
+        (done.length
+          ? done.map(d => dvCard(d, true)).join('')
+          : '<div class="card"><small>No hay repartos terminados hoy.</small></div>')
+      : t == 'c'
+        ? '<h3 style="margin:12px 4px 6px">Mis repartos en camino</h3>' +
+          (mine.length
+            ? mine.map(d => dvCard(d, true)).join('')
+            : '<div class="card"><small>No tienes repartos en camino.</small></div>')
+        : '<h3 style="margin:12px 4px 6px">Disponibles para tomar</h3>' +
+           `<div class="form" style="margin:0 0 10px"><button class="alt" style="flex:1" onclick="S.repMulti=!S.repMulti;S.repSel=[];S.repRoute=null;renderNow(true)">${S.repMulti ? '✕ Cancelar selección' : '☑ Tomar varios'}</button>${S.repMulti && (S.repSel||[]).length >= 2 ? `<button class="go" style="flex:1" onclick="repRouteBuild()">Ver ruta combinada (${(S.repSel||[]).length})</button>` : ''}</div>` +
+           (S.repRoute ? repRouteView() : '') +
+           (free.map(d => dvCard(d, true)).join('') ||
+             '<div class="card"><small>No hay repartos por tomar. Se actualiza solo.</small></div>');
+
 function repView() {
   const me = S.me.user,
     t = ['e', 'c', 't'].includes(S.rt) ? S.rt : 'e',
@@ -1277,22 +1439,23 @@ function repView() {
     head() +
     alertSpace() +
     (typeof Notification !== 'undefined' && Notification.permission !== 'granted'
-      ? `<div class="card"><button class="go" style="width:100%" onclick="enableNotif()">🔔 Activar notificaciones</button><small>Para recibir pedidos grandes aunque la app esté en segundo plano.</small></div>`
+      ? `<div class="card"><button class="go" style="width:100%" onclick="enableNotif()">���� Activar notificaciones</button><small>Para recibir pedidos grandes aunque la app est+� en segundo plano.</small></div>`
       : '') +
     kp +
     body +
     nav(
       [
-        ['e', '🛵', 'Repartos', free.length || ''],
-        ['c', '🚚', 'En camino', mine.length || ''],
-        ['t', '✅', 'Terminados'],
-        ['more', '⋯', 'Más'],
+        ['e', '����', 'Repartos', free.length || ''],
+        ['c', '����', 'En camino', mine.length || ''],
+        ['t', 'ԣ�', 'Terminados'],
+        ['more', '��', 'M+�s'],
       ],
       t,
       'repNav'
     )
   );
 }
+
 
 const alertSpace = () => '';
 
