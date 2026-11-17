@@ -85,51 +85,148 @@ button.gh.bad {
   font: inherit;
   touch-action: manipulation;
 }
-.dvprep-ok {
-  min-height: 62px;
+/* Deslizar para confirmar: pista con relleno, pulgar con degradado y estados armado/hecho */
+.dvslide {
+  position: relative;
+  height: 66px;
+  padding: 5px;
+  border: 1.5px solid var(--ok-t);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, var(--ok-t), transparent 78%),
+    var(--card);
+  box-shadow: inset 0 1px 2px #00000012;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: grab;
+  isolation: isolate;
+}
+.dvslide.drag {
+  cursor: grabbing;
+}
+.dvslide:focus-visible {
+  outline: 3px solid var(--ac);
+  outline-offset: 3px;
+}
+.dvslide-fill {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  bottom: 5px;
+  width: 56px;
+  border-radius: 13px;
+  background: linear-gradient(90deg, var(--ok-btn), var(--ok-btn2));
+  opacity: 0.16;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+.dvslide.armed .dvslide-fill {
+  opacity: 0.36;
+}
+.dvslide.done .dvslide-fill {
+  opacity: 1;
+}
+.dvslide-label {
+  position: absolute;
+  inset: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ok);
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  transition:
+    opacity 0.12s linear,
+    color 0.2s ease;
+  z-index: 1;
+}
+.dvslide.done .dvslide-label {
+  color: var(--on-ok-btn);
+}
+.dvslide-thumb {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  bottom: 5px;
+  width: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
   background: linear-gradient(180deg, var(--ok-btn), var(--ok-btn2));
   color: var(--on-ok-btn);
   box-shadow:
-    0 12px 26px -16px #000000a6,
-    inset 0 1px 0 #ffffff2e;
+    0 8px 18px -10px #000000a6,
+    inset 0 1px 0 #ffffff38;
+  z-index: 2;
+  will-change: transform;
 }
-.dvprep-ok .dvprep-ic {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #ffffff1f;
-  box-shadow: inset 0 0 0 1px #ffffff29;
+.dvslide-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #ffffff26, transparent 55%);
+  pointer-events: none;
 }
-.dvprep-ok svg {
-  width: 22px;
-  height: 22px;
+.dvslide-thumb svg {
+  width: 24px;
+  height: 24px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.8;
+  stroke-width: 2.6;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.dvprep-tx {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+.dvslide-check {
+  display: none;
 }
-.dvprep-tx b {
-  font-size: 16.5px;
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.012em;
+.dvslide.done .dvslide-arrow {
+  display: none;
 }
-.dvprep-tx small {
-  color: inherit;
-  font-size: 13.5px;
-  font-weight: 500;
-  line-height: 1.35;
-  opacity: 1;
+.dvslide.done .dvslide-check {
+  display: block;
+}
+.dvslide.snap .dvslide-thumb,
+.dvslide.snap .dvslide-fill {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dvslide.armed .dvslide-thumb {
+  box-shadow:
+    0 0 0 4px var(--ok-t),
+    0 10px 22px -8px #000000a6,
+    inset 0 1px 0 #ffffff38;
+}
+@keyframes dvslide-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+.dvslide:not(.drag):not(.armed):not(.done) .dvslide-arrow {
+  animation: dvslide-nudge 1.8s ease-in-out 0.6s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dvslide-thumb,
+  .dvslide-fill,
+  .dvslide-label {
+    transition: none !important;
+  }
+  .dvslide-arrow {
+    animation: none !important;
+  }
 }
 .dvprep-warn {
   justify-content: center;
@@ -161,9 +258,6 @@ button.gh.bad {
   color: var(--on-bad);
 }
 @media (hover: hover) and (pointer: fine) {
-  .dvprep-ok:hover {
-    filter: brightness(1.05);
-  }
   .dvprep-warn:hover {
     background: var(--bad);
     color: var(--on-bad);

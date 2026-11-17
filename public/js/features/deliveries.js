@@ -988,17 +988,152 @@ function dvVendCard(d) {
  ${!myPrepared && myItems.length ? '<small style="display:block;margin-top:4px;color:var(--bad)">⚠️ El stock se reserva al confirmar el apartado</small>' : ''}
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
- ${myPrepared ? `<div class="ok" style="margin-top:6px"><b>✅ Apartado confirmado${myPrepared.at ? ' · ' + hm(myPrepared.at) : ''}${myPrepared.name ? ' por ' + esc(myPrepared.name) : ''}</b></div>` : (myItems.length && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="dvprep"><button type="button" class="dvprep-ok" onclick="dvReady('${d._id}')"><span class="dvprep-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><span class="dvprep-tx"><b>Confirmar apartado</b><small>Reserva el stock y avisa al repartidor</small></span></button><button type="button" class="dvprep-warn" onclick="dvNoStockAsk('${d._id}')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg><span>Avisar sin stock</span></button></div>` : '')}
+ ${myPrepared ? `<div class="ok" style="margin-top:6px"><b>✅ Apartado confirmado${myPrepared.at ? ' · ' + hm(myPrepared.at) : ''}${myPrepared.name ? ' por ' + esc(myPrepared.name) : ''}</b></div>` : (myItems.length && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="dvprep">${dvSlideHTML(d._id)}<button type="button" class="dvprep-warn" onclick="dvNoStockAsk('${d._id}')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg><span>Avisar sin stock</span></button></div>` : '')}
  ${d.repNote ? `<small style="display:block;margin-top:4px;color:var(--ac)">💬 Repartidor: ${esc(d.repNote)}</small>` : ''}
  ${myOut ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${myOut.at ? ' · ' + hm(myOut.at) : ''}${myOut.name ? ' por ' + esc(myOut.name) : ''}</b></div>` : (myPrepared && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '')}</div>`;
+}
+
+/* Deslizar hacia la derecha para confirmar: un gesto deliberado evita apartados por accidente. */
+function dvSlideHTML(id) {
+  return `<div class="dvslide" data-id="${id}" role="slider" tabindex="0" aria-label="Desliza hacia la derecha para confirmar el apartado" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" onpointerdown="dvSlideDown(event)" onpointermove="dvSlideMove(event)" onpointerup="dvSlideEnd(event)" onpointercancel="dvSlideEnd(event)" onkeydown="dvSlideKey(event)"><span class="dvslide-fill" aria-hidden="true"></span><span class="dvslide-label">Desliza para confirmar</span><span class="dvslide-thumb" aria-hidden="true"><svg class="dvslide-arrow" viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m12 5 7 7-7 7"/></svg><svg class="dvslide-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></div>`;
+}
+
+const dvSlide = { el: null, x0: 0, pos: 0, max: 0, busy: false };
+
+function dvSlideGeom(el) {
+  const thumb = el.querySelector('.dvslide-thumb');
+  const pad = parseFloat(getComputedStyle(el).paddingLeft) || 5;
+  const max = Math.max(1, el.clientWidth - pad * 2 - (thumb ? thumb.offsetWidth : 56));
+  return { thumb, pad, max };
+}
+
+/* Pinta el avance: relleno, posición del pulgar y texto según lo cerca que esté de confirmar. */
+function dvSlideSet(el, dx, animate) {
+  const { thumb, max } = dvSlideGeom(el);
+  if (!thumb) return;
+  const fill = el.querySelector('.dvslide-fill');
+  const lab = el.querySelector('.dvslide-label');
+  const d = Math.max(0, Math.min(max, dx));
+  const pct = d / max;
+  const armed = pct >= 0.85;
+  if (animate) {
+    el.classList.add('snap');
+    clearTimeout(el._snapT);
+    el._snapT = setTimeout(() => el.classList.remove('snap'), 340);
+  }
+  dvSlide.pos = d;
+  if (dvSlide.el === el) dvSlide.max = max;
+  el.dataset.pos = String(Math.round(d));
+  el.classList.toggle('armed', armed && !el.classList.contains('done'));
+  thumb.style.transform = 'translate3d(' + d.toFixed(1) + 'px, 0, 0)';
+  if (fill) fill.style.width = (thumb.offsetWidth + d).toFixed(1) + 'px';
+  el.setAttribute('aria-valuenow', String(Math.round(pct * 100)));
+  if (lab && !el.classList.contains('done')) {
+    lab.textContent = armed ? 'Suelta para confirmar' : 'Desliza para confirmar';
+    lab.style.opacity = armed ? '1' : String(Math.max(0, 1 - pct / 0.3));
+  }
+}
+
+function dvSlideDown(e) {
+  const el = e.currentTarget;
+  if (dvSlide.busy || el.classList.contains('done')) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  dvSlide.el = el;
+  dvSlide.x0 = e.clientX;
+  dvSlide.pos = 0;
+  dvSlide.max = dvSlideGeom(el).max;
+  el.classList.remove('snap', 'armed');
+  el.classList.add('drag');
+  try {
+    el.setPointerCapture(e.pointerId);
+  } catch (_) {}
+  dvSlideSet(el, 0);
+  try {
+    el.focus({ preventScroll: true });
+  } catch (_) {}
+}
+
+function dvSlideMove(e) {
+  const el = e.currentTarget;
+  if (!dvSlide.el || dvSlide.el !== el || dvSlide.busy) return;
+  if (!dvSlide.max) dvSlide.max = dvSlideGeom(el).max;
+  dvSlideSet(el, e.clientX - dvSlide.x0);
+}
+
+function dvSlideEnd(e) {
+  const el = e.currentTarget;
+  if (!dvSlide.el || dvSlide.el !== el) return;
+  const pct = dvSlide.pos / (dvSlide.max || 1);
+  try {
+    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+  } catch (_) {}
+  el.classList.remove('drag');
+  dvSlide.el = null;
+  if (pct >= 0.85) dvSlideConfirm(el);
+  else dvSlideSet(el, 0, true);
+}
+
+/* Confirma con el gesto o con teclado. Si Firestore falla o falta stock, el pulgar regresa. */
+async function dvSlideConfirm(el) {
+  if (!el || dvSlide.busy || el.classList.contains('done')) return;
+  const { max } = dvSlideGeom(el);
+  const lab = el.querySelector('.dvslide-label');
+  dvSlide.busy = true;
+  el.classList.remove('drag');
+  dvSlideSet(el, max, true);
+  el.classList.add('done');
+  if (lab) {
+    lab.textContent = 'Confirmando…';
+    lab.style.opacity = '1';
+  }
+  let ok = false;
+  try {
+    ok = (await dvReady(el.getAttribute('data-id'))) !== false;
+  } catch (_) {
+    ok = false;
+  }
+  dvSlide.busy = false;
+  if (ok) {
+    if (lab) {
+      lab.textContent = 'Apartado confirmado';
+      lab.style.opacity = '1';
+    }
+    el.setAttribute('aria-valuenow', '100');
+  } else {
+    el.classList.remove('done', 'armed');
+    dvSlideSet(el, 0, true);
+    if (lab) {
+      lab.textContent = 'Desliza para confirmar';
+      lab.style.opacity = '1';
+    }
+  }
+}
+
+/* Teclado: Enter/Espacio confirman; las flechas acercan o alejan el pulgar. */
+function dvSlideKey(e) {
+  const el = e.currentTarget;
+  if (dvSlide.busy || el.classList.contains('done')) return;
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault();
+    dvSlideConfirm(el);
+    return;
+  }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    e.preventDefault();
+    const { max } = dvSlideGeom(el);
+    const cur = +el.dataset.pos || 0;
+    const step = Math.max(12, Math.round(max / 5));
+    const next = Math.max(0, Math.min(max, cur + (e.key === 'ArrowRight' ? step : -step)));
+    dvSlideSet(el, next, true);
+  }
 }
 
 /* El vendedor confirma que apartó los productos de su sucursal */
 async function dvReady(id) {
   const d = (S.dv || []).find(x => x._id == id);
-  if (!d) return;
+  if (!d) return false;
   const b = S.me && S.me.branch;
-  if (b == null) return;
+  if (b == null) return false;
   const mine = (dvPickups(d) || []).find(s => s.branch == b);
   const myItems = mine ? Object.entries(mine.items || {}).filter(([, v]) => +v > 0) : [];
   // Verifica stock disponible para cada producto de esta sucursal.
@@ -1032,7 +1167,7 @@ async function dvReady(id) {
     }
     if (failed) {
       toast('No hay suficiente stock en ' + brs()[b] + ' ni en otra sucursal. Avisa al administrador.');
-      return;
+      return false;
     }
     // Aplica la reasignación al documento del reparto.
     const pickups = dvPickups(d).map(s => ({ branch: s.branch, items: { ...s.items } }));
@@ -1063,7 +1198,7 @@ async function dvReady(id) {
     if (typeof pushNotify === 'function') {
       pushNotify('Reparto reasignado', (d.client || 'Cliente') + ' · faltante movido a otra sucursal');
     }
-    return;
+    return true;
   }
   // Stock suficiente: confirmación normal.
   try {
@@ -1078,7 +1213,9 @@ async function dvReady(id) {
     }
   } catch (e) {
     err(e);
+    return false;
   }
+  return true;
 }
 
 /* El vendedor confirma que el pedido sali� de su sucursal */
