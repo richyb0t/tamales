@@ -165,6 +165,7 @@ body:has(.who) #sync {
   height: 30px;
   border-radius: 16px;
   transition: background-color var(--d2) var(--ease);
+  font-size: 18px;
 }
 .nav button.on {
   background: var(--ac-t);
