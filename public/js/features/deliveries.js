@@ -1156,13 +1156,25 @@ async function dvNoStock(id) {
   }
   if (failed) {
     // No hay otra sucursal: el vendedor NO cancela, solo avisa a Pedidos/Admin/Supervisor.
-    toast('No hay otra sucursal con stock. Se avisó a Pedidos y al administrador.');
+    const msg = (d.client || 'Cliente') + ' · falta stock en ' + brs()[b] + ' · requiere cancelar o reasignar';
+    toast('No hay otra sucursal con stock. Avisando a Pedidos, Admin y Supervisor…');
+    let res = [];
     if (typeof pushNotify === 'function') {
-      const msg = (d.client || 'Cliente') + ' · falta stock en ' + brs()[b] + ' · requiere cancelar o reasignar';
-      pushNotify('Reparto sin stock', msg, 'enc');
-      pushNotify('Reparto sin stock', msg, 'admin');
-      pushNotify('Reparto sin stock', msg, 'sup');
+      res = await Promise.all([
+        pushNotify('Reparto sin stock', msg, 'enc'),
+        pushNotify('Reparto sin stock', msg, 'admin'),
+        pushNotify('Reparto sin stock', msg, 'sup'),
+      ]);
     }
+    const sent = res.filter(r => r && r.ok).length;
+    const reached = res.some(r => r && r.ok && (r.recipients == null || r.recipients > 0));
+    toast(
+      sent === 0
+        ? 'No se pudo enviar el aviso. Revisa la conexión e inténtalo de nuevo.'
+        : reached
+          ? 'Aviso enviado a Pedidos, Admin y Supervisor.'
+          : 'Aviso enviado, pero nadie tiene notificaciones activas. Pide a Pedidos/Admin activarlas en Ajustes.'
+    );
     return;
   }
   // Reasignar
@@ -1255,6 +1267,15 @@ function enableNotif() {
   });
 }
 
+function notifCard() {
+  if (!('Notification' in window))
+    return '<div class="card"><h3>🔔 Notificaciones</h3><small>Este navegador no soporta notificaciones push.</small></div>';
+  const perm = Notification.permission;
+  const on = perm === 'granted';
+  const denied = perm === 'denied';
+  return `<div class="card"><div class="ivh"><h3>🔔 Notificaciones</h3><span class="chip ${on ? 'ok' : denied ? 'bad' : 'low'}">${on ? 'Activadas' : denied ? 'Bloqueadas' : 'Apagadas'}</span></div><small>${on ? 'Este dispositivo recibirá avisos de repartos, apartados y faltantes de stock.' : denied ? 'El navegador bloqueó las notificaciones para esta app. Ábrelas desde el candado de la barra de direcciones y vuelve a intentar.' : 'Actívalas para recibir avisos de repartos, apartados y faltantes de stock, incluso con la app cerrada.'}</small>${on ? '' : '<div class="form" style="margin-top:8px"><button class="go" style="width:100%" onclick="enableNotif()">Activar notificaciones</button></div>'}</div>`;
+}
+
 /* Muestra una notificación. En Android el constructor `new Notification` está prohibido:
    hay que usar el service worker. En escritorio se conserva como respaldo. */
 async function notifShow(title, body, tag) {
@@ -1293,7 +1314,8 @@ async function notifShow(title, body, tag) {
 /* Envía el push real a los repartidores a través del Worker de Cloudflare.
    No bloquea el guardado: si falla, solo se avisa en consola. */
 async function pushNotify(title, body, role, branch) {
-  if (!PUSH_URL || !S.fu || typeof S.fu.getIdToken !== 'function') return;
+  if (!PUSH_URL || !S.fu || typeof S.fu.getIdToken !== 'function')
+    return { ok: false, reason: 'sin-sesion' };
   try {
     const token = await S.fu.getIdToken();
     const r = await fetch(PUSH_URL, {
@@ -1302,10 +1324,19 @@ async function pushNotify(title, body, role, branch) {
       body: JSON.stringify({ title: title, body: body, role: role || 'rep', branch: branch != null ? branch : undefined }),
     });
     const txt = await r.text();
-    if (r.ok) console.log('[push] enviado', txt);
-    else console.warn('[push] error', r.status, txt);
+    let out = {};
+    try {
+      out = JSON.parse(txt);
+    } catch (_) {}
+    if (r.ok) {
+      console.log('[push] enviado', txt);
+      return { ok: true, recipients: out.recipients, id: out.id };
+    }
+    console.warn('[push] error', r.status, txt);
+    return { ok: false, status: r.status, error: out };
   } catch (e) {
     console.warn('push', e);
+    return { ok: false, error: e };
   }
 }
 
@@ -1685,6 +1716,7 @@ async function clearPushTag(force) {
         /* Si mientras tanto entró un repartidor, no apagues su suscripción. */
         if (seq !== pushSeq) return resolve();
         try { await OneSignal.User.removeTag('role'); } catch (e) { console.warn('[OneSignal] remove tag', e); }
+        try { await OneSignal.User.removeTag('branch'); } catch (e) { console.warn('[OneSignal] remove branch tag', e); }
         /* Si entró un repartidor mientras se quitaba la etiqueta, no lo apagues. */
         if (seq !== pushSeq) return resolve();
         /* Apagar la suscripción corta el envío de inmediato en este dispositivo. */

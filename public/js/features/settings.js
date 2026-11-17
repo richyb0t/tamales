@@ -210,7 +210,7 @@ function ajView() {
       ).join(''),
     al = (t, sm, inp) =>
       `<div class="row"><div>${t}${sm ? `<br><small>${sm}</small>` : ''}</div>${inp}</div>`;
-  return `<div class="card"><div class="ivh"><h3>🏪 Sucursales</h3><span class="chip">${op} ${op == 1 ? 'abierta' : 'abiertas'}</span></div><small>Cambia el nombre y guarda. "Cerrar" oculta la sucursal (se puede reabrir). "Eliminar" la borra definitivamente (solo si está cerrada y sin datos activos). Las ventas anteriores se conservan.</small>
+  return `${notifCard()}<div class="card"><div class="ivh"><h3>🏪 Sucursales</h3><span class="chip">${op} ${op == 1 ? 'abierta' : 'abiertas'}</span></div><small>Cambia el nombre y guarda. "Cerrar" oculta la sucursal (se puede reabrir). "Eliminar" la borra definitivamente (solo si está cerrada y sin datos activos). Las ventas anteriores se conservan.</small>
  ${brs()
     .map(
       (n, i) =>

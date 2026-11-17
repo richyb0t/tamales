@@ -28,6 +28,9 @@
   --on-cta: #1a0e08;
   --mark: #2447b8;
   --ok: #1a6b3c;
+  --ok-btn: #12693a;
+  --ok-btn2: #0c532d;
+  --on-ok-btn: #ffffff;
   --low: #8a5300;
   --bad: #b3261e;
   --info: #2a5e86;
@@ -131,6 +134,9 @@
     --on-cta: #1a0e08;
     --mark: #3b63d9;
     --ok: #6fd39a;
+    --ok-btn: #46c486;
+    --ok-btn2: #2fa76b;
+    --on-ok-btn: #06180f;
     --low: #f5be5a;
     --bad: #ff9c8a;
     --info: #8db8f0;
@@ -197,6 +203,9 @@
   --on-cta: #1a0e08;
   --mark: #3b63d9;
   --ok: #6fd39a;
+  --ok-btn: #46c486;
+  --ok-btn2: #2fa76b;
+  --on-ok-btn: #06180f;
   --low: #f5be5a;
   --bad: #ff9c8a;
   --info: #8db8f0;

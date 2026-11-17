@@ -119,10 +119,10 @@ function startSubs() {
   );
   if (m.role != 'enc' && m.role != 'rep') subClaims();
   if (m.role != 'vend' || rd) subDv();
+  if (typeof initOnesignal === 'function') initOnesignal();
   if (m.role == 'rep') {
     render();
     if (typeof initFcm === 'function') initFcm();
-    if (typeof initOnesignal === 'function') initOnesignal();
     return;
   } /* el repartidor solo necesita configuración y repartos */
   /* Si este teléfono fue de repartidor, quita la etiqueta al entrar otro rol. */
