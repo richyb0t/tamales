@@ -988,7 +988,7 @@ function dvVendCard(d) {
  ${!myPrepared && myItems.length ? '<small style="display:block;margin-top:4px;color:var(--bad)">⚠️ El stock se reserva al confirmar el apartado</small>' : ''}
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
- ${myPrepared ? `<div class="ok" style="margin-top:6px"><b>✅ Apartado confirmado${myPrepared.at ? ' · ' + hm(myPrepared.at) : ''}${myPrepared.name ? ' por ' + esc(myPrepared.name) : ''}</b></div>` : (myItems.length && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvReady('${d._id}')">✅ Confirmar apartado</button><button class="gh" style="color:var(--bad);flex:1" onclick="dvNoStock('${d._id}')">❌ Sin stock</button></div>` : '')}
+ ${myPrepared ? `<div class="ok" style="margin-top:6px"><b>✅ Apartado confirmado${myPrepared.at ? ' · ' + hm(myPrepared.at) : ''}${myPrepared.name ? ' por ' + esc(myPrepared.name) : ''}</b></div>` : (myItems.length && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvReady('${d._id}')">✅ Confirmar apartado</button><button class="gh" style="color:var(--bad);flex:1" onclick="dvNoStock('${d._id}')">❌ Avisar sin stock</button></div>` : '')}
  ${d.repNote ? `<small style="display:block;margin-top:4px;color:var(--ac)">💬 Repartidor: ${esc(d.repNote)}</small>` : ''}
  ${myOut ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${myOut.at ? ' · ' + hm(myOut.at) : ''}${myOut.name ? ' por ' + esc(myOut.name) : ''}</b></div>` : (myPrepared && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '')}</div>`;
 }
@@ -1115,7 +1115,8 @@ async function dvPickup(id, branch) {
   }
 }
 
-/* El vendedor indica que no tiene stock; se reasigna o se cancela el reparto */
+/* El vendedor avisa que no tiene stock: se reasigna a otra sucursal si la hay.
+   Si nadie más tiene, solo se avisa a Pedidos/Admin/Supervisor: el vendedor no cancela. */
 async function dvNoStock(id) {
   const d = (S.dv || []).find(x => x._id == id);
   if (!d) return;
@@ -1147,13 +1148,14 @@ async function dvNoStock(id) {
     realloc.push({ f, qty: need, toBranch: candidates[0] });
   }
   if (failed) {
-    // No hay otra sucursal: cancelar el reparto completo
-    if (!confirm('No hay otra sucursal con stock. ¿Cancelar el reparto completo?')) return;
-    try {
-      await db.doc('deliveries/' + id).update({ status: 'cancelado', reason: 'Sin stock en ' + brs()[b], tsDone: Date.now() });
-      toast('Reparto cancelado');
-      if (typeof pushNotify === 'function') pushNotify('Reparto cancelado', (d.client || 'Cliente') + ' · sin stock en ' + brs()[b]);
-    } catch (e) { err(e); }
+    // No hay otra sucursal: el vendedor NO cancela, solo avisa a Pedidos/Admin/Supervisor.
+    toast('No hay otra sucursal con stock. Se avisó a Pedidos y al administrador.');
+    if (typeof pushNotify === 'function') {
+      const msg = (d.client || 'Cliente') + ' · falta stock en ' + brs()[b] + ' · requiere cancelar o reasignar';
+      pushNotify('Reparto sin stock', msg, 'enc');
+      pushNotify('Reparto sin stock', msg, 'admin');
+      pushNotify('Reparto sin stock', msg, 'sup');
+    }
     return;
   }
   // Reasignar
