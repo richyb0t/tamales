@@ -58,3 +58,35 @@ function chkAlerts() {
   }
   S.alSeen = cur;
 }
+
+/* Avisos de "sin stock" que el vendedor manda a Pedidos, Admin y Supervisor.
+   Se guardan en Firestore para que se vean en la app aunque el push no llegue. */
+function stockAlerts() {
+  return (S.alerts || []).filter(a => a.status == 'nuevo');
+}
+
+function stockAlertCard() {
+  const list = stockAlerts();
+  if (!list.length) return '';
+  return `<div class="card" style="border:2px solid var(--bad)"><div class="ivh"><h3 style="margin:0">⚠️ Avisos sin stock</h3><span class="chip bad">${list.length}</span></div><small>Un vendedor no pudo apartar estos repartos. Reasígnalos o cancélalos.</small>${list
+    .map(a => {
+      const br = brs()[a.branch];
+      const where = br != null ? esc(br) : 'Sucursal ' + esc(String(a.branch));
+      return `<div class="row" style="align-items:flex-start;gap:10px"><div><b>${esc(a.client || 'Cliente')}</b><br><small>${a.items ? esc(a.items) + ' · ' : ''}${where}<br>${hm(a.at)} · ${esc(a.byName || a.by || 'Vendedor')}</small></div><button class="gh" style="flex:none;min-height:32px;padding:0 10px;font-size:12px;color:var(--bad)" onclick="alertDone('${a._id}')">Atendido</button></div>`;
+    })
+    .join('')}</div>`;
+}
+
+async function alertDone(id) {
+  try {
+    await db.doc('alerts/' + id).update({
+      status: 'atendido',
+      doneBy: S.me.user,
+      doneName: S.me.name,
+      doneAt: Date.now(),
+    });
+    toast('Aviso marcado como atendido');
+  } catch (e) {
+    err(e);
+  }
+}

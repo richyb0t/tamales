@@ -256,6 +256,26 @@ function admOrSup() { return adm() || sup(); }
       allow create: if adm() || sup() || (okId(id) && vend(request.resource.data.from));
       allow delete: if adm() || sup() || (vend(resource.data.from) && existsAfter(/databases/$(database)/documents/logs/$('del_tr_' + id)));
     }
+    // Avisos de "sin stock" que el vendedor manda a Pedidos, Admin y Supervisor.
+    // Se guardan aparte del reparto para que se vean en la app aunque el push no llegue.
+    match /alerts/{id} {
+      allow read: if adm() || sup() || enc();
+      allow create: if okId(id) && (
+        adm() || sup() || enc()
+        || (vend(request.resource.data.branch)
+            && request.resource.data.by == prof().user
+            && request.resource.data.kind == 'stock'
+            && request.resource.data.status == 'nuevo'
+            && request.resource.data.day == today()));
+      // Cualquiera de los tres roles lo marca atendido; después queda cerrado.
+      allow update: if (adm() || sup() || enc())
+        && resource.data.status == 'nuevo'
+        && request.resource.data.status == 'atendido'
+        && request.resource.data.doneBy == prof().user
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'doneBy', 'doneName', 'doneAt']);
+      allow delete: if adm();
+    }
     // Repartos a domicilio: los crea el administrador o Pedidos; el repartidor los toma y cierra
     match /deliveries/{id} {
       allow read: if adm() || sup() || enc() || rep() || vend(resource.data.branch)

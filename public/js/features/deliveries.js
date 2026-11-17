@@ -1256,7 +1256,7 @@ async function dvPickup(id, branch) {
    Si nadie más tiene, solo se avisa a Pedidos/Admin/Supervisor: el vendedor no cancela. */
 function dvNoStockAsk(id) {
   ask(
-    '¿Avisar que no tienes stock? Si otra sucursal lo tiene, el pedido se mueve allá. Si nadie lo tiene, se avisa a Pedidos, Admin y Supervisor.',
+    '¿Avisar que no tienes stock? Si otra sucursal lo tiene, el pedido se mueve allá y no se avisa a nadie más. Si nadie lo tiene, se crea un aviso para Pedidos, Admin y Supervisor.',
     () => dvNoStock(id)
   );
 }
@@ -1292,9 +1292,30 @@ async function dvNoStock(id) {
     realloc.push({ f, qty: need, toBranch: candidates[0] });
   }
   if (failed) {
-    // No hay otra sucursal: el vendedor NO cancela, solo avisa a Pedidos/Admin/Supervisor.
-    const msg = (d.client || 'Cliente') + ' · falta stock en ' + brs()[b] + ' · requiere cancelar o reasignar';
+    // No hay otra sucursal: el vendedor NO cancela. Se guarda un aviso para Pedidos/Admin/Supervisor
+    // y además se manda push a sus teléfonos (si tienen notificaciones activas).
+    const br = brs()[b];
+    const items = myItems.map(([k, v]) => v + ' ' + nm(+k.slice(1))).join(', ');
+    const msg = (d.client || 'Cliente') + ' · falta stock en ' + br + ' · requiere cancelar o reasignar';
     toast('No hay otra sucursal con stock. Avisando a Pedidos, Admin y Supervisor…');
+    let alertOk = false;
+    try {
+      await db.collection('alerts').add({
+        kind: 'stock',
+        day: D,
+        dvId: id,
+        client: d.client || 'Cliente',
+        branch: b,
+        items: items,
+        by: S.me.user,
+        byName: S.me.name,
+        at: Date.now(),
+        status: 'nuevo',
+      });
+      alertOk = true;
+    } catch (e) {
+      console.warn('alerts', e);
+    }
     let res = [];
     if (typeof pushNotify === 'function') {
       res = await Promise.all([
@@ -1303,14 +1324,13 @@ async function dvNoStock(id) {
         pushNotify('Reparto sin stock', msg, 'sup'),
       ]);
     }
-    const sent = res.filter(r => r && r.ok).length;
-    const reached = res.some(r => r && r.ok && (r.recipients == null || r.recipients > 0));
+    const delivered = res.filter(r => r && r.delivered).length;
     toast(
-      sent === 0
-        ? 'No se pudo enviar el aviso. Revisa la conexión e inténtalo de nuevo.'
-        : reached
-          ? 'Aviso enviado a Pedidos, Admin y Supervisor.'
-          : 'Aviso enviado, pero nadie tiene notificaciones activas. Pide a Pedidos/Admin activarlas en Ajustes.'
+      delivered > 0
+        ? 'Aviso enviado a Pedidos, Admin y Supervisor.'
+        : alertOk
+          ? 'Aviso guardado en el panel de Pedidos, Admin y Supervisor. Activa las notificaciones en esos teléfonos para recibirlo al instante.'
+          : 'No se pudo enviar el aviso. Revisa la conexión e inténtalo de nuevo.'
     );
     return;
   }
@@ -1465,12 +1485,18 @@ async function pushNotify(title, body, role, branch) {
     try {
       out = JSON.parse(txt);
     } catch (_) {}
-    if (r.ok) {
-      console.log('[push] enviado', txt);
-      return { ok: true, recipients: out.recipients, id: out.id };
-    }
-    console.warn('[push] error', r.status, txt);
-    return { ok: false, status: r.status, error: out };
+    const rejected = Array.isArray(out.errors) && out.errors.length > 0;
+    const delivered = r.ok && !rejected && (!!out.id || +out.recipients > 0);
+    if (r.ok) console.log('[push] ' + (delivered ? 'entregado' : 'sin suscriptores'), txt);
+    else console.warn('[push] error', r.status, txt);
+    return {
+      ok: r.ok,
+      delivered,
+      recipients: out.recipients,
+      errors: out.errors,
+      id: out.id,
+      status: r.status,
+    };
   } catch (e) {
     console.warn('push', e);
     return { ok: false, error: e };

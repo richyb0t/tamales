@@ -117,6 +117,24 @@ function startSubs() {
       render();
     }, err)
   );
+  S.alerts = [];
+  if (m.role == 'admin' || m.role == 'sup' || m.role == 'enc') {
+    subs.push(
+      db
+        .collection('alerts')
+        .where('day', '==', D)
+        .onSnapshot(
+          q => {
+            S.alerts = q.docs
+              .map(d => ({ _id: d.id, ...d.data() }))
+              .filter(a => a.status == 'nuevo')
+              .sort((a, b) => (b.at || 0) - (a.at || 0));
+            render();
+          },
+          e => console.warn('alerts', e)
+        )
+    );
+  }
   if (m.role != 'enc' && m.role != 'rep') subClaims();
   if (m.role != 'vend' || rd) subDv();
   if (typeof initOnesignal === 'function') initOnesignal();

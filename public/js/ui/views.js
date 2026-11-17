@@ -76,6 +76,7 @@ const t = ['d', 'r', 'a', 's'].includes(S.et) ? S.et : 'd';
 const rqN = (S.rq || []).filter(r => ['pendiente', 'aceptado'].includes(rqSt(r))).length;
 return (
 head() +
+stockAlertCard() +
 (t == 'd' ? alertCard() : '') +
 (t == 'r'
 ? dvPanel()
@@ -117,6 +118,7 @@ const sel0 = navSel(),
   cu = t || 'res';
 return (
 head() +
+stockAlertCard() +
 (v[t] || resView)() +
 nav(
 [...sel.map(k => [k, NAVALL[k][0], NAVALL[k][1], navBadge(k)]), ['more', '⋯', 'Más']],

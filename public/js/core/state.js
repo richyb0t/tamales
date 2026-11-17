@@ -5,6 +5,7 @@ let db = null,
   S = {
     users: [],
     pre: [],
+    alerts: [],
     dvOld: [],
     dvOldHide: true,
     cfg: {},
