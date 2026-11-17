@@ -86,7 +86,7 @@ function pay() {
     .map(v => `<button class="gh" onclick="pgSet(${v})">$${v}</button>`)
     .join(
       ''
-    )}<button class="gh" onclick="pgSet(${tot})">Exacto</button></div><div id="cg" class="big" style="font-size:26px"></div><div class="form"><button id="mk">Confirmar cobro</button><button class="alt" id="mn">Cancelar</button></div></div>`;
+    )}<button class="gh" onclick="pgSet(${tot})">Exacto</button></div><div id="cg" class="big" style="font-size:26px"></div><div class="form"><button class="alt" id="mn">Cancelar</button><button id="mk">Confirmar cobro</button></div></div>`;
   m.style.display = 'flex';
   $('#mn').onclick = () => (m.style.display = 'none');
   $('#mk').onclick = () => {
@@ -114,7 +114,7 @@ function payAsk(tot, head, line, go) {
     .map(v => `<button class="gh" onclick="pqSet(${v},${tot})">$${v}</button>`)
     .join(
       ''
-    )}<button class="gh" onclick="pqSet(${tot},${tot})">Exacto</button></div><div id="cq" class="big" style="font-size:26px"></div><div class="form"><button id="mk">Confirmar cobro</button><button class="alt" id="mn">Cancelar</button></div></div>`;
+    )}<button class="gh" onclick="pqSet(${tot},${tot})">Exacto</button></div><div id="cq" class="big" style="font-size:26px"></div><div class="form"><button class="alt" id="mn">Cancelar</button><button id="mk">Confirmar cobro</button></div></div>`;
   m.style.display = 'flex';
   $('#mn').onclick = () => (m.style.display = 'none');
   $('#mk').onclick = () => {
