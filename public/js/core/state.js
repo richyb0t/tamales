@@ -25,4 +25,7 @@ let db = null,
     tt: 1,
     qty: 1,
     ru: false,
+    repSel: [],
+    repRoute: null,
+    repRouteOrder: null,
   };

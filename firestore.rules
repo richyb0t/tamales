@@ -264,7 +264,7 @@ function admOrSup() { return adm() || sup(); }
         && request.resource.data.status == 'pendiente');
       allow update: if adm() || sup()
         || (rep() && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['status', 'drv', 'drvName', 'tsTake', 'tsDone', 'cobrado', 'reason'])
+              .hasOnly(['status', 'drv', 'drvName', 'tsTake', 'tsDone', 'cobrado', 'reason', 'repNote', 'pickedUp'])
             && (
               (resource.data.status == 'pendiente' && request.resource.data.status == 'en_ruta'
                 && request.resource.data.drv == prof().user)
@@ -278,11 +278,15 @@ function admOrSup() { return adm() || sup(); }
             && request.resource.data.out == true
             && request.resource.data.outBy == prof().user
             && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['out', 'outBy', 'outName', 'outAt']))
+                 .hasOnly(['out', 'outBy', 'outName', 'outAt', 'outs']))
         || ((vend(resource.data.branch) || (vendHere() && prof().branch in resource.data.get('branches', [])))
             && resource.data.status in ['pendiente', 'en_ruta']
             && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['outs']));
+                 .hasOnly(['outs']))
+        || ((vend(resource.data.branch) || (vendHere() && prof().branch in resource.data.get('branches', [])))
+            && resource.data.status in ['pendiente', 'en_ruta']
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['prepared']));
       allow delete: if (adm() || sup() || enc()) && resource.data.status == 'pendiente';
     }
   }
