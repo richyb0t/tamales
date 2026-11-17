@@ -61,19 +61,20 @@ function head() {
 function menu(o) {
   const d = $('#drawer');
   if (!d) return;
-  if (!o) {
-    const f = d.contains(document.activeElement);
-    d.classList.remove('open');
-    document.body.classList.remove('nolock');
-    if (f) {
-      const h = $('.hb');
-      if (h) h.focus();
+  try {
+    if (!o) {
+      const f = d.contains(document.activeElement);
+      d.classList.remove('open');
+      document.body.classList.remove('nolock');
+      if (f) {
+        const h = $('.hb');
+        if (h) h.focus();
+      }
+      return;
     }
-    return;
-  }
-  const m = S.me,
-    A = m.role == 'admin' || m.role == 'sup',
-    V = m.role == 'vend';
+    const m = S.me,
+      A = m.role == 'admin' || m.role == 'sup',
+      V = m.role == 'vend';
   /* Grupos del menú: el administrador ve «Operación» (el día a día) y «Análisis y gestión» (lo que se usa menos) */
     const G = A
     ? [
@@ -141,6 +142,9 @@ function menu(o) {
     const f = d.querySelector('.mi');
     if (f) f.focus({ preventScroll: true });
   });
+  } catch (e) {
+    console.error('menu error', e);
+  }
 }
 
 function go(k) {
