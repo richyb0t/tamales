@@ -1484,39 +1484,6 @@ function repRouteMove(i, dir) {
   S.repRoute[j] = tmp;
   renderNow(true);
 }
-  const me = S.me.user,
-    t = ['e', 'c', 't'].includes(S.rt) ? S.rt : 'e',
-    L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
-    free = L.filter(d => d.status == 'pendiente'),
-    mine = L.filter(d => d.drv == me && d.status == 'en_ruta'),
-    ok = L.filter(d => d.drv == me && d.status == 'entregado'),
-    bad = L.filter(d => d.drv == me && d.status == 'fallido'),
-    done = [...ok, ...bad].sort((a, b) => (b.tsDone || b.ts) - (a.tsDone || a.ts)),
-    cash = ok.reduce((a, d) => a + nz(d.cobrado), 0),
-    due = mine.reduce((a, d) => a + dvDue(d), 0);
-  const kp =
-    t == 't'
-      ? `<div class="kp kv"><div><small>Entregados</small><b>${ok.length}</b></div><div><small>No entregados</small><b>${bad.length}</b></div><div><small>Efectivo cobrado</small><b>${money(cash)}</b></div></div>`
-      : t == 'c'
-        ? `<div class="kp kv"><div><small>En camino</small><b>${mine.length}</b></div><div><small>Por cobrar</small><b>${money(due)}</b></div><div><small>Efectivo a rendir</small><b>${money(cash)}</b></div></div>`
-        : `<div class="kp kv"><div><small>Disponibles</small><b>${free.length}</b></div><div><small>En camino</small><b>${mine.length}</b></div><div><small>Entregados</small><b>${ok.length}</b></div></div>`;
-  const body =
-    t == 't'
-      ? '<h3 style="margin:12px 4px 6px">Terminados hoy</h3>' +
-        (done.length
-          ? done.map(d => dvCard(d, true)).join('')
-          : '<div class="card"><small>No hay repartos terminados hoy.</small></div>')
-      : t == 'c'
-        ? '<h3 style="margin:12px 4px 6px">Mis repartos en camino</h3>' +
-          (mine.length
-            ? mine.map(d => dvCard(d, true)).join('')
-            : '<div class="card"><small>No tienes repartos en camino.</small></div>')
-        : '<h3 style="margin:12px 4px 6px">Disponibles para tomar</h3>' +
-           `<div class="form" style="margin:0 0 10px"><button class="alt" style="flex:1" onclick="S.repMulti=!S.repMulti;S.repSel=[];S.repRoute=null;renderNow(true)">${S.repMulti ? '✕ Cancelar selección' : '☑ Tomar varios'}</button>${S.repMulti && (S.repSel||[]).length >= 2 ? `<button class="go" style="flex:1" onclick="repRouteBuild()">Ver ruta combinada (${(S.repSel||[]).length})</button>` : ''}</div>` +
-           (S.repRoute ? repRouteView() : '') +
-           (free.map(d => dvCard(d, true)).join('') ||
-             '<div class="card"><small>No hay repartos por tomar. Se actualiza solo.</small></div>');
-
 function repView() {
   const me = S.me.user,
     t = ['e', 'c', 't'].includes(S.rt) ? S.rt : 'e',
