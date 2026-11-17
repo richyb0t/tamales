@@ -16,6 +16,15 @@ d ? d + (d > 1 ? ' bebidas' : ' bebida') : '',
 .filter(Boolean)
 .join(' + ');
 };
+const dtNet = () => {
+  const vTam = mine.filter(s => s.type == 'vendido' && s.f < 100).reduce((a, s) => a + nz(s.qty), 0);
+  const vBev = mine.filter(s => s.type == 'vendido' && s.f >= 100).reduce((a, s) => a + nz(s.qty), 0);
+  const dTam = mine.filter(s => s.type == 'devolucion' && s.f < 100).reduce((a, s) => a + nz(s.qty), 0);
+  const dBev = mine.filter(s => s.type == 'devolucion' && s.f >= 100).reduce((a, s) => a + nz(s.qty), 0);
+  const n = Math.max(0, vTam - dTam);
+  const d = Math.max(0, vBev - dBev);
+  return [n ? n + (n > 1 ? ' tamales' : ' tamal') : '', d ? d + (d > 1 ? ' bebidas' : ' bebida') : ''].filter(Boolean).join(' + ');
+};
 const pq = S.pre.filter(p => p.branch == b && p.date <= D).reduce((a, p) => a + preQty(p), 0),
 dta = () => {
 const d = mine
@@ -29,7 +38,7 @@ d ? d + (d > 1 ? ' bebidas' : ' bebida') : '',
 .filter(Boolean)
 .join(' + ');
 };
-const kp = `<div class="kp kv"><div><small>Vendidos</small><b>${sm('vendido')}</b><small>${dt('vendido')}</small></div><div><small>Apartados</small><b>${sm('apartado') + pq}</b><small>${dta()}</small></div><div><small>Total neto</small><b>${money(sm('vendido', 1) - sm('devolucion', 1))}</b></div></div>`;
+const kp = `<div class="kp kv"><div><small>Vendidos</small><b>${Math.max(0, sm('vendido') - sm('devolucion'))}</b><small>${dtNet()}</small></div><div><small>Apartados</small><b>${sm('apartado') + pq}</b><small>${dta()}</small></div><div><small>Total neto</small><b>${money(sm('vendido', 1) - sm('devolucion', 1))}</b></div></div>`;
 const any = F.some((_, f) => load(b, f) + tx(b, f, 'to') > 0) || chLoad(b) + txc(b, 'to') > 0;
 let body;
 if (vt == 'v')
@@ -116,3 +125,4 @@ sel.includes(cu) ? cu : 'more',
 )
 );
 }
+
