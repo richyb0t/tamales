@@ -349,14 +349,14 @@ body.kb .cart {
     visibility 0s linear 0.26s;
 }
 #drawer.open {
-  pointer-events: auto;
+  pointer-events: auto !important;
 }
 #drawer.open .bk {
-  opacity: 1;
+  opacity: 1 !important;
 }
 #drawer.open .pn {
-  visibility: visible;
-  transform: none;
+  visibility: visible !important;
+  transform: none !important;
   transition:
     transform 0.36s var(--sheet),
     visibility 0s;
