@@ -879,7 +879,7 @@ ${rt ? `<div class="form" style="margin:4px 0"><input placeholder="Nota para las
     const best = near[0];
     return '<small style="display:block;margin-top:2px">Sucursal mas cercana: <b>' + esc(brs()[best.i]) + '</b> (' + best.dd.toFixed(1) + ' km)' + (near.length > 1 ? ' · ' + near.slice(1).map(x => esc(brs()[x.i]) + ' ' + x.dd.toFixed(1) + 'km').join(' · ') : '') + '</small>';
   })()}
- ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada (principal)${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}
+ ${ph ? `<div><a href="tel:${esc(ph.replace(/[^0-9+]/g, ''))}" style="color:var(--ac);font-weight:800;text-decoration:none">📞 ${esc(ph)}</a></div>` : ''}${d.note ? `<small>📝 ${esc(d.note)}</small>` : ''}${d.status == 'fallido' ? `<small class="bad" style="display:block">${esc(d.reason || '')}</small>` : ''}${d.noStock ? Object.keys(d.noStock).map(br => `<small class="bad" style="display:block">⚠️ Sin stock en ${esc(brs()[+br] || 'sucursal ' + br)}${d.noStock[br].at ? ' · ' + hm(d.noStock[br].at) : ''}</small>`).join('') : ''}${d.out ? `<small class="ok" style="display:block">✅ Salida confirmada (principal)${d.outAt ? ' · ' + hm(d.outAt) : ''}${d.outName ? ' por ' + esc(d.outName) : ''}</small>` : ''}
 ${d.outs ? Object.keys(d.outs).map(br => `<small class="ok" style="display:block">✅ Salida confirmada en ${esc(brs()[+br])}${d.outs[br].at ? ' · ' + hm(d.outs[br].at) : ''}${d.outs[br].name ? ' por ' + esc(d.outs[br].name) : ''}</small>`).join('') : ''}
 ${d.prepared ? Object.keys(d.prepared).map(br => `<small class="ok" style="display:block">📦 Apartado confirmado en ${esc(brs()[+br])}${d.prepared[br].at ? ' · ' + hm(d.prepared[br].at) : ''}${d.prepared[br].name ? ' por ' + esc(d.prepared[br].name) : ''}</small>`).join('') : ''}${rt ? (S.dvRoute == d._id ? dvRouteMap(d) : `<div class="form" style="margin-top:8px"><button class="dvnav" style="flex:1" onclick="dvRoute('${d._id}')">🧭 Ver recorrido</button></div>`) : ''}${bt ? `<div class="apa"${rt ? ' style="margin-top:20px"' : ''}>${bt}</div>` : ''}</div>`;
 }
@@ -953,7 +953,7 @@ function dvPanel() {
     old = (S.dvOld || []).slice().sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : a.ts - b.ts)),
     n = s => L.filter(d => d.status == s).length,
     cash = L.filter(d => d.status == 'entregado').reduce((a, d) => a + nz(d.cobrado), 0);
-  return `<div class="kp" style="margin-bottom:8px"><div><small>Por tomar</small><b>${n('pendiente')}</b></div><div><small>En camino</small><b>${n('en_ruta')}</b></div><div><small>Entregados</small><b>${n('entregado')}</b></div></div>
+  return `${typeof stockAlertCard == 'function' ? stockAlertCard() : ''}<div class="kp" style="margin-bottom:8px"><div><small>Por tomar</small><b>${n('pendiente')}</b></div><div><small>En camino</small><b>${n('en_ruta')}</b></div><div><small>Entregados</small><b>${n('entregado')}</b></div></div>
  ${S.me.role == 'admin' ? `<div class="card"><div class="row" style="border:0;padding:0"><div>Efectivo cobrado por repartidores<br><small>Lo que deben entregar hoy</small></div><b>${money(cash)}</b></div></div>` : ''}
  ${S.me.role == 'admin' && n('fallido') ? `<div class="card" style="border:2px solid var(--bad)"><div class="row" style="border:0;padding:0"><div>⚠️ Merma (no entregados)<br><small>Repartos fallidos de hoy</small></div><b>${n('fallido')}</b></div></div>` : ''}
   ${old.length ? (S.dvOldHide ? `<div class="card alb" style="border:2px solid var(--bad)"><span>⚠️ ${old.length} reparto${old.length > 1 ? 's' : ''} de ayer sin cumplir</span><button class="gh" onclick="S.dvOldHide=false;render(true)">Mostrar</button></div>` : `<div class="card" style="border:2px solid var(--bad);margin-bottom:10px"><div class="alr"><h3 style="margin:0">⚠️ Repartos de ayer sin cumplir</h3><button class="gh" onclick="S.dvOldHide=true;render(true)">Ocultar</button></div><small>${old.length} reparto${old.length > 1 ? 's' : ''} que no se entregó${old.length > 1 ? 'n' : ''} ayer</small>${old.map(d => {
@@ -1255,10 +1255,7 @@ async function dvPickup(id, branch) {
 /* El vendedor avisa que no tiene stock: se reasigna a otra sucursal si la hay.
    Si nadie más tiene, solo se avisa a Pedidos/Admin/Supervisor: el vendedor no cancela. */
 function dvNoStockAsk(id) {
-  ask(
-    '¿Avisar que no tienes stock? Si otra sucursal lo tiene, el pedido se mueve allá y no se avisa a nadie más. Si nadie lo tiene, se crea un aviso para Pedidos, Admin y Supervisor.',
-    () => dvNoStock(id)
-  );
+  ask('¿Avisar que no tienes stock?', () => dvNoStock(id));
 }
 
 async function dvNoStock(id) {
@@ -1292,12 +1289,11 @@ async function dvNoStock(id) {
     realloc.push({ f, qty: need, toBranch: candidates[0] });
   }
   if (failed) {
-    // No hay otra sucursal: el vendedor NO cancela. Se guarda un aviso para Pedidos/Admin/Supervisor
-    // y además se manda push a sus teléfonos (si tienen notificaciones activas).
+    // No hay otra sucursal: el vendedor NO cancela. Se avisa a Pedidos/Admin/Supervisor,
+    // se marca el reparto sin stock en su sucursal y se quita de la lista del vendedor.
     const br = brs()[b];
     const items = myItems.map(([k, v]) => v + ' ' + nm(+k.slice(1))).join(', ');
     const msg = (d.client || 'Cliente') + ' · falta stock en ' + br + ' · requiere cancelar o reasignar';
-    toast('No hay otra sucursal con stock. Avisando a Pedidos, Admin y Supervisor…');
     let alertOk = false;
     try {
       await db.collection('alerts').add({
@@ -1325,13 +1321,17 @@ async function dvNoStock(id) {
       ]);
     }
     const delivered = res.filter(r => r && r.delivered).length;
-    toast(
-      delivered > 0
-        ? 'Aviso enviado a Pedidos, Admin y Supervisor.'
-        : alertOk
-          ? 'Aviso guardado en el panel de Pedidos, Admin y Supervisor. Activa las notificaciones en esos teléfonos para recibirlo al instante.'
-          : 'No se pudo enviar el aviso. Revisa la conexión e inténtalo de nuevo.'
-    );
+    if (alertOk || delivered) {
+      try {
+        const noStock = { ...(d.noStock || {}), [b]: { by: S.me.user, name: S.me.name, at: Date.now() } };
+        await db.doc('deliveries/' + id).update({ noStock });
+        d.noStock = noStock;
+        renderNow(true);
+      } catch (e) {
+        console.warn('noStock', e);
+      }
+    }
+    toast(alertOk || delivered ? 'Aviso enviado' : 'No se pudo enviar el aviso. Inténtalo de nuevo.');
     return;
   }
   // Reasignar
@@ -1534,17 +1534,24 @@ function notifyNewDv() {
   } catch (_) {}
 }
 
+/* Marca que una sucursal avisó que no tiene stock para ese reparto. */
+const dvNoStockAt = (d, b) => !!(d && d.noStock && b != null && d.noStock[b]);
+const dvNoStockAny = d => !!(d && d.noStock && Object.keys(d.noStock).length);
+
 /* Repartos de hoy dentro de Apartados (vendedor, solo consulta) */
 function dvToday() {
-  const all = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
+  const b = S.me && S.me.branch,
+    all = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
     active = all.filter(d => {
+      if (dvNoStockAt(d, b)) return false;
       const outs = d.outs || {};
-      const myOut = outs[S.me && S.me.branch] || (d.branch == (S.me && S.me.branch) && d.out);
+      const myOut = outs[b] || (d.branch == b && d.out);
       return !myOut;
     }),
     done = all.filter(d => {
+      if (dvNoStockAt(d, b)) return false;
       const outs = d.outs || {};
-      const myOut = outs[S.me && S.me.branch] || (d.branch == (S.me && S.me.branch) && d.out);
+      const myOut = outs[b] || (d.branch == b && d.out);
       return !!myOut;
     }),
     pend = active.filter(d => d.status == 'pendiente' || d.status == 'en_ruta').length;
@@ -1691,7 +1698,7 @@ function repView() {
   const me = S.me.user,
     t = ['e', 'c', 't'].includes(S.rt) ? S.rt : 'e',
     L = (S.dv || []).slice().sort((a, b) => a.ts - b.ts),
-    free = L.filter(d => d.status == 'pendiente'),
+    free = L.filter(d => d.status == 'pendiente' && !dvNoStockAny(d)),
     mine = L.filter(d => d.drv == me && d.status == 'en_ruta'),
     ok = L.filter(d => d.drv == me && d.status == 'entregado'),
     bad = L.filter(d => d.drv == me && d.status == 'fallido'),
@@ -1902,6 +1909,7 @@ async function clearPushTag(force) {
 const dvOpenN = () => (S.dv || []).filter(d => {
   if (d.status != 'pendiente' && d.status != 'en_ruta') return false;
   if (S.me && S.me.role == 'vend' && S.me.branch != null) {
+    if (dvNoStockAt(d, S.me.branch)) return false;
     const outs = d.outs || {};
     if (outs[S.me.branch]) return false;
     if (d.branch == S.me.branch && d.out) return false;

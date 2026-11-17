@@ -39,6 +39,15 @@ function admOrSup() { return adm() || sup(); }
         && request.time.toMillis() < get(/databases/$(database)/documents/claims/$(string(prof().branch))).data.ts + 86400000
         && (!exists(/databases/$(database)/documents/config/main) || !(prof().branch in get(/databases/$(database)/documents/config/main).data.get('closed', [])));
     }
+    // El vendedor participa en el reparto: es la sucursal principal o una parada secundaria.
+    function vendDv() {
+      return vend(resource.data.branch)
+        || (vendHere() && prof().branch in resource.data.get('branches', []));
+    }
+    // Campos que cambian en esta actualización.
+    function dvKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
     // IDs seguros (se usan dentro de atributos onclick) y venta con campos válidos.
     // Se permite el punto porque los usuarios pueden tenerlo (ej. ana.lopez) y el corte usa día_usuario.
     function okId(id) { return id.matches('^[A-Za-z0-9_.-]{1,128}$'); }
@@ -278,8 +287,7 @@ function admOrSup() { return adm() || sup(); }
     }
     // Repartos a domicilio: los crea el administrador o Pedidos; el repartidor los toma y cierra
     match /deliveries/{id} {
-      allow read: if adm() || sup() || enc() || rep() || vend(resource.data.branch)
-        || (vendHere() && prof().branch in resource.data.get('branches', []));
+      allow read: if adm() || sup() || enc() || rep() || vendDv();
       allow create: if adm() || sup() || (enc() && request.resource.data.by == prof().user
         && request.resource.data.status == 'pendiente');
       allow update: if adm() || sup()
@@ -299,18 +307,22 @@ function admOrSup() { return adm() || sup(); }
             && request.resource.data.outBy == prof().user
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['out', 'outBy', 'outName', 'outAt', 'outs']))
-        || ((vend(resource.data.branch) || (vendHere() && prof().branch in resource.data.get('branches', [])))
-            && resource.data.status in ['pendiente', 'en_ruta']
-            && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['outs']))
-        || ((vend(resource.data.branch) || (vendHere() && prof().branch in resource.data.get('branches', [])))
-            && resource.data.status in ['pendiente', 'en_ruta']
-            && request.resource.data.diff(resource.data).affectedKeys()
-                  .hasOnly(['prepared']))
-        || ((vend(resource.data.branch) || (vendHere() && prof().branch in resource.data.get('branches', [])))
-            && resource.data.status == 'pendiente'
-            && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['pickups', 'branches', 'branch', 'prepared']));
+        // Salida, apartado confirmado, sin stock y reasignación del vendedor.
+        // Se agrupan en una sola rama para no repetir las consultas de sucursal/claims.
+        || (vendDv() && (
+             (resource.data.status in ['pendiente', 'en_ruta'] && (
+                dvKeys().hasOnly(['outs'])
+                || dvKeys().hasOnly(['prepared'])
+                // Sin stock: el vendedor solo puede escribir su propia entrada del mapa.
+                || (dvKeys().hasOnly(['noStock'])
+                    && request.resource.data.noStock is map
+                    && request.resource.data.noStock.diff(resource.data.get('noStock', {}))
+                         .affectedKeys().hasOnly([string(prof().branch)])
+                    && request.resource.data.noStock[string(prof().branch)].by == prof().user)
+             ))
+             || (resource.data.status == 'pendiente'
+                 && dvKeys().hasOnly(['pickups', 'branches', 'branch', 'prepared']))
+           ));
       allow delete: if (adm() || sup() || enc()) && resource.data.status == 'pendiente';
     }
   }
