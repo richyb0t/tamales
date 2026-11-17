@@ -61,6 +61,7 @@ function head() {
 function menu(o) {
   const d = $('#drawer');
   if (!d) return;
+  if (!S.me) return;
   try {
     if (!o) {
       const f = d.contains(document.activeElement);
