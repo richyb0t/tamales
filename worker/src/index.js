@@ -110,6 +110,11 @@ export default {
     const title = String(data.title || 'Nuevo reparto').slice(0, 80);
     const body = String(data.body || '').slice(0, 200);
     const appUrl = env.APP_URL || 'https://tamalescastro-ca1bf.web.app';
+    const targetRole = String(data.role || 'rep').slice(0, 20);
+    const targetBranch = data.branch != null ? String(data.branch) : null;
+
+    const filters = [{ field: 'tag', key: 'role', value: targetRole, relation: '=' }];
+    if (targetBranch) filters.push({ field: 'tag', key: 'branch', value: targetBranch, relation: '=' });
 
     const payload = {
       app_id: env.ONESIGNAL_APP_ID,
@@ -120,9 +125,9 @@ export default {
       chrome_web_icon: appUrl + '/icons/icon-192.png',
       chrome_web_badge: appUrl + '/icons/scooter-192.png',
       ttl: 3600,
-      /* Solo a repartidores (etiqueta puesta por la app al iniciar sesión). */
-      filters: [{ field: 'tag', key: 'role', value: 'rep', relation: '=' }],
+      filters,
     };
+
 
     const r = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',

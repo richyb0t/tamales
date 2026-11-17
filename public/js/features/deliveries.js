@@ -617,6 +617,13 @@ async function saveDv() {
           ' · ' +
           n.addr.trim()
       );
+    // Notifica a los vendedores de las sucursales involucradas
+    if (typeof pushNotify === 'function') {
+      plan.stops.forEach(s => {
+        const items = Object.entries(s.items || {}).filter(([, v]) => +v > 0).map(([k, v]) => v + ' ' + nm(+k.slice(1))).join(', ');
+        pushNotify('Apartar para reparto', (n.client.trim() || 'Cliente') + ' · ' + items, 'vend', s.branch);
+      });
+    }
     renderNow(true);
   } catch (e) {
     delete lock.s.dv;
@@ -713,6 +720,9 @@ async function dvAddFromPre(preId) {
     await db.doc('pre/' + preId).update({ dvId: dvId });
     toast('Reparto agregado');
     if (typeof pushNotify === 'function') pushNotify('Nuevo pedido grande', p.client + ' · ' + (p.addr || ''));
+    if (typeof pushNotify === 'function' && p.branch != null) {
+      pushNotify('Apartar para reparto grande', p.client + ' · ' + (p.addr || ''), 'vend', p.branch);
+    }
   } catch (e) {
     err(e);
   }
@@ -978,7 +988,7 @@ function dvVendCard(d) {
  ${!myPrepared && myItems.length ? '<small style="display:block;margin-top:4px;color:var(--bad)">⚠️ El stock se reserva al confirmar el apartado</small>' : ''}
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
- ${myPrepared ? `<div class="ok" style="margin-top:6px"><b>✅ Apartado confirmado${myPrepared.at ? ' · ' + hm(myPrepared.at) : ''}${myPrepared.name ? ' por ' + esc(myPrepared.name) : ''}</b></div>` : (myItems.length && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvReady('${d._id}')">✅ Confirmar apartado</button></div>` : '')}
+ ${myPrepared ? `<div class="ok" style="margin-top:6px"><b>✅ Apartado confirmado${myPrepared.at ? ' · ' + hm(myPrepared.at) : ''}${myPrepared.name ? ' por ' + esc(myPrepared.name) : ''}</b></div>` : (myItems.length && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvReady('${d._id}')">✅ Confirmar apartado</button><button class="gh" style="color:var(--bad);flex:1" onclick="dvNoStock('${d._id}')">❌ Sin stock</button></div>` : '')}
  ${d.repNote ? `<small style="display:block;margin-top:4px;color:var(--ac)">💬 Repartidor: ${esc(d.repNote)}</small>` : ''}
  ${myOut ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${myOut.at ? ' · ' + hm(myOut.at) : ''}${myOut.name ? ' por ' + esc(myOut.name) : ''}</b></div>` : (myPrepared && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '')}</div>`;
 }
@@ -1105,6 +1115,78 @@ async function dvPickup(id, branch) {
   }
 }
 
+/* El vendedor indica que no tiene stock; se reasigna o se cancela el reparto */
+async function dvNoStock(id) {
+  const d = (S.dv || []).find(x => x._id == id);
+  if (!d) return;
+  const b = S.me && S.me.branch;
+  if (b == null) return;
+  const mine = (dvPickups(d) || []).find(s => s.branch == b);
+  const myItems = mine ? Object.entries(mine.items || {}).filter(([, v]) => +v > 0) : [];
+  if (!myItems.length) return toast('No te toca surtir este reparto');
+  // Intentar reasignar cada item a otra sucursal
+  const custLat = d.lat, custLng = d.lng;
+  const dist = i => {
+    const l = (S.cfg.branchLocs || [])[i];
+    return custLat && custLng && l ? distKm({ lat: custLat, lng: custLng }, l) : null;
+  };
+  const realloc = [];
+  let failed = false;
+  for (const [k, v] of myItems) {
+    const f = +k.slice(1);
+    const need = +v;
+    const candidates = BI().filter(i => i !== b && left(i, f) >= need);
+    if (!candidates.length) { failed = true; break; }
+    candidates.sort((a, c) => {
+      const da = dist(a), dc = dist(c);
+      if (da == null && dc == null) return a - c;
+      if (da == null) return 1;
+      if (dc == null) return -1;
+      return da - dc;
+    });
+    realloc.push({ f, qty: need, toBranch: candidates[0] });
+  }
+  if (failed) {
+    // No hay otra sucursal: cancelar el reparto completo
+    if (!confirm('No hay otra sucursal con stock. ¿Cancelar el reparto completo?')) return;
+    try {
+      await db.doc('deliveries/' + id).update({ status: 'cancelado', reason: 'Sin stock en ' + brs()[b], tsDone: Date.now() });
+      toast('Reparto cancelado');
+      if (typeof pushNotify === 'function') pushNotify('Reparto cancelado', (d.client || 'Cliente') + ' · sin stock en ' + brs()[b]);
+    } catch (e) { err(e); }
+    return;
+  }
+  // Reasignar
+  const pickups = dvPickups(d).map(s => ({ branch: s.branch, items: { ...s.items } }));
+  for (const r of realloc) {
+    const fromStop = pickups.find(s => s.branch == b);
+    if (fromStop) {
+      const key = 'f' + r.f;
+      fromStop.items[key] = (fromStop.items[key] || 0) - r.qty;
+      if (fromStop.items[key] <= 0) delete fromStop.items[key];
+    }
+    let toStop = pickups.find(s => s.branch == r.toBranch);
+    if (!toStop) { toStop = { branch: r.toBranch, items: {} }; pickups.push(toStop); }
+    const key = 'f' + r.f;
+    toStop.items[key] = (toStop.items[key] || 0) + r.qty;
+  }
+  const newPickups = pickups.filter(s => Object.keys(s.items).length > 0);
+  try {
+    await db.doc('deliveries/' + id).update({
+      pickups: newPickups,
+      branches: newPickups.map(s => s.branch),
+      branch: newPickups.length ? newPickups[0].branch : d.branch,
+    });
+    toast('Reasignado a ' + realloc.map(r => brs()[r.toBranch]).join(', '));
+    if (typeof pushNotify === 'function') pushNotify('Reparto reasignado', (d.client || 'Cliente') + ' · sin stock en ' + brs()[b]);
+    if (typeof pushNotify === 'function') {
+      realloc.forEach(r => {
+        pushNotify('Apartar para reparto', (d.client || 'Cliente') + ' · reasignado a tu sucursal', 'vend', r.toBranch);
+      });
+    }
+  } catch (e) { err(e); }
+}
+
 /* El repartidor deja una nota para las sucursales */
 async function dvRepNote(id, val) {
   try {
@@ -1144,6 +1226,9 @@ function enableNotif() {
       }
       if (S.me && S.me.id) {
         OneSignal.User.addTag('role', S.me.role);
+        if (S.me.role == 'vend' && S.me.branch != null) {
+          OneSignal.User.addTag('branch', String(S.me.branch));
+        }
         try {
           localStorage.setItem('tm_push_role', S.me.role);
           localStorage.setItem('tm_push_appid', appId);
@@ -1198,14 +1283,14 @@ async function notifShow(title, body, tag) {
 
 /* Envía el push real a los repartidores a través del Worker de Cloudflare.
    No bloquea el guardado: si falla, solo se avisa en consola. */
-async function pushNotify(title, body) {
+async function pushNotify(title, body, role, branch) {
   if (!PUSH_URL || !S.fu || typeof S.fu.getIdToken !== 'function') return;
   try {
     const token = await S.fu.getIdToken();
     const r = await fetch(PUSH_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ title: title, body: body }),
+      body: JSON.stringify({ title: title, body: body, role: role || 'rep', branch: branch != null ? branch : undefined }),
     });
     const txt = await r.text();
     if (r.ok) console.log('[push] enviado', txt);
@@ -1579,6 +1664,9 @@ async function initOnesignal() {
       console.log('[OneSignal] init OK, permission:', Notification.permission);
       if (S.me && S.me.id) {
         OneSignal.User.addTag('role', S.me.role);
+        if (S.me.role == 'vend' && S.me.branch != null) {
+          OneSignal.User.addTag('branch', String(S.me.branch));
+        }
         try {
           localStorage.setItem('tm_push_role', S.me.role);
           localStorage.setItem('tm_push_appid', appId);
