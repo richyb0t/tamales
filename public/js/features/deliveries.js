@@ -851,6 +851,13 @@ function dvCard(d, rep) {
   return `<div class="card apc${d.status == 'entregado' ? ' ok' : d.status == 'fallido' ? ' fail' : ''}"><div class="aph"><div><b class="n">${esc(d.client)}</b>${d.large ? ' <span class="chip ok">📦 Grande</span>' : ''}<div class="apm">${d.large ? '📦 Pedido grande' : multi ? '🚏 ' + picks.length + ' sucursales' : esc(brs()[d.branch] || '')} · ${d.time ? '🕒 ' + ftime(d.time) + ' · ' : ''}${hm(d.ts)} · lo capturó ${esc(d.byName || d.by)}${d.drvName ? ' · 🛵 ' + esc(d.drvName) : ''}</div></div><div style="text-align:right;flex:none"><b>${money(dvDue(d))}</b><br><span class="chip ${t[1]}">${t[0]}</span></div></div>
  <div class="apt">${esc(dvTxt(d))}${d.fee ? '<br><small>Envío ' + money(d.fee) + '</small>' : ''}${multi ? '<br><small style="display:block;margin-top:4px"><b>Recoger en:</b></small>' + picks.map((s, i) => `<small style="display:block">${i + 1}. <b>${esc(brs()[s.branch])}</b>: ${esc(dvStopTxt(s))}</small>`).join('') : ''}</div>
  ${d.status == 'pendiente' || d.status == 'en_ruta' ? `<div style="margin:6px 0;padding:6px 8px;border-radius:8px;background:${ready ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.12)'};border:1px solid ${ready ? 'rgba(34,197,94,.4)' : 'rgba(245,158,11,.4)'}"><b style="color:${ready ? '#22c55e' : '#f59e0b'}">${ready ? '✅ Listo para recoger' : '⏳ Esperando apartado (' + preparedCount + '/' + picks.length + ')'}</b></div>` : ''}
+${rt && picks.length ? `<div style="margin:6px 0;padding:8px;border-radius:8px;border:1px solid var(--bd)"><small style="display:block;margin-bottom:4px;font-weight:700">📋 Recogido por sucursal:</small>${picks.map(s => {
+  const pu = d.pickedUp && d.pickedUp[s.branch];
+  return `<div style="display:flex;align-items:center;gap:8px;margin:2px 0"><input type="checkbox" ${pu ? 'checked disabled' : ''} onchange="dvPickup('${d._id}', ${s.branch})" style="width:16px;height:16px"><span style="font-size:12px">${esc(brs()[s.branch])}${pu ? ' · ' + hm(pu.at) : ''}</span></div>`;
+}).join('')}</div>` : ''}
+${d.note ? `<small style="display:block;margin:4px 0;opacity:.7">📝 ${esc(d.note)}</small>` : ''}
+${d.repNote ? `<small style="display:block;margin:4px 0;color:var(--ac)">💬 ${esc(d.repNote)}</small>` : ''}
+${rt ? `<div class="form" style="margin:4px 0"><input placeholder="Nota para las sucursales" value="${esc(d.repNote || '')}" oninput="dvRepNote('${d._id}', this.value)" style="flex:1"></div>` : ''}
  <div>📍 <a href="${mapUrl}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;text-decoration:none">${esc(d.addr)}</a></div>${q ? `<div style="margin:4px 0"><iframe src="https://www.google.com/maps?q=${encodeURIComponent(q)}&z=16&output=embed" width="100%" height="180" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div style="margin-top:4px"><a href="https://www.google.com/maps?q=${encodeURIComponent(q)}" target="_blank" rel="noopener" style="display:inline-block;padding:4px 8px;border:1px solid var(--ac);border-radius:6px;color:var(--ac);font-size:12px;text-decoration:none">🗺️ Abrir en Google Maps</a></div></div>` : ''}${(() => {
     if (d.lat == null || d.lng == null) return '';
     const near = brs().map((nm, i) => {
@@ -972,6 +979,7 @@ function dvVendCard(d) {
  ${others.length ? `<small style="display:block;margin-top:4px;opacity:.75">El resto se recoge en ${others.map(s => esc(brs()[s.branch])).join(', ')}.</small>` : ''}
  <div style="display:flex;justify-content:space-between;margin-top:6px"><span><b>Total del pedido</b></span><b>${money(dvDue(d))}</b></div>${d.fee ? `<small style="display:block;opacity:.7">Incluye envío ${money(d.fee)}</small>` : ''}
  ${myPrepared ? `<div class="ok" style="margin-top:6px"><b>✅ Apartado confirmado${myPrepared.at ? ' · ' + hm(myPrepared.at) : ''}${myPrepared.name ? ' por ' + esc(myPrepared.name) : ''}</b></div>` : (myItems.length && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvReady('${d._id}')">✅ Confirmar apartado</button></div>` : '')}
+ ${d.repNote ? `<small style="display:block;margin-top:4px;color:var(--ac)">💬 Repartidor: ${esc(d.repNote)}</small>` : ''}
  ${myOut ? `<div class="ok" style="margin-top:6px"><b>✅ Salida confirmada${myOut.at ? ' · ' + hm(myOut.at) : ''}${myOut.name ? ' por ' + esc(myOut.name) : ''}</b></div>` : (myPrepared && (d.status == 'pendiente' || d.status == 'en_ruta') ? `<div class="form" style="margin-top:6px"><button class="alt" style="flex:1" onclick="dvOut('${d._id}')">✅ Marcar salida</button></div>` : '')}</div>`;
 }
 
@@ -1085,6 +1093,26 @@ async function dvOut(id) {
   }
 }
 
+/* El repartidor confirma que recogió el pedido en una sucursal */
+async function dvPickup(id, branch) {
+  try {
+    const patch = {};
+    patch['pickedUp.' + branch] = { by: S.me.user, name: S.me.name, at: Date.now() };
+    await db.doc('deliveries/' + id).update(patch);
+    toast('Recogido en ' + brs()[branch]);
+  } catch (e) {
+    err(e);
+  }
+}
+
+/* El repartidor deja una nota para las sucursales */
+async function dvRepNote(id, val) {
+  try {
+    await db.doc('deliveries/' + id).update({ repNote: (val || '').trim() });
+  } catch (e) {
+    // silencioso: se reintenta al escribir
+  }
+}
 const seenDv = new Set();
 try {
   JSON.parse(localStorage.getItem('tm_seen_dv') || '[]').forEach(x => seenDv.add(x));

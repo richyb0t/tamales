@@ -13,7 +13,7 @@ try {
   console.warn('OneSignal SW no disponible', e);
 }
 
-const CACHE_VERSION = 'tamales-v232';
+const CACHE_VERSION = 'tamales-v233';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const PRECACHE = [
