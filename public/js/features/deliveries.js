@@ -1312,6 +1312,20 @@ async function dvNoStock(id) {
     } catch (e) {
       console.warn('alerts', e);
     }
+    const markNoStock = async () => {
+      try {
+        const noStock = { ...(d.noStock || {}), [b]: { by: S.me.user, name: S.me.name, at: Date.now() } };
+        await db.doc('deliveries/' + id).update({ noStock });
+        d.noStock = noStock;
+        renderNow(true);
+        return true;
+      } catch (e) {
+        console.warn('noStock', e);
+        return false;
+      }
+    };
+    // Si el aviso ya quedó guardado, quita el reparto de la lista de inmediato.
+    let marked = alertOk ? await markNoStock() : false;
     let res = [];
     if (typeof pushNotify === 'function') {
       res = await Promise.all([
@@ -1321,16 +1335,7 @@ async function dvNoStock(id) {
       ]);
     }
     const delivered = res.filter(r => r && r.delivered).length;
-    if (alertOk || delivered) {
-      try {
-        const noStock = { ...(d.noStock || {}), [b]: { by: S.me.user, name: S.me.name, at: Date.now() } };
-        await db.doc('deliveries/' + id).update({ noStock });
-        d.noStock = noStock;
-        renderNow(true);
-      } catch (e) {
-        console.warn('noStock', e);
-      }
-    }
+    if (!marked && delivered) await markNoStock();
     toast(alertOk || delivered ? 'Aviso enviado' : 'No se pudo enviar el aviso. Inténtalo de nuevo.');
     return;
   }
